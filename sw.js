@@ -1,6 +1,7 @@
 /* Army Board Study Guide service worker. Cache-first app shell, no network use. */
-var CACHE = "absg-c24867fcfaa9";
-var SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
+var CACHE = "absg-ca819179bdf7-if90b71";
+var SHELL = ["./", "./index.html", "./manifest.webmanifest?v=2",
+             "./icon-192.png?v=2", "./icon-512.png?v=2", "./apple-touch-icon.png?v=2"];
 
 self.addEventListener("install", function(e){
   e.waitUntil(caches.open(CACHE).then(function(c){ return c.addAll(SHELL); }).then(function(){ return self.skipWaiting(); }));
