@@ -91,8 +91,16 @@ details.cats[open] summary::after{content:"\2212"}
 .catgroup{
   margin:10px 0 4px;font-size:.74rem;font-weight:700;letter-spacing:.06em;
   text-transform:uppercase;color:var(--accent);border-bottom:1px solid var(--line);padding-bottom:5px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
 }
 .catgroup:first-child{margin-top:0}
+.grpbtn{
+  font:inherit;font-size:.7rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--accent);background:none;border:1px solid var(--line);border-radius:99px;
+  padding:0 12px;min-height:44px;cursor:pointer;white-space:nowrap;
+}
+.grpbtn:hover{background:var(--accent-soft);border-color:var(--accent)}
+.grpbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .cat{display:flex;align-items:center;gap:10px;padding:9px 6px;border-radius:8px;cursor:pointer;min-height:44px}
 .cat:hover{background:var(--surface2)}
 .cat input{width:19px;height:19px;accent-color:var(--accent);margin:0;flex:0 0 auto}
@@ -224,10 +232,10 @@ footer p{margin:0 0 8px}
         <span class="lbl"><b>Promotion Board</b><small>Leadership, Counseling, and Situational Judgment</small></span></button>
       <div class="subpick hidden" id="promoSub">
         <button class="pick" type="button" data-board="p1" aria-pressed="false">
-          <span class="lbl"><b>SPC to SGT</b><small>Core NCO Knowledge, Some Situational Judgment</small></span>
+          <span class="lbl"><b>Specialist to Sergeant</b><small>Core NCO Knowledge, Some Situational Judgment</small></span>
           <span class="rchip" data-r="p1">Not Started</span></button>
         <button class="pick" type="button" data-board="p2" aria-pressed="false">
-          <span class="lbl"><b>SGT to SSG</b><small>More Advanced, Leadership Heavy</small></span>
+          <span class="lbl"><b>Sergeant to Staff Sergeant</b><small>More Advanced, Leadership Heavy</small></span>
           <span class="rchip" data-r="p2">Not Started</span></button>
       </div>
       <button class="pick" type="button" data-board="amc" aria-pressed="false">
@@ -242,7 +250,9 @@ footer p{margin:0 0 8px}
     <div class="catbody">
       <p class="hint">Applies to every board, including the Audie Murphy Club, and to flashcards and the print sheet.</p>
       <div class="row" style="margin-bottom:8px">
-        <button class="btn sec sm" type="button" id="allBtn">Select All</button>
+        <button class="btn sec sm" type="button" id="allBtn">Everything</button>
+        <button class="btn sec sm" type="button" id="stdBtn">Standard Only</button>
+        <button class="btn sec sm" type="button" id="amBtn">Audie Murphy Only</button>
         <button class="btn sec sm" type="button" id="noneBtn">Clear All</button>
       </div>
       <div id="cats"></div>
@@ -917,7 +927,7 @@ var BOARDS = {
     "Supply and Property Accountability":0.8,"Uniforms and Appearance":1.0,
     "Physical Fitness and Body Composition":1.0,"Weapons and Marksmanship":1.2,
     "First Aid and TCCC":1.2,"Land Navigation and Map Reading":1.2,"CBRN and MOPP":1.1,"Audie Murphy — Early Life":0.15,"Audie Murphy — World War II Service":0.15,"Audie Murphy — Awards and Decorations":0.15,"Audie Murphy — Film and Music":0.15,"Audie Murphy — Personal Life and Legacy":0.15 }},
-  p1:{ label:"Promotion Board — SPC to SGT", adv:0.30, sit:0.15, w:{
+  p1:{ label:"Promotion Board — Specialist to Sergeant", adv:0.30, sit:0.15, w:{
     "Leadership":2.0,"Counseling and Development":1.8,"Army Values, Creeds, and Ethos":1.2,
     "Army History and Heritage":0.8,"NCO Development and Promotions":1.5,"Evaluations and NCOER":1.0,
     "Army Programs":1.3,"Drill and Ceremony":1.8,"Customs and Courtesies":1.5,
@@ -926,7 +936,7 @@ var BOARDS = {
     "Supply and Property Accountability":0.7,"Uniforms and Appearance":1.2,
     "Physical Fitness and Body Composition":1.0,"Weapons and Marksmanship":1.0,
     "First Aid and TCCC":1.0,"Land Navigation and Map Reading":0.8,"CBRN and MOPP":0.8,"Audie Murphy — Early Life":0.15,"Audie Murphy — World War II Service":0.15,"Audie Murphy — Awards and Decorations":0.15,"Audie Murphy — Film and Music":0.15,"Audie Murphy — Personal Life and Legacy":0.15 }},
-  p2:{ label:"Promotion Board — SGT to SSG", adv:0.50, sit:0.22, w:{
+  p2:{ label:"Promotion Board — Sergeant to Staff Sergeant", adv:0.50, sit:0.22, w:{
     "Leadership":2.4,"Counseling and Development":2.0,"Army Values, Creeds, and Ethos":0.9,
     "Army History and Heritage":0.7,"NCO Development and Promotions":1.8,"Evaluations and NCOER":1.8,
     "Army Programs":1.5,"Drill and Ceremony":1.6,"Customs and Courtesies":1.2,
@@ -1049,22 +1059,65 @@ function buildCats(){
     lab.appendChild(cb); lab.appendChild(sp); lab.appendChild(n);
     return lab;
   }
-  function heading(text){
-    var h=document.createElement("p"); h.className="catgroup"; h.textContent=text; return h;
+  // Each group heading carries its own one-tap select/clear toggle.
+  function heading(text, names){
+    var h=document.createElement("p"); h.className="catgroup";
+    var lbl=document.createElement("span"); lbl.textContent=text;
+    var btn=document.createElement("button");
+    btn.type="button"; btn.className="grpbtn";
+    btn.addEventListener("click", function(){ setCats(names, !allChecked(names)); });
+    h.appendChild(lbl); h.appendChild(btn);
+    GROUPS.push({ cats:names, btn:btn });
+    return h;
   }
+  GROUPS = [];
   // The Audie Murphy sub-categories are set apart from the general board topics.
   var am = CATS.filter(function(c){ return isAM(c.name); });
   var rest = CATS.filter(function(c){ return !isAM(c.name); });
+  var amNames = am.map(function(c){ return c.name; });
+  var restNames = rest.map(function(c){ return c.name; });
   if(am.length){
-    host.appendChild(heading("Audie Murphy — The Man"));
+    host.appendChild(heading("Audie Murphy", amNames));
     var g1=document.createElement("div"); g1.className="catgrid";
     am.forEach(function(c){ g1.appendChild(row(c)); });
     host.appendChild(g1);
   }
-  host.appendChild(heading("General Board Topics"));
+  host.appendChild(heading("General Board Topics", restNames));
   var g2=document.createElement("div"); g2.className="catgrid";
   rest.forEach(function(c){ g2.appendChild(row(c)); });
   host.appendChild(g2);
+}
+/* ---- group selection helpers ---- */
+var GROUPS = [];
+function amNames(){ return CATS.filter(function(c){ return isAM(c.name); }).map(function(c){ return c.name; }); }
+function stdNames(){ return CATS.filter(function(c){ return !isAM(c.name); }).map(function(c){ return c.name; }); }
+function allChecked(names){
+  var ok = names.length > 0;
+  Array.prototype.forEach.call($("cats").querySelectorAll("input"), function(cb){
+    if(names.indexOf(cb.value) !== -1 && !cb.checked) ok = false;
+  });
+  return ok;
+}
+/* Set one group without disturbing the rest. */
+function setCats(names, on){
+  Array.prototype.forEach.call($("cats").querySelectorAll("input"), function(cb){
+    if(names.indexOf(cb.value) !== -1) cb.checked = !!on;
+  });
+  updatePool();
+}
+/* Select exactly this group and clear everything else. */
+function onlyCats(names){
+  Array.prototype.forEach.call($("cats").querySelectorAll("input"), function(cb){
+    cb.checked = names.indexOf(cb.value) !== -1;
+  });
+  updatePool();
+}
+function refreshGroupBtns(){
+  GROUPS.forEach(function(g){
+    var on = allChecked(g.cats);
+    g.btn.textContent = on ? "Clear" : "Select All";
+    g.btn.setAttribute("aria-pressed", on ? "true" : "false");
+  });
 }
 function selectedCats(){
   var out=[]; Array.prototype.forEach.call($("cats").querySelectorAll("input"),function(cb){ if(cb.checked) out.push(cb.value); });
@@ -1073,6 +1126,7 @@ function selectedCats(){
 function poolSize(cats){ return QUESTIONS.filter(function(q){ return inBoard(q,board) && cats.indexOf(q.c)!==-1; }).length; }
 function updatePool(){
   var cats=selectedCats(), pool=poolSize(cats);
+  refreshGroupBtns();
   $("catCount").textContent = (cats.length===CATS.length) ? ("All "+CATS.length+" Selected") : (cats.length+" of "+CATS.length+" Selected");
   $("startBtn").disabled = (pool===0);
   $("printBtn").disabled = (pool===0);
@@ -1389,6 +1443,8 @@ Array.prototype.forEach.call($("lens").querySelectorAll(".pick"),function(b){
 $("timerChk").addEventListener("change", function(){ useTimer=!!this.checked; });
 $("allBtn").addEventListener("click", function(){ Array.prototype.forEach.call($("cats").querySelectorAll("input"),function(cb){cb.checked=true;}); updatePool(); });
 $("noneBtn").addEventListener("click", function(){ Array.prototype.forEach.call($("cats").querySelectorAll("input"),function(cb){cb.checked=false;}); updatePool(); });
+$("stdBtn").addEventListener("click", function(){ onlyCats(stdNames()); });
+$("amBtn").addEventListener("click", function(){ onlyCats(amNames()); });
 $("startBtn").addEventListener("click", function(){ startQuiz(selectedCats()); });
 $("nextBtn").addEventListener("click", next);
 $("quitBtn").addEventListener("click", function(){ if(answers.length) finish(); else toMenu(); });
