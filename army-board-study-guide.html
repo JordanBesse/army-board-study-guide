@@ -63,6 +63,10 @@ h1{font-size:1.3rem;margin:0;letter-spacing:-.01em;font-weight:700}
   --ok:#5fb0e0; --ok-bg:#0e1c26; --ok-line:#2a5a7c;
   --no:#f0895a; --no-bg:#2a1a11; --no-line:#8a4a24;
 }
+.cbpreview{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+.cbsw{border:1px solid;border-radius:var(--r);padding:3px 9px;font-size:.72rem;font-weight:700;letter-spacing:.04em;white-space:nowrap}
+.cbsw.ok{color:var(--ok);border-color:var(--ok-line);background:var(--ok-bg)}
+.cbsw.no{color:var(--no);border-color:var(--no-line);background:var(--no-bg)}
 .setrow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0}
 .setrow+.setrow{border-top:1px solid var(--line)}
 .setrow>span{font-size:.9rem}
@@ -279,7 +283,14 @@ footer p{margin:0 0 8px}
     <button id="themeBtn" type="button" aria-label="Toggle light and dark mode">Dark</button>
   </div>
   <div class="setrow">
-    <span>Colorblind-friendly colors<br><small class="hint" style="text-align:left;margin:0">Blue and orange instead of green and red. The check, cross, and wording never depend on color.</small></span>
+    <span>Colorblind-friendly colors<br><small class="hint" style="text-align:left;margin:0">Blue and orange instead of green and red. The check, cross, and wording never depend on color.</small>
+      <!-- Live sample. The palette itself was correct before v13, but nothing on the
+           settings screen used the answer colours, so flipping the switch appeared to do
+           nothing at all. These two chips are the only place the setting is visible at the
+           moment you change it. Decorative: the button states the setting for a reader. -->
+      <span class="cbpreview" aria-hidden="true">
+        <span class="cbsw ok">✓ CORRECT</span><span class="cbsw no">✗ YOUR ANSWER</span>
+      </span></span>
     <button class="btn sec sm swbtn" type="button" id="cbBtn" aria-pressed="false">Off</button>
   </div>
   <div class="setrow" id="ttsRow">
@@ -343,6 +354,9 @@ footer p{margin:0 0 8px}
       <button class="pick" type="button" data-board="amc" aria-pressed="false">
         <span class="lbl"><b>Audie Murphy Club</b><small>Leadership Philosophy, Heritage, Situational Judgment</small></span>
         <span class="rchip" data-r="amc">Not Started</span></button>
+      <button class="pick" type="button" data-board="ds" aria-pressed="false">
+        <span class="lbl"><b>Drill Sergeant</b><small>The Creed, the DS Program, Drill, PRT, and Cadence</small></span>
+        <span class="rchip" data-r="ds">Not Started</span></button>
     </div>
     <p class="hint" id="readyHint" style="margin:10px 0 0"></p>
   </div>
@@ -350,11 +364,12 @@ footer p{margin:0 0 8px}
   <details class="cats">
     <summary>Choose Categories <span id="catCount"></span></summary>
     <div class="catbody">
-      <p class="hint">Applies to every board, including the Audie Murphy Club, and to flashcards and the print sheet.</p>
+      <p class="hint">Applies to every board, including the Audie Murphy Club and Drill Sergeant, and to flashcards and the print sheet.</p>
       <div class="row" style="margin-bottom:8px">
         <button class="btn sec sm" type="button" id="allBtn">Everything</button>
         <button class="btn sec sm" type="button" id="stdBtn">Standard Only</button>
         <button class="btn sec sm" type="button" id="amBtn">Audie Murphy Only</button>
+        <button class="btn sec sm" type="button" id="dsBtn">Drill Sergeant Only</button>
         <button class="btn sec sm" type="button" id="noneBtn">Clear All</button>
       </div>
       <div id="cats"></div>
@@ -931,10 +946,117 @@ var QUESTIONS = [
 {c:"Audie Murphy — Awards and Decorations",q:"Who presented Audie Murphy with the Medal of Honor?",o:["Lieutenant General Alexander Patch","General Dwight D. Eisenhower","General George S. Patton","President Harry S. Truman"],a:"Lieutenant General Alexander Patch",s:"Army heritage",e:"The Seventh Army commander presented it in France on 2 June 1945.",t:"knowledge",tr:"advanced",b:["amc"]},
 {c:"Audie Murphy — Film and Music",q:"In which 1951 John Huston film did Audie Murphy star as a Civil War soldier?",o:["The Red Badge of Courage","Sergeant York","Shenandoah","The Blue and the Gray"],a:"The Red Badge of Courage",s:"Audie Murphy biography",e:"He played the Youth in Huston's adaptation of the Stephen Crane novel.",t:"knowledge",tr:"advanced",b:["amc"]},
 {c:"Audie Murphy — Film and Music",q:"With which songwriter did Audie Murphy frequently collaborate?",o:["Scott Turner","Hank Williams","Chet Atkins","Willie Nelson"],a:"Scott Turner",s:"Audie Murphy biography",e:"Their collaboration produced several recorded songs, including \"Shutters and Boards.\"",t:"knowledge",tr:"advanced",b:["amc"]},
+{c:"Drill Sergeant Creed and Identity",q:"The Drill Sergeant Creed opens and closes with the same sentence. What is it?",o:["\"I am a Drill Sergeant.\"","\"This we'll defend.\"","\"I am an American Soldier, a member of a team.\"","\"I will always place the mission first.\""],a:"\"I am a Drill Sergeant.\"",s:"The Drill Sergeant Creed",e:"The Creed both begins and ends with \"I am a Drill Sergeant,\" framing everything pledged in between.",t:"knowledge",tr:"core",b:["ds"]},
+{c:"Drill Sergeant Creed and Identity",q:"According to the Creed, a Drill Sergeant assists each individual in becoming what kind of Soldier?",o:["A highly motivated, well disciplined, physically and mentally fit Soldier capable of defeating any enemy on today's modern battlefield","A confident, disciplined, and tactically proficient combat leader, prepared to lead a squad in its first engagement","A resilient and adaptable warfighter, ready to fight and win in large-scale combat operations against a determined peer threat","A loyal and obedient Soldier who is physically tough enough to deploy anywhere in the world on very short notice"],a:"A highly motivated, well disciplined, physically and mentally fit Soldier capable of defeating any enemy on today's modern battlefield",s:"The Drill Sergeant Creed",e:"The Creed's wording is \"highly motivated, well disciplined, physically and mentally fit soldier, capable of defeating any enemy on today's modern battlefield.\"",t:"knowledge",tr:"core",b:["ds"]},
+{c:"Drill Sergeant Creed and Identity",q:"The Creed says the Drill Sergeant will instill pride in three things. What are they?",o:["Self, the Army, and country","Self, the unit, and the mission","The team, the Army, and the flag","Self, the squad, and the nation"],a:"Self, the Army, and country",s:"The Drill Sergeant Creed",e:"\"I will instill pride in all I train. Pride in self, in the Army, and in country.\"",t:"knowledge",tr:"core",b:["ds"]},
+{c:"Drill Sergeant Creed and Identity",q:"Per the Creed, the Drill Sergeant insists that each Soldier meets and maintains the Army's standards of what?",o:["Military bearing and courtesy","Physical fitness and marksmanship","Discipline and conduct","Weapons handling and field craft"],a:"Military bearing and courtesy",s:"The Drill Sergeant Creed",e:"\"...meets and maintains the Army's standards of military bearing and courtesy, consistent with the highest traditions of the U.S. Army.\"",t:"knowledge",tr:"core",b:["ds"]},
+{c:"Drill Sergeant Creed and Identity",q:"How does the Creed say a Drill Sergeant will lead?",o:["By instruction, demonstrating every task in full before a Soldier is asked to perform it","With firm discipline, holding every Soldier to an uncompromising standard at all times","By example, never requiring a Soldier to attempt any task the Drill Sergeant would not do","From the front, sharing every hardship the Soldiers endure in training"],a:"By example, never requiring a Soldier to attempt any task the Drill Sergeant would not do",s:"The Drill Sergeant Creed",e:"\"I will lead by example, never requiring a soldier to attempt any task I would not do myself.\"",t:"knowledge",tr:"core",b:["ds"]},
+{c:"Drill Sergeant Creed and Identity",q:"The Creed states that \"first, last, and always,\" the Drill Sergeant is what?",o:["An American Soldier","A drill instructor","A servant of the nation","A guardian of standards"],a:"An American Soldier",s:"The Drill Sergeant Creed",e:"\"But first, last, and always, I am an American Soldier.\"",t:"knowledge",tr:"core",b:["ds"]},
+{c:"Drill Sergeant Creed and Identity",q:"What special qualification identifier (SQI) is awarded to a Soldier who graduates the Drill Sergeant Course?",o:["X","H","8","P"],a:"X",s:"TR 350-16 (27 March 2023)",e:"Graduates of the course are awarded the SQI X, which identifies a Drill Sergeant-qualified NCO.",t:"knowledge",tr:"core",b:["ds"]},
+{c:"Drill Sergeant Creed and Identity",q:"What is the distinctive headgear that identifies a Drill Sergeant?",o:["The patrol cap","The campaign hat","The maroon beret","The garrison cap"],a:"The campaign hat",s:"TR 350-16 (27 March 2023)",e:"The regular working uniform for Drill Sergeants is the Army Combat Uniform with the campaign hat, the distinctive wide-brimmed \"brown round.\"",t:"knowledge",tr:"core",b:["ds"]},
+{c:"Drill Sergeant Creed and Identity",q:"\"This We'll Defend,\" the phrase carried on Drill Sergeant heraldry, is best described as what?",o:["The motto of the U.S. Army","The slogan adopted by the Drill Sergeant Academy","The motto of the Infantry branch","The motto of TRADOC"],a:"The motto of the U.S. Army",s:"Army heritage",e:"\"This We'll Defend\" is the motto of the United States Army, appearing on the Army seal and on Drill Sergeant heraldry.",t:"knowledge",tr:"core",b:["ds"]},
+{c:"Drill Sergeant Creed and Identity",q:"When are the campaign hat and the Drill Sergeant Identification Badge awarded to a candidate?",o:["On assignment to an authorized DS position","On graduation from the Drill Sergeant Course","After twelve months on the trail","On selection by HRC for DS duty"],a:"On graduation from the Drill Sergeant Course",s:"TR 350-16 (27 March 2023)",e:"TR 350-16 states that DS Candidates are awarded the campaign/bush hat and the Drill Sergeant Identification Badge upon graduation from the DS Course.",t:"knowledge",tr:"core",b:["ds"]},
+{c:"Drill Sergeant Program",q:"What is the mission of the U.S. Army Drill Sergeant Academy?",o:["To assess, select, and assign the most qualified noncommissioned officers in the Army to special duty as instructors of initial entry Soldiers","To standardize the conduct of initial entry training across every Army training center, school, and center of excellence","To train, educate, certify, and validate an NCO's ability to execute and teach the core tenets of the Basic Combat Training program of instruction","To write, publish, and maintain the doctrine used to train Soldiers in Basic Combat Training"],a:"To train, educate, certify, and validate an NCO's ability to execute and teach the core tenets of the Basic Combat Training program of instruction",s:"TR 350-16 (27 March 2023)",e:"This is the USADSA mission statement in TR 350-16, paragraph 2-1a.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Program",q:"Which set correctly lists the core tenets of the Basic Combat Training program of instruction that the Drill Sergeant Academy certifies an NCO to teach?",o:["Physical Readiness Training, Drill and Ceremonies, Basic Rifle Marksmanship, and Warrior Tasks and Battle Drills","Physical fitness, rifle marksmanship, land navigation, first aid, and individual field craft","Discipline, drill and ceremony, rifle marksmanship, and individual field craft","Combatives, marksmanship, tactical medicine, and battlefield communications"],a:"Physical Readiness Training, Drill and Ceremonies, Basic Rifle Marksmanship, and Warrior Tasks and Battle Drills",s:"TR 350-16 (27 March 2023)",e:"The USADSA mission names these four core tenets of the BCT program of instruction.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Program",q:"What is the minimum General Technical (GT) score for a Drill Sergeant candidate?",o:["100","90","85","110"],a:"90",s:"TR 350-16 (27 March 2023)",e:"TR 350-16 sets the minimum GT score at 90, revised down from 100 per MILPER 21-260.",t:"knowledge",tr:"core",b:["ds"]},
+{c:"Drill Sergeant Program",q:"The minimum GT score may be waived, on a case-by-case basis, to no lower than what?",o:["80","85","90","75"],a:"85",s:"TR 350-16 (27 March 2023)",e:"The GT requirement may be waived to not less than 85 on a case-by-case basis; see AR 614-200 for waiver requirements.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Program",q:"What ranks are eligible to attend the Drill Sergeant Course?",o:["Corporal through Sergeant First Class","Sergeant through Sergeant First Class","Staff Sergeant through Master Sergeant","Sergeant through Master Sergeant"],a:"Sergeant through Sergeant First Class",s:"TR 350-16 (27 March 2023)",e:"All DS Candidates must be in the rank of Sergeant (SGT) through Sergeant First Class (SFC).",t:"knowledge",tr:"core",b:["ds"]},
+{c:"Drill Sergeant Program",q:"How many phases make up the Drill Sergeant Course?",o:["Two","Three","Four","Five"],a:"Three",s:"TR 350-16 (27 March 2023)",e:"The DS Course consists of three phases, which must be completed in the order 1, 2, then 3; no other sequence is authorized.",t:"knowledge",tr:"core",b:["ds"]},
+{c:"Drill Sergeant Program",q:"A Drill Sergeant candidate has how long to complete all three phases of the course?",o:["12 months","18 months","24 months","9 months"],a:"18 months",s:"TR 350-16 (27 March 2023)",e:"Candidates have 18 months from the start date of phase one; failure to finish in that window is a course failure.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Program",q:"What instructor-to-student ratio do Drill Sergeant Leaders maintain in the Drill Sergeant Course?",o:["1 to 4","1 to 8","1 to 12","1 to 16"],a:"1 to 8",s:"TR 350-16 (27 March 2023)",e:"The course uses small-group instruction, with Drill Sergeant Leaders maintaining a 1:8 instructor-to-student ratio.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Program",q:"A small-group instruction squad in the Drill Sergeant Course consists of how many candidates?",o:["6 to 10","8 to 16","10 to 20","4 to 8"],a:"8 to 16",s:"TR 350-16 (27 March 2023)",e:"Squads consist of 8 to 16 assigned candidates.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Program",q:"What is the maximum physical profile (PULHES) allowed for a Drill Sergeant candidate?",o:["111121","211321","222222","311321"],a:"211321",s:"TR 350-16 (27 March 2023)",e:"TR 350-16 lists a maximum profile of 211321 PULHES, and states there is no maximum age limit.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Program",q:"Which form does a Drill Sergeant candidate complete during initial orientation to screen sensitive-duty eligibility?",o:["DA Form 4856","DA Form 7424","DA Form 1059","DA Form 705"],a:"DA Form 7424",s:"TR 350-16 (27 March 2023)",e:"Candidates complete DA Form 7424, the Sensitive Duty Assignment Eligibility Questionnaire, during initial orientation at the academy.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Program",q:"What document is completed for every Drill Sergeant candidate upon completion of, or removal from, the DS Course?",o:["DA Form 638, Recommendation for Award or Decoration","DA Form 87, Certificate of Training and Completion","DA Form 1059, Service School Academic Evaluation Report","DA Form 2166, Noncommissioned Officer Evaluation Report"],a:"DA Form 1059, Service School Academic Evaluation Report",s:"TR 350-16 (27 March 2023)",e:"A DA Form 1059 is completed for all DS Candidates on completion or removal; unqualified arrivals do not require one.",t:"knowledge",tr:"core",b:["ds"]},
+{c:"Drill Sergeant Program",q:"A drug urinalysis is administered to Drill Sergeant candidates on what timeline after they report to the academy?",o:["100 percent, within three training days","A random sample, within the first week","100 percent, within the first 30 days","50 percent, within three training days"],a:"100 percent, within three training days",s:"TR 350-16 (27 March 2023)",e:"The DSA Commandant administers a 100 percent urinalysis to all candidates within three training days after reporting.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Program",q:"The DSA Commandant conducts a complete review of any class whose overall attrition exceeds what level?",o:["10 percent","12 percent","15 percent","20 percent"],a:"12 percent",s:"TR 350-16 (27 March 2023)",e:"The Commandant reviews any class with overall attrition over 12 percent to determine the cause; the rate is a quality tool and is never used to lower standards.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Program",q:"A Soldier assigned to an authorized Drill Sergeant position is entitled to what level of special duty assignment pay on graduation?",o:["SDAP-3","SDAP-4","SDAP-5","SDAP-2"],a:"SDAP-4",s:"TR 350-16 (27 March 2023)",e:"DS Course graduates assigned to a DS position are authorized SDAP-4, effective the date assigned to an authorized DS position.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Program",q:"What must a Drill Sergeant complete to advance from SDAP-4 to SDAP-5?",o:["A second tour as a Drill Sergeant Leader at the Drill Sergeant Academy, with the Commandant's endorsement","The unit DS certification program, 12 months as a DS, and the company commander's recommendation","Promotion to Sergeant First Class and completion of 24 months of service on the trail","Reassignment to the Reception Battalion for one full year and a favorable interview"],a:"The unit DS certification program, 12 months as a DS, and the company commander's recommendation",s:"TR 350-16 (27 March 2023)",e:"Advancement to SDAP-5 requires the unit's DS certification program, 12 months of service as a DS, and the company commander's favorable recommendation and endorsement.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Program",q:"Failure to meet which regulation's standards is grounds for removing a candidate from the DS Course for body composition?",o:["AR 350-1","AR 600-9","AR 640-30","AR 40-501"],a:"AR 600-9",s:"TR 350-16 (27 March 2023)",e:"TR 350-16 lists failure to meet the body composition requirements in AR 600-9 as a basis for removal from the DS Course.",t:"knowledge",tr:"core",b:["ds"]},
+{c:"Drill Sergeant Program",q:"A prior-service NCO who was an instructor in the Navy, Marines, or Air Force wants a Drill Sergeant assignment. What does TR 350-16 require?",o:["Their prior instructor credential substitutes for the DS Course","They may be assigned as a DS and complete the course within their first year","They attend an abbreviated orientation in place of the full course","They must still attend the DS Course before being assigned to a DS position"],a:"They must still attend the DS Course before being assigned to a DS position",s:"TR 350-16 (27 March 2023)",e:"Prior-service personnel who were instructor-qualified in another service must still attend the DS Course before assignment to a DS position.",t:"situational",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Program",q:"Drill Sergeants selected for a Reception Battalion should come from which part of the force?",o:["The top 20 percent of Drill Sergeants across the enterprise","Any Drill Sergeant who has served at least one year on the trail in a training company","The most senior Drill Sergeants available by rank at the installation","Drill Sergeants who are completing the final year of their tour of duty"],a:"The top 20 percent of Drill Sergeants across the enterprise",s:"TR 350-16 (27 March 2023)",e:"Reception Battalion DSs should be among the top 20 percent across the enterprise, recommended by the brigade CSM or DSA Commandant and interviewed by the Reception Battalion CSM.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Program",q:"Which of the following is an authorized additional duty for a Drill Sergeant under TR 350-16?",o:["Supply Sergeant","Arms room NCO","Operations and training NCO","Gate and access control guard"],a:"Arms room NCO",s:"TR 350-16 (27 March 2023)",e:"Authorized additional duties include company CBRN NCO, physical security NCO, arms room NCO, and equal opportunity representative; supply sergeant, operations/training NCO, and gate guard are not authorized.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Program",q:"A Drill Sergeant candidate fails to achieve course standards. Who authorizes a one-time recycle?",o:["Human Resources Command","The candidate's brigade commander","The Drill Sergeant Leader supervising the squad","The candidate's first sergeant"],a:"Human Resources Command",s:"TR 350-16 (27 March 2023)",e:"HRC grants authorization to recycle a candidate on a one-time-only basis; the DSA Commandant may separately grant a one-time fourth attempt case by case.",t:"situational",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Program",q:"Under what authority may a Drill Sergeant's identification badge be revoked?",o:["AR 350-1","AR 600-8-22","TR 350-6","AR 670-1"],a:"AR 600-8-22",s:"TR 350-16 (27 March 2023)",e:"The badge may be revoked in accordance with AR 600-8-22 and AR 614-200; revocation may result in withdrawal of the SQI X.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Program",q:"Successful graduates of the Drill Sergeant Course incur an obligation of how long for Drill Sergeant duty?",o:["12 months","24 months","36 months","18 months"],a:"24 months",s:"TR 350-16 (27 March 2023)",e:"Graduates incur a 24-month obligation for DS duty, and NCOs must reenlist or extend to meet the service requirement before attending the course.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Program",q:"An NCO has not performed Drill Sergeant duties for over a year and is returning to the trail. What is required?",o:["Attendance at the two-week Drill Sergeant Recertification Course before assuming DS duties","A unit-level refresher administered by the company first sergeant","Repeating the full three-phase Drill Sergeant Course from the beginning, in sequence","Nothing at all; the SQI X carries the qualification forward indefinitely once awarded"],a:"Attendance at the two-week Drill Sergeant Recertification Course before assuming DS duties",s:"TR 350-16 (27 March 2023)",e:"Any Drill Sergeant Returnee who has not performed DS duties for 12 months or longer attends the two-week DSRC before assuming DS duties.",t:"situational",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Program",q:"Which grades are eligible to serve as a Drill Sergeant Leader at the academy?",o:["Sergeant and Staff Sergeant","Staff Sergeant and Sergeant First Class","Sergeant First Class and Master Sergeant","Staff Sergeant through Master Sergeant"],a:"Staff Sergeant and Sergeant First Class",s:"TR 350-16 (27 March 2023)",e:"Only DSs in the grade of SSG and SFC are eligible to serve as DSLs; a Chief Instructor must be a 1SG or MSG.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Program",q:"In BCT and OSUT, the Drill Sergeant assignment model is resourced to sustain what ratio?",o:["One Drill Sergeant to a maximum of 12 Soldiers in training","One Drill Sergeant to a maximum of 20 Soldiers in training","One Drill Sergeant to a maximum of 8 Soldiers in training","One Drill Sergeant to a maximum of 16 Soldiers in training"],a:"One Drill Sergeant to a maximum of 12 Soldiers in training",s:"TR 350-16 (27 March 2023)",e:"BCT and OSUT are resourced 16 DSs per company, four per platoon, to sustain a 1:12 ratio. The AIT ratio is 1:20.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Program",q:"A Drill Sergeant is assigned to a non-Drill Sergeant position for 90 days or longer. What happens to their special duty assignment pay?",o:["It continues without change at the rate already authorized for that Soldier","It is lost for the length of time assigned to the non-DS position","It is reduced by one level for the whole duration of the assignment","It is suspended, then paid retroactively when the Soldier returns to DS duty"],a:"It is lost for the length of time assigned to the non-DS position",s:"TR 350-16 (27 March 2023)",e:"SDAP is lost for the length of the non-DS assignment. The exception is a specific operational tasking outside the IET environment that requires a serving DS.",t:"situational",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Program",q:"A Drill Sergeant candidate is assigned to a training unit while awaiting the course. What does TR 350-16 prohibit?",o:["Marching Soldiers in formation while under the direct supervision of an assigned DS Sponsor","Accompanying a DS Sponsor on charge of quarters, staff duty, or sergeant of the guard","Observing unit training and participating in as many training activities as time allows","Placing the candidate in a position of total control of or responsibility for IET Soldiers"],a:"Placing the candidate in a position of total control of or responsibility for IET Soldiers",s:"TR 350-16 (27 March 2023)",e:"Candidates must never counsel IET Soldiers or act as primary instructor. They may march Soldiers under a DS Sponsor's supervision and accompany the Sponsor on CQ, staff duty, sergeant of the guard, and commander of the relief.",t:"situational",tr:"advanced",b:["ds"]},
+{c:"Drill and Ceremony — Drill Sergeant Depth",q:"What are the three methods of instruction used to teach drill?",o:["Step by step, talk-through, and by the numbers","Explanation, demonstration, and practice","Crawl, walk, and then run","Lecture, conference, and practical work"],a:"Step by step, talk-through, and by the numbers",s:"TC 3-21.5",e:"The character of the movement being taught determines which of the three methods is most effective.",t:"knowledge",tr:"core",b:["ds"]},
+{c:"Drill and Ceremony — Drill Sergeant Depth",q:"As a rule, which method of instruction is used to teach marching movements?",o:["The talk-through method","The step-by-step method","The by-the-numbers method","The demonstration-only method"],a:"The step-by-step method",s:"TC 3-21.5",e:"Marching movements are taught step by step; movements with two or more counts are taught by the numbers.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill and Ceremony — Drill Sergeant Depth",q:"Which method of instruction is best for movements that require numerous or simultaneous actions?",o:["The step-by-step method","The by-the-numbers method","The talk-through method","The mass command method"],a:"The talk-through method",s:"TC 3-21.5",e:"In the talk-through method the instructor describes the movement while the demonstrators execute it as described.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill and Ceremony — Drill Sergeant Depth",q:"Which method of instruction is used for movements that have two or more counts?",o:["The step-by-step method","The talk-through method","The by-the-numbers method","The U-formation method"],a:"The by-the-numbers method",s:"TC 3-21.5",e:"By The Numbers begins single-count instruction; Without The Numbers ends it and returns the element to normal cadence.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill and Ceremony — Drill Sergeant Depth",q:"Every drill movement is presented using which three teaching stages?",o:["Explanation, demonstration, and practice","Introduction, instruction, and evaluation","Preparation, execution, and assessment","Explanation, repetition, and inspection"],a:"Explanation, demonstration, and practice",s:"TC 3-21.5",e:"The three stages apply regardless of which method of instruction the drill instructor selects.",t:"knowledge",tr:"core",b:["ds"]},
+{c:"Drill and Ceremony — Drill Sergeant Depth",q:"What are the four formation types an instructor may use when conducting drill instruction?",o:["Line, column, mass, and file formations","U, line, circular, and extended rectangular","Squad, platoon, company, and battalion","Wedge, echelon, vee, and line formations"],a:"U, line, circular, and extended rectangular",s:"TC 3-21.5",e:"Soldiers should be taught in the smallest formation possible to ensure individual attention.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill and Ceremony — Drill Sergeant Depth",q:"As a rule, stationary movements are taught using which instructional formation?",o:["The line formation","The U-formation","The circular formation","The extended rectangular formation"],a:"The U-formation",s:"TC 3-21.5",e:"Marching movements, including squad, platoon, and company drill, are best taught from the line formation.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill and Ceremony — Drill Sergeant Depth",q:"Which command forms the circular formation for instruction?",o:["Circle formation, FOLLOW ME","Assemble to the right, MARCH","Extend to the left, MARCH","Instructional Formation, MARCH"],a:"Circle formation, FOLLOW ME",s:"TC 3-21.5",e:"The instructor double-times in a circle large enough for the formation, then moves to the center of the circle.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill and Ceremony — Drill Sergeant Depth",q:"How many facing movements are executed from the Position of Attention?",o:["Three","Four","Five","Six"],a:"Five",s:"TC 3-21.5",e:"They are Left FACE, Right FACE, Half Left FACE, Half Right FACE, and About FACE.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill and Ceremony — Drill Sergeant Depth",q:"About, FACE is executed in how many counts?",o:["One","Two","Three","Four"],a:"Two",s:"TC 3-21.5",e:"On count one the right toe moves to the rear and slightly left of the left heel; on count two the Soldier turns 180 degrees to the right.",t:"knowledge",tr:"core",b:["ds"]},
+{c:"Drill and Ceremony — Drill Sergeant Depth",q:"The Hand Salute is executed in how many counts?",o:["One","Two","Three","Four"],a:"One",s:"TC 3-21.5",e:"The command is Present, ARMS. Order Arms from the Hand Salute is likewise a one-count movement.",t:"knowledge",tr:"core",b:["ds"]},
+{c:"Drill and Ceremony — Drill Sergeant Depth",q:"Port Arms from Order Arms with the M4-series carbine is a movement of how many counts?",o:["Two","Three","Four","Five"],a:"Two",s:"TC 3-21.5",e:"On count one the rifle is raised diagonally across the body; on count two the right hand regrasps at the small of the stock.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill and Ceremony — Drill Sergeant Depth",q:"Present Arms from Order Arms with the M4-series carbine is a movement of how many counts?",o:["Two","Three","Four","Seven"],a:"Three",s:"TC 3-21.5",e:"TC 3-21.5, chapter 5, gives the M4-series manual of arms count by count.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill and Ceremony — Drill Sergeant Depth",q:"Inspection Arms from Order Arms with the M4-series carbine is a movement of how many counts?",o:["Four","Five","Six","Seven"],a:"Seven",s:"TC 3-21.5",e:"Inspection Arms is the longest single movement in the M4-series manual of arms.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill and Ceremony — Drill Sergeant Depth",q:"Right Shoulder Arms from Order Arms with the M4-series carbine is a movement of how many counts?",o:["Two","Three","Four","Five"],a:"Four",s:"TC 3-21.5",e:"Order Arms from Right Shoulder Arms, by contrast, is a three-count movement.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill and Ceremony — Drill Sergeant Depth",q:"Experienced Soldiers should be able to execute the manual of arms in unison as a sequence of how many counts?",o:["10-count","15-count","20-count","25-count"],a:"15-count",s:"TC 3-21.5",e:"TC 3-21.5 notes that experienced Soldiers should be able to execute the 15-count manual of arms in unison.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill and Ceremony — Drill Sergeant Depth",q:"When a squad is formed in line, how are squad members numbered?",o:["From right to left","From left to right","From front to rear","From the center outward"],a:"From right to left",s:"TC 3-21.5",e:"When the squad is in column, members are numbered from front to rear.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill and Ceremony — Drill Sergeant Depth",q:"Which command forms the squad in column?",o:["FALL IN","In Column, FALL IN","At Close Interval, FALL IN","Column of Twos, MARCH"],a:"In Column, FALL IN",s:"TC 3-21.5",e:"The squad leader faces the proposed flank of the column and gives the command; members double-time to their positions and cover on the Soldier to their front.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill and Ceremony — Drill Sergeant Depth",q:"When a platoon is in a line formation, which squad leader serves as the base?",o:["The leader of the first squad","The leader of the second squad","The leader of the third squad","The leader of the fourth squad"],a:"The leader of the first squad",s:"TC 3-21.5",e:"The leader of the fourth squad serves as the base when the platoon is in a column formation.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill and Ceremony — Drill Sergeant Depth",q:"Without officers present, where is the platoon sergeant's post when the platoon is in line formation?",o:["One step to the rear and centered on the platoon","Three steps in front of and centered on the platoon","Six steps in front of and centered on the platoon","Three steps to the left flank of the platoon"],a:"Three steps in front of and centered on the platoon",s:"TC 3-21.5",e:"In column formation that post is three steps to the left flank and centered on the platoon. With the platoon leader present, the platoon sergeant's post is one step to the rear.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill and Ceremony — Drill Sergeant Depth",q:"Which directive is the only one on which a commander relinquishes command and salutes are exchanged?",o:["BRING YOUR UNITS TO PRESENT ARMS","HAVE YOUR UNITS OPEN RANKS","TAKE CHARGE OF YOUR UNITS","POST"],a:"TAKE CHARGE OF YOUR UNITS",s:"TC 3-21.5",e:"Directives are given in sentence form and are normally prefaced by HAVE YOUR UNITS or BRING YOUR UNITS.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill and Ceremony — Drill Sergeant Depth",q:"Over which shoulder do subordinate leaders normally give supplementary commands?",o:["The right shoulder","The left shoulder","Whichever shoulder faces the commander","Neither; they face the element first"],a:"The right shoulder",s:"TC 3-21.5",e:"The exception is when the command is based on the actions of an element to their left, or when they are to execute a Column Left, Column Half Left, or Left Flank.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill and Ceremony — Drill Sergeant Depth",q:"A preparatory command is given but no rate of march is stated. What rate is understood?",o:["Quick Time","Double Time","Half Step","Mark Time"],a:"Quick Time",s:"TC 3-21.5",e:"Likewise, when no direction is given, the response is understood to be Forward.",t:"situational",tr:"advanced",b:["ds"]},
+{c:"Drill and Ceremony — Drill Sergeant Depth",q:"How is a preparatory command pronounced?",o:["With a rising inflection","With a falling inflection","Without inflection, at a uniformly high pitch","In a sharper tone than the command of execution"],a:"With a rising inflection",s:"TC 3-21.5",e:"The command of execution is given in a sharper tone and slightly higher pitch than the last syllable of the preparatory command.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill and Ceremony — Drill Sergeant Depth",q:"How are combined commands such as FALL IN and AT EASE given?",o:["With a rising inflection, as with any preparatory command","Without inflection, at a uniformly high pitch and loudness","In two distinct parts, separated by an interval of one count","At a pitch noticeably lower than the natural speaking voice"],a:"Without inflection, at a uniformly high pitch and loudness",s:"TC 3-21.5",e:"In a combined command the preparatory command and the command of execution are combined into one.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Physical Readiness Training",q:"Which publication contains the standards, modifications, and illustrations for each H2F drill and exercise?",o:["FM 7-22","ATP 7-22.01","ATP 7-22.02","AR 350-1"],a:"ATP 7-22.02",s:"FM 7-22",e:"FM 7-22 establishes the doctrine and directs the reader to ATP 7-22.02 for the standards, modifications, and illustrations of each drill.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Physical Readiness Training",q:"What are the three parts of a physical readiness training session, in order?",o:["Preparation, activities, and recovery","Warm-up, workout, and cool-down","Stretching, conditioning, and stretching","Assessment, activity, and reassessment"],a:"Preparation, activities, and recovery",s:"FM 7-22",e:"Preparation readies the body for the main activity; activities take up most of the session; recovery covers rest intervals and the time between sessions.",t:"knowledge",tr:"core",b:["ds"]},
+{c:"Physical Readiness Training",q:"What are the slow and moderate exercise cadences, in counts per minute?",o:["40 and 70","50 and 80","60 and 90","50 and 100"],a:"50 and 80",s:"FM 7-22",e:"Preparation is conducted at a controlled slow or moderate cadence, 50 or 80 counts per minute.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Physical Readiness Training",q:"In initial military training, what limits apply to preparation cadence and repetitions?",o:["Cadence does not exceed moderate, with no more than 10 repetitions of any single 4-count exercise","Cadence does not exceed slow, and no more than 5 repetitions of any single 4-count exercise are performed","Cadence is always moderate, with no more than 15 repetitions of any single exercise in the drill","Cadence is set by the Drill Sergeant leading the session, with no fixed limit on repetitions"],a:"Cadence does not exceed moderate, with no more than 10 repetitions of any single 4-count exercise",s:"FM 7-22",e:"Cadence and repetitions otherwise depend on the recruits' fitness.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Physical Readiness Training",q:"How many exercises are in the Preparation Drill?",o:["8","10","12","5"],a:"10",s:"FM 7-22",e:"The Preparation Drill is a muscular endurance drill of 10 exercises. The Recovery Drill has 8.",t:"knowledge",tr:"core",b:["ds"]},
+{c:"Physical Readiness Training",q:"How many exercises are in the Recovery Drill?",o:["5","6","8","10"],a:"8",s:"FM 7-22",e:"Table 6-2 of FM 7-22 lists the Recovery Drill with 8 exercises, alongside Preventive Maintenance Checks and Services with 6.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Physical Readiness Training",q:"How many drills and exercises make up the H2F physical training domain?",o:["24 drills with 150 exercises","38 drills with 201 exercises","42 drills with 220 exercises","30 drills with 180 exercises"],a:"38 drills with 201 exercises",s:"FM 7-22",e:"Modifications in weight, repetitions, distance, and range of motion widen that variety further.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Physical Readiness Training",q:"USARIEM identified five domains of combat physical fitness. Which set is correct?",o:["Muscular strength, muscular endurance, aerobic endurance, explosive power, and anaerobic endurance","Muscular strength, speed, agility, endurance, and whole-body flexibility across the joints","Physical readiness, nutritional readiness, mental readiness, spiritual readiness, and sleep","Explosive power, balance, coordination, mobility, and sustained stamina under load"],a:"Muscular strength, muscular endurance, aerobic endurance, explosive power, and anaerobic endurance",s:"FM 7-22",e:"The old Army Physical Fitness Test assessed only two of those five: aerobic endurance and muscular endurance.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Physical Readiness Training",q:"Which of the following is one of the six physical components of physical readiness in FM 7-22?",o:["Flexibility","Hypertrophy","Agility","Coordination"],a:"Hypertrophy",s:"FM 7-22",e:"The six components are muscular strength, hypertrophy, muscular endurance, aerobic endurance, anaerobic endurance, and power. Agility and flexibility are listed as structural requirements.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Physical Readiness Training",q:"What are the two phases of Holistic Health and Fitness training?",o:["The toughening phase and the sustaining phase","The initial phase and the sustaining phase","The preparatory phase and the sustaining phase","The conditioning phase and the maintenance phase"],a:"The initial phase and the sustaining phase",s:"FM 7-22",e:"Initial phase training is far more prescriptive than sustaining phase training.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Physical Readiness Training",q:"After how many months of initial military training are Soldiers ready to move to the sustaining phase?",o:["Three","Six","Nine","Twelve"],a:"Six",s:"FM 7-22",e:"A Soldier who reaches sustaining phase standards during AIT or OSUT may begin sustaining phase training earlier, but that progression is not automatic.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Physical Readiness Training",q:"In a one-hour session focused on hypertrophy, how should preparation and recovery relate to the main activity?",o:["A 1:1 ratio — fifteen minutes each of preparation and recovery, thirty minutes of activity","A 1:2 ratio — ten minutes each of preparation and recovery, and forty minutes of main activity","A 2:1 ratio — twenty minutes each of preparation and recovery, and twenty of main activity","No fixed ratio at all; preparation is always ten minutes regardless of the session"],a:"A 1:1 ratio — fifteen minutes each of preparation and recovery, thirty minutes of activity",s:"FM 7-22",e:"A session focused on muscular strength devotes a larger proportion to preparation, because the main effort is close to maximum.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Physical Readiness Training",q:"During recovery, Soldiers walk until their heart rate returns to below what?",o:["80 beats per minute","100 beats per minute","120 beats per minute","140 beats per minute"],a:"100 beats per minute",s:"FM 7-22",e:"Soldiers cool down by walking until the heart rate drops below 100 bpm and heavy sweating stops.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Physical Readiness Training",q:"Approximately how long should the cool down last, and when should it occur?",o:["Approximately 10 minutes, immediately after the main activities","Approximately 5 minutes, immediately after the main activities","Approximately 15 minutes, following a short rest period","Approximately 20 minutes, at the very end of the training day"],a:"Approximately 10 minutes, immediately after the main activities",s:"FM 7-22",e:"The cool down gradually slows the heart rate and helps prevent pooling of blood in the legs and feet.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Physical Readiness Training",q:"The static stretches in the Recovery Drill are held for up to how long?",o:["10 seconds","20 seconds","30 seconds","60 seconds"],a:"30 seconds",s:"FM 7-22",e:"These stretches improve flexibility in most of the joints and reduce muscle tightness.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Physical Readiness Training",q:"When the main activity of a session is strength training, what is the correct order of exercises?",o:["Power before multi-joint, multi-joint before single-joint, larger muscles before smaller","Single-joint before multi-joint, smaller muscles before larger ones, and power exercises last","Larger muscles first, then power, then all of the remaining exercises in any convenient order","Multi-joint before power, then single-joint, then the larger muscle groups"],a:"Power before multi-joint, multi-joint before single-joint, larger muscles before smaller",s:"FM 7-22",e:"Ordering the session this way puts the most demanding movements first, while the Soldier is freshest.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Physical Readiness Training",q:"In BCT, how is the Strength Training Circuit modified to build hypertrophy?",o:["8 to 12 repetitions with 60 seconds of rest","5 to 8 repetitions with 60 to 120 seconds of rest","1 to 5 repetitions with 120 seconds of rest","15 to 20 repetitions with 30 seconds of rest"],a:"8 to 12 repetitions with 60 seconds of rest",s:"FM 7-22",e:"For muscular strength the modification is 5 to 8 repetitions with 60 to 120 seconds of rest; for power, 1 to 5 repetitions with 120 seconds.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Physical Readiness Training",q:"Which equipment does FM 7-22 require to be available at platoon level in Basic Combat Training?",o:["Elastic resistance bands and kettlebells","Medicine balls and suspension trainers","Sandbags and climbing ropes at squad level","Barbells and weight plates for every squad"],a:"Elastic resistance bands and kettlebells",s:"FM 7-22",e:"Having them at platoon level optimizes training time.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Cadences and Marching",q:"Which command has Soldiers count cadence while marching?",o:["In Cadence, COUNT","Count Cadence, COUNT","Sound Off, COUNT","Mark Time, COUNT"],a:"Count Cadence, COUNT",s:"TC 3-21.5",e:"Counting cadence helps Soldiers learn or maintain cadence and develop rhythm.",t:"knowledge",tr:"core",b:["ds"]},
+{c:"Cadences and Marching",q:"When marching at quick time, the preparatory command Count Cadence is given as which foot strikes the marching surface?",o:["The left foot","The right foot","Either foot","The foot opposite the direction of march"],a:"The left foot",s:"TC 3-21.5",e:"The command of execution COUNT is given the next time the left foot strikes, and Soldiers begin counting the time after that.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Cadences and Marching",q:"How does counting cadence differ between quick time and double time?",o:["At quick time Soldiers count as each foot strikes; at double time they count only when the left foot strikes","At quick time Soldiers count only when the left foot strikes; at double time they count as each foot strikes the marching surface","At quick time Soldiers count to four and repeat; at double time they count all the way to eight before repeating","There is no difference at all; the count is identical at both rates of march"],a:"At quick time Soldiers count as each foot strikes; at double time they count only when the left foot strikes",s:"TC 3-21.5",e:"At quick time the count runs ONE, TWO, THREE, FOUR as each foot strikes the marching surface.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Cadences and Marching",q:"Which command halts the execution of movements in cadence?",o:["Without Cadence","AS YOU WERE","Without The Numbers","Recover"],a:"Without Cadence",s:"TC 3-21.5",e:"For example, Without Cadence, MARCH when marching at Count Cadence, or Without Cadence, Left, FACE for stationary movements.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Cadences and Marching",q:"For a stationary movement of two or more counts, which command has Soldiers sound off with the count?",o:["Count Cadence, COUNT","By The Numbers, Right, FACE","In Cadence, Right, FACE","Sound Off, Right, FACE"],a:"In Cadence, Right, FACE",s:"TC 3-21.5",e:"Soldiers execute the first count on the command of execution and sound off ONE, then sound off TWO as they execute the second count.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Cadences and Marching",q:"What does TC 3-21.5 permit Soldiers to do in order to maintain cadence while marching?",o:["Sing, or march to a drummer's beat","Talk quietly within their rank","Count silently to themselves","Set their own pace in formation"],a:"Sing, or march to a drummer's beat",s:"TC 3-21.5",e:"This is the doctrinal basis for the marching cadences a Drill Sergeant calls on the move.",t:"knowledge",tr:"core",b:["ds"]},
+{c:"Cadences and Marching",q:"When marking time, how high is each foot raised off the marching surface?",o:["1 inch","2 inches","4 inches","6 inches"],a:"2 inches",s:"TC 3-21.5",e:"Each foot is raised alternately, and the arms swing naturally, as when marching with a 30-inch step.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Cadences and Marching",q:"Mark Time, MARCH may be commanded only while marching with which step?",o:["The 30-inch step, and only from the halt","The 30-inch or 15-inch step forward","Any step, including the right or left 15-inch step","The double-time step only, at 180 steps per minute"],a:"The 30-inch or 15-inch step forward",s:"TC 3-21.5",e:"The command may be given as either foot strikes the marching surface, and the Halt from Mark Time is executed in two counts.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Cadences and Marching",q:"What is the interval between the preparatory command and the command of execution?",o:["Always one step or count","Always two steps or counts","Three counts for marching movements","It varies with the size of the unit"],a:"Always one step or count",s:"TC 3-21.5",e:"The preparatory command and the command of execution are always given as the same foot strikes the marching surface.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Cadences and Marching",q:"Which movements are the only ones that may be executed while double-timing?",o:["Quick Time, Column Half Left or Right, and Column Left or Right","Rear March, Change Step, and Half Step, but only from a 30-inch step","Right Flank, Left Flank, and Rear March, given on the appropriate foot","Mark Time, Half Step, and Quick Time, given as either foot strikes"],a:"Quick Time, Column Half Left or Right, and Column Left or Right",s:"TC 3-21.5",e:"Armed troops must be at Port Arms before the command Double Time, MARCH is given.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Competition",q:"How many times may a nominee compete at the TRADOC-level Drill Sergeant of the Year competition?",o:["Once","Twice","Three times","There is no limit"],a:"Once",s:"TR 350-16 (27 March 2023)",e:"Nominees for DSOY are allowed to compete only once at the TRADOC level.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Competition",q:"Which ranks are eligible to be nominated for Drill Sergeant of the Year?",o:["Sergeant, Staff Sergeant, or Sergeant First Class","Staff Sergeant or Sergeant First Class only","Sergeant First Class or Master Sergeant","Corporal through Sergeant First Class"],a:"Sergeant, Staff Sergeant, or Sergeant First Class",s:"TR 350-16 (27 March 2023)",e:"A nominee must also be a graduate of the DS Course and be serving as a DS on the date of nomination.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Competition",q:"How long must a nominee have served in Drill Sergeant status prior to selection for the DSOY competition?",o:["6 months","12 months","18 months","24 months"],a:"12 months",s:"TR 350-16 (27 March 2023)",e:"USAR nominees must also have completed a minimum of two annual training periods or the equivalent as a DS in the IET environment.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Competition",q:"How much time must remain on a DSOY nominee's current enlistment?",o:["6 months, or an approved letter of extension","12 months, or an approved letter of extension","24 months, with no extension of any kind permitted","No minimum is specified in the regulation"],a:"12 months, or an approved letter of extension",s:"TR 350-16 (27 March 2023)",e:"This is one of the four minimum eligibility criteria listed in TR 350-16, paragraph 6-1.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Competition",q:"Which form is completed and forwarded with a Drill Sergeant of the Year nomination packet?",o:["DA Form 638","TRADOC Form 298","DA Form 4187","TRADOC Form 378"],a:"TRADOC Form 298",s:"TR 350-16 (27 March 2023)",e:"TRADOC Form 298 is the Drill Sergeant of the Year Nominee form, forwarded with the packet to the current DSOY at USACIMT.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Competition",q:"Where and when is the TRADOC Drill Sergeant of the Year competition held?",o:["At Fort Eustis, VA, in the spring of each year","At Fort Jackson, SC, on the week of 12 September","At Fort Benning, GA, on the week of 14 June","At the Drill Sergeant Academy, on a date set annually by HRC"],a:"At Fort Jackson, SC, on the week of 12 September",s:"TR 350-16 (27 March 2023)",e:"12 September is the Anniversary of the Drill Sergeant. The competition is held annually at Army Training Center-Fort Jackson.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Competition",q:"Who has the authority to terminate a nominee from the Drill Sergeant of the Year competition?",o:["The USACIMT Command Sergeant Major","The Commandant of the Drill Sergeant Academy","The nominee's own brigade commander","The Commanding General, TRADOC"],a:"The USACIMT Command Sergeant Major",s:"TR 350-16 (27 March 2023)",e:"The USACIMT CSM also selects the board that convenes to choose the DSOY.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Competition",q:"A nominee refuses to attempt a performance-oriented test event at the competition. What does TR 350-16 authorize?",o:["Termination from the competition by the USACIMT Command Sergeant Major","A retest on the following day, at the discretion of the selection board","A score of zero for that event, with the rest of the competition continuing","Referral of the matter to the nominee's brigade commander for action"],a:"Termination from the competition by the USACIMT Command Sergeant Major",s:"TR 350-16 (27 March 2023)",e:"Non-compliance with AR 600-9 and UCMJ violations or suspended favorable actions are the other listed grounds for termination.",t:"situational",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Competition",q:"From what are the performance-oriented tests in the DSOY competition drawn?",o:["Tasks from the DS Course program of instruction taught at the academy","Warrior tasks and battle drills chosen by the host installation","The Basic Combat Training program in force that year","Events chosen by the sitting Drill Sergeant of the Year"],a:"Tasks from the DS Course program of instruction taught at the academy",s:"TR 350-16 (27 March 2023)",e:"These tests are conducted in front of evaluators at the competition site.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Competition",q:"Besides the performance-oriented tests, which of these is a stated DSOY selection criterion?",o:["A written evaluation of each nominee's performance","A panel interview with the nominee's spouse","A record Army Fitness Test scored the morning of the board","A written examination on the Drill Sergeant Creed"],a:"A written evaluation of each nominee's performance",s:"TR 350-16 (27 March 2023)",e:"The criteria are a written evaluation, the nomination packet, performance on a physical event, and the performance-oriented tests.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Competition",q:"What must a DSOY nominee bring to the competition?",o:["An updated Soldier Record Brief, the packing list items in the MOI, any orders not already in the packet, and a current DA photograph","Only the nomination packet that the installation has already forwarded to USACIMT on their behalf","A completed DA Form 1059, the last three NCO evaluation reports, and a current Soldier Record Brief","A memorandum of recommendation signed by the installation commander and by the brigade command sergeant major"],a:"An updated Soldier Record Brief, the packing list items in the MOI, any orders not already in the packet, and a current DA photograph",s:"TR 350-16 (27 March 2023)",e:"The nomination packet the installation submitted is itself one of the selection criteria.",t:"situational",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Competition",q:"Who selects the TRADOC Active Army and Reserve Component Drill Sergeants of the Year?",o:["The Commander, TRADOC","The Commanding General, USACIMT","The Sergeant Major of the Army","The DSA Commandant"],a:"The Commander, TRADOC",s:"TR 350-16 (27 March 2023)",e:"A board of individuals selected by the USACIMT CSM convenes to make the selection.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Competition",q:"Which award does the Chief of Staff of the Army present to the Active Army Drill Sergeant of the Year?",o:["The Stephen Ailes Award","The Ralph E. Haines, Jr. Award","The Sergeant Audie Murphy Award","The Order of Saint Maurice"],a:"The Stephen Ailes Award",s:"TR 350-16 (27 March 2023)",e:"The Reserve Component DSOY receives the Ralph E. Haines, Jr. Award.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Competition",q:"Which award does the Chief of Staff of the Army present to the Reserve Component Drill Sergeant of the Year?",o:["The Ralph E. Haines, Jr. Award","The Stephen Ailes Award","The Ancient Order of Saint Barbara","The Distinguished Drill Sergeant Award"],a:"The Ralph E. Haines, Jr. Award",s:"TR 350-16 (27 March 2023)",e:"The Commanding General, TRADOC presents awards at a ceremony culminating the competition; the CSA presents these two separately.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Competition",q:"A Center of Excellence DSOY who is not selected as the TRADOC DSOY performs special assignments for the CoE Commander and CSM. Which duties may they not perform?",o:["Driver or enlisted aide","Recruiting or staff assistance visits","Quality assurance of CoE training","Advising the command team on Drill Sergeant issues"],a:"Driver or enlisted aide",s:"TR 350-16 (27 March 2023)",e:"TR 350-16 names those two duties as explicitly excluded from the CoE DSOY's role.",t:"situational",tr:"advanced",b:["ds"]},
+{c:"Drill Sergeant Competition",q:"Where does the TRADOC Active Army Drill Sergeant of the Year relocate, and for how long?",o:["To Fort Eustis, VA, for a minimum of one year","To Fort Jackson, SC, for a minimum of one year","To Fort Knox, KY, for the award year","They remain at their home installation"],a:"To Fort Eustis, VA, for a minimum of one year",s:"TR 350-16 (27 March 2023)",e:"Total time in a Drill Sergeant status may not exceed 42 months, and the DSOY draws SDAP for the duration of the assignment.",t:"knowledge",tr:"advanced",b:["ds"]}
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v12";
+var APP_VERSION = "v13";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -1047,7 +1169,8 @@ var BOARDS = {
     "Military Justice":1.0,"Risk Management":1.0,"Operations and Training Management":0.6,
     "Supply and Property Accountability":0.8,"Uniforms and Appearance":1.0,
     "Physical Fitness and Body Composition":1.0,"Weapons and Marksmanship":1.2,
-    "First Aid and TCCC":1.2,"Land Navigation and Map Reading":1.2,"CBRN and MOPP":1.1,"Audie Murphy — Early Life":0.15,"Audie Murphy — World War II Service":0.15,"Audie Murphy — Awards and Decorations":0.15,"Audie Murphy — Film and Music":0.15,"Audie Murphy — Personal Life and Legacy":0.15 }},
+    "First Aid and TCCC":1.2,"Land Navigation and Map Reading":1.2,"CBRN and MOPP":1.1,"Audie Murphy — Early Life":0.15,"Audie Murphy — World War II Service":0.15,"Audie Murphy — Awards and Decorations":0.15,"Audie Murphy — Film and Music":0.15,"Audie Murphy — Personal Life and Legacy":0.15,
+    "Drill Sergeant Creed and Identity":0.15,"Drill Sergeant Program":0.15,"Drill and Ceremony — Drill Sergeant Depth":0.15,"Physical Readiness Training":0.15,"Cadences and Marching":0.15,"Drill Sergeant Competition":0.15 }},
   p1:{ label:"Promotion Board — Specialist to Sergeant", adv:0.30, sit:0.15, w:{
     "Leadership":2.0,"Counseling and Development":1.8,"Army Values, Creeds, and Ethos":1.2,
     "Army History and Heritage":0.8,"NCO Development and Promotions":1.5,"Evaluations and NCOER":1.0,
@@ -1056,7 +1179,8 @@ var BOARDS = {
     "Military Justice":1.2,"Risk Management":0.8,"Operations and Training Management":0.7,
     "Supply and Property Accountability":0.7,"Uniforms and Appearance":1.2,
     "Physical Fitness and Body Composition":1.0,"Weapons and Marksmanship":1.0,
-    "First Aid and TCCC":1.0,"Land Navigation and Map Reading":0.8,"CBRN and MOPP":0.8,"Audie Murphy — Early Life":0.15,"Audie Murphy — World War II Service":0.15,"Audie Murphy — Awards and Decorations":0.15,"Audie Murphy — Film and Music":0.15,"Audie Murphy — Personal Life and Legacy":0.15 }},
+    "First Aid and TCCC":1.0,"Land Navigation and Map Reading":0.8,"CBRN and MOPP":0.8,"Audie Murphy — Early Life":0.15,"Audie Murphy — World War II Service":0.15,"Audie Murphy — Awards and Decorations":0.15,"Audie Murphy — Film and Music":0.15,"Audie Murphy — Personal Life and Legacy":0.15,
+    "Drill Sergeant Creed and Identity":0.15,"Drill Sergeant Program":0.15,"Drill and Ceremony — Drill Sergeant Depth":0.15,"Physical Readiness Training":0.15,"Cadences and Marching":0.15,"Drill Sergeant Competition":0.15 }},
   p2:{ label:"Promotion Board — Sergeant to Staff Sergeant", adv:0.50, sit:0.22, w:{
     "Leadership":2.4,"Counseling and Development":2.0,"Army Values, Creeds, and Ethos":0.9,
     "Army History and Heritage":0.7,"NCO Development and Promotions":1.8,"Evaluations and NCOER":1.8,
@@ -1065,7 +1189,8 @@ var BOARDS = {
     "Military Justice":1.4,"Risk Management":1.3,"Operations and Training Management":1.3,
     "Supply and Property Accountability":1.2,"Uniforms and Appearance":1.0,
     "Physical Fitness and Body Composition":1.0,"Weapons and Marksmanship":0.9,
-    "First Aid and TCCC":0.9,"Land Navigation and Map Reading":0.7,"CBRN and MOPP":0.7,"Audie Murphy — Early Life":0.2,"Audie Murphy — World War II Service":0.2,"Audie Murphy — Awards and Decorations":0.2,"Audie Murphy — Film and Music":0.2,"Audie Murphy — Personal Life and Legacy":0.2 }},
+    "First Aid and TCCC":0.9,"Land Navigation and Map Reading":0.7,"CBRN and MOPP":0.7,"Audie Murphy — Early Life":0.2,"Audie Murphy — World War II Service":0.2,"Audie Murphy — Awards and Decorations":0.2,"Audie Murphy — Film and Music":0.2,"Audie Murphy — Personal Life and Legacy":0.2,
+    "Drill Sergeant Creed and Identity":0.15,"Drill Sergeant Program":0.15,"Drill and Ceremony — Drill Sergeant Depth":0.15,"Physical Readiness Training":0.15,"Cadences and Marching":0.15,"Drill Sergeant Competition":0.15 }},
   amc:{ label:"Audie Murphy Club", adv:0.70, sit:0.28, w:{
     "Leadership":3.0,"Counseling and Development":2.2,"Army Values, Creeds, and Ethos":2.0,
     "Army History and Heritage":1.8,"NCO Development and Promotions":1.6,"Evaluations and NCOER":1.2,
@@ -1074,7 +1199,30 @@ var BOARDS = {
     "Military Justice":1.0,"Risk Management":1.0,"Operations and Training Management":1.0,
     "Supply and Property Accountability":0.6,"Uniforms and Appearance":0.8,
     "Physical Fitness and Body Composition":0.9,"Weapons and Marksmanship":0.8,
-    "First Aid and TCCC":0.8,"Land Navigation and Map Reading":0.6,"CBRN and MOPP":0.6,"Audie Murphy — Early Life":5,"Audie Murphy — World War II Service":5,"Audie Murphy — Awards and Decorations":5,"Audie Murphy — Film and Music":5,"Audie Murphy — Personal Life and Legacy":5 }}
+    "First Aid and TCCC":0.8,"Land Navigation and Map Reading":0.6,"CBRN and MOPP":0.6,"Audie Murphy — Early Life":5,"Audie Murphy — World War II Service":5,"Audie Murphy — Awards and Decorations":5,"Audie Murphy — Film and Music":5,"Audie Murphy — Personal Life and Legacy":5,
+    "Drill Sergeant Creed and Identity":0.15,"Drill Sergeant Program":0.15,"Drill and Ceremony — Drill Sergeant Depth":0.15,"Physical Readiness Training":0.15,"Cadences and Marching":0.15,"Drill Sergeant Competition":0.15 }},
+  /* The Drill Sergeant pool layers the new DS-specific questions on top of the ground the
+     bank already covers, rather than re-asking it. The six new categories and the existing
+     categories a Drill Sergeant lives in carry the heaviest weights, so a DS quiz draws on
+     the whole relevant body of knowledge and not only on what was written for this pool.
+     Note the weights above: the DS categories are 0.15, not 0, in every other board. Those
+     questions are b:["ds"] and never enter another board's pool, so the number is inert —
+     but drawQuiz reads `cfg.w[q.c] || 1`, and a literal 0 is falsy and would silently become
+     a weight of 1. Never write 0 in a weight table here. */
+  ds:{ label:"Drill Sergeant", adv:0.40, sit:0.15, w:{
+    "Drill Sergeant Creed and Identity":2.2,"Drill Sergeant Program":2.4,
+    "Drill and Ceremony — Drill Sergeant Depth":2.4,"Physical Readiness Training":2.0,
+    "Cadences and Marching":1.8,"Drill Sergeant Competition":2.0,
+    "Drill and Ceremony":2.2,"Army Values, Creeds, and Ethos":1.8,"Customs and Courtesies":1.6,
+    "Chain of Command and NCO Support Channel":1.4,"First Aid and TCCC":1.5,
+    "Weapons and Marksmanship":1.5,"Physical Fitness and Body Composition":1.5,
+    "Guard Duty and General Orders":1.4,
+    "Leadership":1.2,"Counseling and Development":1.2,"Army Programs":1.0,
+    "Uniforms and Appearance":1.0,"Army History and Heritage":0.9,"Military Justice":0.9,
+    "Risk Management":0.9,"Land Navigation and Map Reading":0.9,"NCO Development and Promotions":0.8,
+    "CBRN and MOPP":0.7,"Evaluations and NCOER":0.5,"Operations and Training Management":0.5,
+    "Supply and Property Accountability":0.5,
+    "Audie Murphy — Early Life":0.1,"Audie Murphy — World War II Service":0.1,"Audie Murphy — Awards and Decorations":0.1,"Audie Murphy — Film and Music":0.1,"Audie Murphy — Personal Life and Legacy":0.1 }}
 };
 function inBoard(q,b){ return !q.b || q.b.indexOf(b) !== -1; }
 
@@ -1109,6 +1257,21 @@ function drawQuiz(board, cats, n){
 
 /* ---------------- readiness ---------------- */
 var CAT_LIST = (function(){ var m={}; QUESTIONS.forEach(function(q){m[q.c]=1;}); return Object.keys(m).sort(); })();
+/* Categories a given board can actually draw. Coverage used to be measured against
+   CAT_LIST — every category in the bank — which quietly penalised any board that cannot
+   reach all of them: a Soldier of the Month user could never study an Audie Murphy
+   category, so their coverage was capped below 100 and their readiness sat a few points
+   low no matter what they did. Adding six Drill Sergeant categories would have widened
+   that gap. Measured per board, coverage means what it says on every board. */
+var BOARD_CATS = (function(){
+  var out={};
+  Object.keys(BOARDS).forEach(function(b){
+    var m={};
+    QUESTIONS.forEach(function(q){ if(inBoard(q,b)) m[q.c]=1; });
+    out[b]=Object.keys(m);
+  });
+  return out;
+})();
 function readiness(boardId){
   var runs = DATA.scores.filter(function(r){ return r && r.boardId===boardId; }).slice(0,5);
   if(!runs.length) return null;
@@ -1120,7 +1283,8 @@ function readiness(boardId){
     var q=BY_ID[id], s=DATA.stats[id];
     if(q && s && s.seen>0 && inBoard(q,boardId)) seenCats[q.c]=1;
   });
-  var coverage = CAT_LIST.length ? (Object.keys(seenCats).length/CAT_LIST.length)*100 : 0;
+  var reach = (BOARD_CATS[boardId] || CAT_LIST).length;
+  var coverage = reach ? (Object.keys(seenCats).length/reach)*100 : 0;
   var backlog = 100*(1 - Math.min(activeMissed().length/40, 1));
   return Math.max(0, Math.min(100, Math.round(0.60*acc + 0.25*coverage + 0.15*backlog)));
 }
@@ -1131,7 +1295,8 @@ function band(v){
   return {t:"Ready "+v+"%", c:"r2"};
 }
 function paintReadiness(){
-  ["som","p1","p2","amc"].forEach(function(b){
+  // Driven off BOARDS, not a hand-kept list — adding a board should not need an edit here.
+  Object.keys(BOARDS).forEach(function(b){
     var el=document.querySelector('.rchip[data-r="'+b+'"]');
     if(!el) return;
     var r=band(readiness(b));
@@ -1276,7 +1441,23 @@ function auditDateLabel(iso){
 /* ---------------- home ---------------- */
 var AM_PREFIX = "Audie Murphy";
 function isAM(name){ return name.indexOf(AM_PREFIX) === 0; }
-function shortCat(name){ return isAM(name) ? name.replace(/^Audie Murphy\s*[—-]\s*/, "") : name; }
+/* The Drill Sergeant categories are grouped the same way the Audie Murphy ones are:
+   set apart under their own heading, because they only draw in their own board. This is
+   an explicit list rather than a name-prefix test — three of the six do not start with
+   "Drill Sergeant", and matching on the prefix would also swallow the general
+   "Drill and Ceremony" category that every board uses. */
+var DS_CATS = ["Drill Sergeant Creed and Identity","Drill Sergeant Program",
+               "Drill and Ceremony — Drill Sergeant Depth","Physical Readiness Training",
+               "Cadences and Marching","Drill Sergeant Competition"];
+function isDS(name){ return DS_CATS.indexOf(name) !== -1; }
+function shortCat(name){
+  if(isAM(name)) return name.replace(/^Audie Murphy\s*[—-]\s*/, "");
+  if(name === "Drill and Ceremony — Drill Sergeant Depth") return "Drill and Ceremony (Depth)";
+  if(name === "Drill Sergeant Creed and Identity") return "Creed and Identity";
+  if(name === "Drill Sergeant Program") return "The DS Program";
+  if(name === "Drill Sergeant Competition") return "DS Competition";
+  return name;
+}
 function buildCats(){
   var host=$("cats"); host.innerHTML="";
   var i=0;
@@ -1304,27 +1485,28 @@ function buildCats(){
     GROUPS.push({ cats:names, btn:btn });
     return h;
   }
-  GROUPS = [];
-  // The Audie Murphy sub-categories are set apart from the general board topics.
-  var am = CATS.filter(function(c){ return isAM(c.name); });
-  var rest = CATS.filter(function(c){ return !isAM(c.name); });
-  var amNames = am.map(function(c){ return c.name; });
-  var restNames = rest.map(function(c){ return c.name; });
-  if(am.length){
-    host.appendChild(heading("Audie Murphy", amNames));
-    var g1=document.createElement("div"); g1.className="catgrid";
-    am.forEach(function(c){ g1.appendChild(row(c)); });
-    host.appendChild(g1);
+  function group(title, items){
+    if(!items.length) return;
+    host.appendChild(heading(title, items.map(function(c){ return c.name; })));
+    var g=document.createElement("div"); g.className="catgrid";
+    items.forEach(function(c){ g.appendChild(row(c)); });
+    host.appendChild(g);
   }
-  host.appendChild(heading("General Board Topics", restNames));
-  var g2=document.createElement("div"); g2.className="catgrid";
-  rest.forEach(function(c){ g2.appendChild(row(c)); });
-  host.appendChild(g2);
+  GROUPS = [];
+  // The Audie Murphy and Drill Sergeant sub-categories are set apart from the general
+  // board topics: each only draws in its own board, so they get their own headings.
+  group("Audie Murphy",         CATS.filter(function(c){ return isAM(c.name); }));
+  group("Drill Sergeant",       CATS.filter(function(c){ return isDS(c.name); }));
+  group("General Board Topics", CATS.filter(function(c){ return !isAM(c.name) && !isDS(c.name); }));
 }
 /* ---- group selection helpers ---- */
 var GROUPS = [];
 function amNames(){ return CATS.filter(function(c){ return isAM(c.name); }).map(function(c){ return c.name; }); }
-function stdNames(){ return CATS.filter(function(c){ return !isAM(c.name); }).map(function(c){ return c.name; }); }
+/* "Standard Only" means the general board topics — neither the Audie Murphy nor the
+   Drill Sergeant sub-categories. Adding the DS categories without excluding them here
+   would have quietly changed what that button does. */
+function stdNames(){ return CATS.filter(function(c){ return !isAM(c.name) && !isDS(c.name); }).map(function(c){ return c.name; }); }
+function dsNames(){ return CATS.filter(function(c){ return isDS(c.name); }).map(function(c){ return c.name; }); }
 function allChecked(names){
   var ok = names.length > 0;
   Array.prototype.forEach.call($("cats").querySelectorAll("input"), function(cb){
@@ -1621,7 +1803,10 @@ function buildPrint(){
 
 /* ---------------- self test (?selftest=1) ---------------- */
 function selfTest(){
-  var errs=[], seen={}, known={som:1,p1:1,p2:1,amc:1};
+  // Derived from BOARDS so a new board id cannot be tagged on a question without also
+  // existing as a board. This was a hand-kept list until v13.
+  var errs=[], seen={}, known={};
+  Object.keys(BOARDS).forEach(function(b){ known[b]=1; });
   QUESTIONS.forEach(function(q,i){
     var tag="#"+(i+1)+" "+String(q.q||"").slice(0,45);
     ["c","q","a","s","e","t","tr"].forEach(function(k){ if(!q[k]) errs.push(tag+": missing "+k); });
@@ -1656,6 +1841,23 @@ function selfTest(){
     CAT_LIST.forEach(function(c){ if(BOARDS[b].w[c]===undefined) errs.push("board "+b+": missing weight for "+c); });
     if(!QUESTIONS.filter(function(q){return inBoard(q,b);}).length) errs.push("board "+b+": empty pool");
   });
+  /* The Drill Sergeant category names are written out in three places — the bank, the
+     board weight tables, and DS_CATS, which drives the picker group and the "Standard
+     Only" button. A typo in any one of them fails silently: the group would render short
+     and those questions would quietly fall into General Board Topics. Assert the names
+     line up, and that the pool is actually reachable. */
+  DS_CATS.forEach(function(c){
+    if(CAT_LIST.indexOf(c)===-1) errs.push("ds categories: '"+c+"' is not a category in the bank");
+    if(BOARDS.ds && BOARDS.ds.w[c]===undefined) errs.push("ds categories: '"+c+"' has no weight in the ds board");
+  });
+  (function(){
+    var pool=QUESTIONS.filter(function(q){ return inBoard(q,"ds") && DS_CATS.indexOf(q.c)!==-1; });
+    if(pool.length<100) errs.push("ds pool: only "+pool.length+" DS-specific questions, expected at least 100");
+    var tagged=QUESTIONS.filter(function(q){ return q.b && q.b.indexOf("ds")!==-1; });
+    tagged.forEach(function(q){
+      if(DS_CATS.indexOf(q.c)===-1) errs.push("ds pool: '"+q.q.slice(0,40)+"' is ds-tagged but sits in "+q.c);
+    });
+  })();
   /* The references list is generated from the citations, so the only way it can be
      wrong is if the renderer and the bank disagree. Assert they never do. */
   (function(){
@@ -1720,6 +1922,7 @@ $("allBtn").addEventListener("click", function(){ Array.prototype.forEach.call($
 $("noneBtn").addEventListener("click", function(){ Array.prototype.forEach.call($("cats").querySelectorAll("input"),function(cb){cb.checked=false;}); updatePool(); });
 $("stdBtn").addEventListener("click", function(){ onlyCats(stdNames()); });
 $("amBtn").addEventListener("click", function(){ onlyCats(amNames()); });
+$("dsBtn").addEventListener("click", function(){ onlyCats(dsNames()); });
 $("startBtn").addEventListener("click", function(){ startQuiz(selectedCats()); });
 $("nextBtn").addEventListener("click", next);
 $("quitBtn").addEventListener("click", function(){ if(answers.length) finish(); else toMenu(); });
