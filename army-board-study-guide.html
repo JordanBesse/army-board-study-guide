@@ -21,8 +21,13 @@
   --barband:transparent;
 }
 :root[data-theme="dark"]{
-  --bg:#11150f; --surface:#191e18; --surface2:#222820;
-  --ink:#e6ebe4; --muted:#9aa598; --line:#2c332a;
+  /* v16: card fill and border both lifted a step. At #191e18 on #11150f the card sat
+     1.09:1 against the page — the edges dissolved in a genuinely dark room, which is
+     exactly when this app gets used. The border does most of the work (1.30 -> 1.53
+     against the card); the fill lift is deliberately small so the restraint holds.
+     Measured on the new card: ink 13.27:1, muted 6.27:1, accent 6.30:1. */
+  --bg:#11150f; --surface:#1d231b; --surface2:#272e24;
+  --ink:#e6ebe4; --muted:#9aa598; --line:#394233;
   --accent:#88ab8b; --accent-ink:#101610; --accent-soft:#1e2820;
   --ok:#8fc79a; --ok-bg:#16251a; --ok-line:#3f6b46;
   --no:#e79a94; --no-bg:#2a1817; --no-line:#7a3b36;
@@ -223,7 +228,17 @@ h2{font-size:.98rem;margin:0 0 10px;font-weight:650;text-align:center}
   border:1px solid var(--line);background:var(--surface);border-radius:var(--r);
   padding:12px 13px;min-height:52px;
 }
-.pick:hover{border-color:var(--accent);background:var(--accent-soft)}
+/* Hover is a neutral raise, never the accent. Until v16 hovering an unselected board
+   painted it with --accent-soft and an --accent border — the exact styling a SELECTED
+   board carries — so running the mouse down the list made every board look chosen. The
+   accent pair is now reserved for real selection, and the ok/no pair for real grading.
+   Gated on a real pointer: a touch tap must never leave a card stuck in a hover state. */
+@media (hover:hover) and (pointer:fine){
+  .pick:hover{background:#e8ece8;border-color:#c9d1c9}
+  :root[data-theme="dark"] .pick:hover{background:#242b21;border-color:#4a5545}
+  /* A selected board must not lose its selected look just because the pointer is over it. */
+  .pick[aria-pressed="true"]:hover{border-color:var(--accent);background:var(--accent-soft)}
+}
 .pick[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
 .pick .lbl{flex:1;min-width:0}
 .pick b{display:block;font-weight:650}
@@ -302,14 +317,30 @@ details.cats[open] summary::after{content:"\2212"}
    text is faster to read under stress, and a centred column of answers would cost more
    than the formality is worth. `balance` keeps a centred multi-line stem from leaving a
    single orphaned word on the last line. */
-.qtext{font-size:1.19rem;font-weight:650;margin:2px 0 16px;line-height:1.35;text-align:center;text-wrap:balance}
+/* Left-aligned by default; centred only when the stem fits on one line. Wave E centred
+   every stem, which reads well on one line and badly on two — a centred two-line question
+   breaks mid-phrase and a tired reader loses the thread. `.oneline` is applied by render()
+   after measuring the laid-out line count. Left is the safe default: if the measurement
+   cannot run (element not laid out yet), the stem stays readable rather than mis-centred. */
+.qtext{font-size:1.19rem;font-weight:650;margin:2px 0 16px;line-height:1.35;text-align:left;text-wrap:balance}
+.qtext.oneline{text-align:center}
 .opts{display:flex;flex-direction:column;gap:8px}
 .opt{
   font:inherit;text-align:left;cursor:pointer;color:var(--ink);
   border:1px solid var(--line);background:var(--surface);border-radius:var(--r);
   padding:12px 13px;min-height:52px;display:flex;gap:11px;align-items:flex-start;line-height:1.4;
 }
-.opt:hover:not(:disabled){border-color:var(--accent);background:var(--accent-soft)}
+/* Same defect, and worse here: hovering an UN-ANSWERED option painted it exactly like a
+   graded-correct one, so on any desktop or iPad the app quietly told you the answer was
+   right before you picked it. Neutral raise only, and only on a real pointer. */
+@media (hover:hover) and (pointer:fine){
+  .opt:hover:not(:disabled){background:#e8ece8;border-color:#c9d1c9}
+  :root[data-theme="dark"] .opt:hover:not(:disabled){background:#242b21;border-color:#4a5545}
+  /* A graded option keeps its verdict even under the cursor. Belt and braces: the options
+     are also disabled once answered, so the rule above already misses them. */
+  .opt.correct:hover{border-color:var(--ok-line);background:var(--ok-bg)}
+  .opt.wrong:hover{border-color:var(--no-line);background:var(--no-bg)}
+}
 .opt:disabled{cursor:default}
 .opt .k{flex:0 0 auto;font-weight:700;color:var(--muted);min-width:1.15em}
 .opt.correct{border-color:var(--ok-line);background:var(--ok-bg)}
@@ -582,7 +613,9 @@ footer p{margin:0 0 8px}
   <div class="card">
     <div class="qhead">
       <span class="tag" id="qcat"></span>
-      <span class="counter" id="counter">Question 1 of 25<span class="clock hidden" id="clock"></span></span>
+      <!-- The position lives in the compact app bar from v16; this span now carries only
+           the timer, so the same "Question N of M" is not printed twice on every screen. -->
+      <span class="counter" id="counter"><span class="clock hidden" id="clock"></span></span>
     </div>
     <p class="qtext" id="qtext"></p>
     <div class="row hidden" id="speakRow" style="margin:0 0 10px;justify-content:flex-start">
@@ -632,7 +665,9 @@ footer p{margin:0 0 8px}
     <div class="flashcard" id="fcard"></div>
     <div class="row" style="margin-top:14px;justify-content:flex-start">
       <button class="btn" type="button" id="revealBtn">Show Answer</button>
-      <button class="btn sec" type="button" id="fprev">Back</button>
+      <!-- "Previous", not "Back": it sits a few pixels from "Back to Main Menu" and the
+           two read as the same action. -->
+      <button class="btn sec" type="button" id="fprev">Previous</button>
       <button class="btn sec" type="button" id="fnext">Next</button>
     </div>
     <div class="row" style="margin-top:8px;justify-content:flex-start">
@@ -1028,7 +1063,7 @@ var QUESTIONS = [
 {c:"Evaluations and NCOER",q:"When must initial counseling be conducted for a rated NCO?",o:["Within the first 30 days of the rating period","Within 90 days of the rating period","At the midpoint of the rating period","Only when the report is being written"],a:"Within the first 30 days of the rating period",s:"AR 623-3",e:"Initial counseling establishes the standards the NCO will be measured against.",t:"knowledge",tr:"advanced"},
 {c:"Evaluations and NCOER",q:"What is a relief for cause NCOER?",o:["A report rendered when an NCO is relieved from a duty position for cause","A report rendered when an NCO changes duty station or is otherwise reassigned","A report rendered at the rated NCO's own written request","An annual report that was submitted after the suspense date"],a:"A report rendered when an NCO is relieved from a duty position for cause",s:"AR 623-3",e:"It is one of the most serious reports an NCO can receive and requires specific justification.",t:"knowledge",tr:"advanced"},
 {c:"Evaluations and NCOER",q:"Which report is rendered when the rater changes but the rated NCO remains in the position?",o:["Change of rater","Annual","Relief for cause","Complete the record"],a:"Change of rater",s:"AR 623-3",e:"It captures the performance observed by that specific rater before the rating chain changes.",t:"knowledge",tr:"core"},
-{c:"Evaluations and NCOER",q:"What is a complete the record NCOER?",o:["An optional report rendered before a promotion or selection board to document recent performance","A report submitted solely to correct factual errors that were found in a previous evaluation report","The final report that is rendered before an NCO separates from the Army or retires from active service","A report covering a rating period of fewer than thirty calendar days"],a:"An optional report rendered before a promotion or selection board to document recent performance",s:"AR 623-3",e:"It gives the board a current picture when the last annual report is dated.",t:"knowledge",tr:"advanced"},
+{c:"Evaluations and NCOER",q:"What is a complete-the-record NCOER?",o:["An optional report rendered before a promotion or selection board to document recent performance","A report submitted solely to correct factual errors that were found in a previous evaluation report","The final report that is rendered before an NCO separates from the Army or retires from active service","A report covering a rating period of fewer than thirty calendar days"],a:"An optional report rendered before a promotion or selection board to document recent performance",s:"AR 623-3",e:"It gives the board a current picture when the last annual report is dated.",t:"knowledge",tr:"advanced"},
 {c:"Evaluations and NCOER",q:"Who is responsible for providing input on the rated NCO's support form?",o:["The rated NCO, working with the rater","The senior rater, working without the rater","The reviewer of the completed evaluation","The unit's senior personnel administrator"],a:"The rated NCO, working with the rater",s:"AR 623-3",e:"The support form is where the NCO documents duties, objectives, and significant contributions.",t:"knowledge",tr:"advanced"},
 {c:"Evaluations and NCOER",q:"Through what process may a rated NCO challenge an evaluation believed to be inaccurate or unjust?",o:["The evaluation appeal process","An Article 138 complaint","An Inspector General complaint","A request for reconsideration to the rater"],a:"The evaluation appeal process",s:"AR 623-3",e:"Appeals are substantive or administrative and are submitted with supporting evidence.",t:"knowledge",tr:"advanced"},
 {c:"Evaluations and NCOER",q:"What must a rater do before a rating period can be properly evaluated?",o:["Conduct and document counseling during the rating period","Complete a formal training evaluation of the NCO","Submit a completed support form to the reviewer","Obtain the reviewer's written concurrence beforehand"],a:"Conduct and document counseling during the rating period",s:"AR 623-3 / ATP 6-22.1",e:"An evaluation should never contain a surprise; counseling is what prevents one.",t:"knowledge",tr:"advanced"},
@@ -1269,7 +1304,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v15";
+var APP_VERSION = "v16";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -1446,17 +1481,27 @@ var BOARDS = {
      aid, land navigation, CBRN, fitness, guard duty. Re-asking them under an ESB label
      would duplicate verified content for nothing. So the new writing covers only the
      program and its testing standards, and the weighting carries the rest. */
+  /* Re-weighted in v16. The first cut kept the general categories at ordinary board
+     weights, and "Army Programs" alone carries 28 questions — so an ESB quiz kept
+     surfacing Army Emergency Relief and similar admin trivia. An E3B candidate is tested
+     on Skill Level 1 common tasks in the weapons, medical, and patrol lanes; they are not
+     tested on career management. The tested-task categories and the two ESB categories now
+     carry the board, and the admin and career-management categories are floored.
+     Guard Duty stays modest rather than floored: the general orders are a common task. */
   esb:{ label:"Expert Soldier Badge", adv:0.45, sit:0.15, w:{
-    "Expert Soldier Badge — Program and Eligibility":2.4,"Expert Soldier Badge — Testing and Standards":2.4,
-    "Weapons and Marksmanship":2.2,"First Aid and TCCC":2.2,"Land Navigation and Map Reading":2.2,
-    "CBRN and MOPP":1.9,"Physical Fitness and Body Composition":1.9,"Guard Duty and General Orders":1.6,
-    "Drill and Ceremony":1.2,"Army Values, Creeds, and Ethos":1.2,
-    "Customs and Courtesies":0.8,"Chain of Command and NCO Support Channel":0.8,
-    "Leadership":0.7,"Army Programs":0.7,"Uniforms and Appearance":0.7,
-    "Army History and Heritage":0.5,"Military Justice":0.5,"Risk Management":0.6,
-    "Counseling and Development":0.4,"NCO Development and Promotions":0.4,
-    "Supply and Property Accountability":0.4,"Operations and Training Management":0.4,
-    "Evaluations and NCOER":0.3,
+    "Expert Soldier Badge — Program and Eligibility":3.0,"Expert Soldier Badge — Testing and Standards":3.0,
+    "Weapons and Marksmanship":3.0,"First Aid and TCCC":3.0,"Land Navigation and Map Reading":3.0,
+    "CBRN and MOPP":2.6,"Physical Fitness and Body Composition":2.2,
+    "Guard Duty and General Orders":1.4,
+    /* Not E3B-tested, but universal Soldier knowledge — present, not driving. */
+    "Drill and Ceremony":0.3,"Army Values, Creeds, and Ethos":0.3,
+    /* Floored: the admin and career-management ground E3B does not test. */
+    "Customs and Courtesies":0.12,"Chain of Command and NCO Support Channel":0.12,
+    "Leadership":0.12,"Army Programs":0.12,"Uniforms and Appearance":0.12,
+    "Army History and Heritage":0.12,"Military Justice":0.12,"Risk Management":0.12,
+    "Counseling and Development":0.12,"NCO Development and Promotions":0.12,
+    "Supply and Property Accountability":0.12,"Operations and Training Management":0.12,
+    "Evaluations and NCOER":0.12,
     "Audie Murphy — Early Life":0.1,"Audie Murphy — World War II Service":0.1,"Audie Murphy — Awards and Decorations":0.1,"Audie Murphy — Film and Music":0.1,"Audie Murphy — Personal Life and Legacy":0.1,
     "Drill Sergeant Creed and Identity":0.1,"Drill Sergeant Program":0.1,"Drill and Ceremony — Drill Sergeant Depth":0.1,"Physical Readiness Training":0.1,"Cadences and Marching":0.1,"Drill Sergeant Competition":0.1 }}
 };
@@ -1963,14 +2008,29 @@ function startQuiz(cats){
     beginQuiz(list,"quiz");
   });
 }
+/* Centre a stem only while it occupies a single line. Measured off the laid-out text
+   rather than guessed from character count, because the threshold moves with the
+   viewport, the font, and the reader's own text-size setting. Left-aligned is the
+   fallback: if the element is not laid out (0 rects) we leave it alone. */
+function fitStem(){
+  var el=$("qtext");
+  el.classList.remove("oneline");
+  var r=document.createRange();
+  r.selectNodeContents(el);
+  if(r.getClientRects().length===1) el.classList.add("oneline");
+}
+/* A rotation or a resized window can turn a one-line stem into two, so re-measure. */
+window.addEventListener("resize", function(){
+  if(!$("quiz").classList.contains("hidden")) fitStem();
+});
 function render(){
   var q=quiz[idx];
   if(!q){ finish(); return; }
   stopSpeech();          // never let one question's audio run over the next
   locked=false;
-  $("counter").firstChild.nodeValue="Question "+(idx+1)+" of "+quiz.length;
   $("qbPos").textContent="Question "+(idx+1)+" of "+quiz.length;
   $("qcat").textContent=q.c; $("qtext").textContent=q.q;
+  fitStem();
   var p=Math.round(idx/quiz.length*100);
   $("prog").style.width=p+"%"; $("progPct").textContent=p+"%";
   $("fb").classList.add("hidden"); $("nextBtn").classList.add("hidden");
