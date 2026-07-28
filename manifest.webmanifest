@@ -1,7 +1,7 @@
 {
   "name": "Army Board Study Guide",
-  "short_name": "Board Guide",
-  "description": "Offline study guide for Soldier of the Month, promotion, and Audie Murphy boards.",
+  "short_name": "Board Study",
+  "description": "Offline study and quiz app for Army boards: Soldier of the Month, promotion, Audie Murphy Club, and Drill Sergeant. No account, works with no signal.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
