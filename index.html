@@ -50,10 +50,50 @@ h1{font-size:1.3rem;margin:0;letter-spacing:-.01em;font-weight:700}
   min-height:44px;min-width:44px;padding:0 13px;font:inherit;font-size:.8rem;cursor:pointer;
 }
 #themeBtn:hover{background:var(--surface2)}
+/* Colour-blind-safe accents (Okabe-Ito blue / vermillion). Applied by a root
+   attribute so it layers over whichever theme is active. The glyph and word cues
+   on an answer are always on and do not depend on this. */
+/* Okabe-Ito blue and vermillion, DARKENED for text contrast. The published values
+   (#0072B2 / #D55E00) are chart-series colours: on this light surface the vermillion
+   measures 3.41:1, below the 4.5:1 AA floor, which would make the accessibility
+   option worse than the default palette. These keep the blue-versus-orange axis that
+   does the colour-blind work and clear AA on both the tint and the card. Measured:
+   blue 5.35 on tint / 6.17 on card, orange 4.59 / 5.20. Do not revert to the raw values. */
+:root[data-cb="1"]{
+  --ok:#00669F; --ok-bg:#e7f0f7; --ok-line:#7fb0d4;
+  --no:#B34F00; --no-bg:#fdeee4; --no-line:#e9a877;
+}
+:root[data-cb="1"][data-theme="dark"]{
+  --ok:#5fb0e0; --ok-bg:#0e1c26; --ok-line:#2a5a7c;
+  --no:#f0895a; --no-bg:#2a1a11; --no-line:#8a4a24;
+}
 .setrow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0}
 .setrow+.setrow{border-top:1px solid var(--line)}
 .setrow>span{font-size:.9rem}
 #resetConfirm{font-size:.85rem;color:var(--muted);margin:10px 0 0;line-height:1.5}
+.setrow .swbtn{min-width:64px}
+.fbrow{display:flex;flex-wrap:wrap;gap:8px}
+.fbrow a{
+  display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 13px;
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--r);
+  font-size:.8rem;text-decoration:none;
+}
+.fbrow a:hover{background:var(--surface2);border-color:var(--accent)}
+.fbrow a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* References list, built at runtime from the citations on the bank. */
+#refBody{max-height:340px;overflow-y:auto}
+.reflist{list-style:none;margin:0;padding:0;columns:2;column-gap:18px}
+.reflist li{font-size:.85rem;padding:3px 0;break-inside:avoid;color:var(--ink)}
+.reflist li .n{color:var(--muted);font-variant-numeric:tabular-nums;font-size:.78rem;margin-left:5px}
+@media (max-width:560px){ .reflist{columns:1} }
+/* Read-aloud control on the quiz question. */
+#speakBtn{
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--r);
+  min-height:44px;min-width:44px;padding:0 11px;font:inherit;font-size:.78rem;cursor:pointer;
+}
+#speakBtn:hover{background:var(--surface2);border-color:var(--accent)}
+#speakBtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cue{font-weight:700;margin-right:5px}
 h2{font-size:.98rem;margin:0 0 10px;font-weight:650;text-align:center}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
 .hint{color:var(--muted);font-size:.84rem;margin:0 0 10px;text-align:center}
@@ -241,8 +281,24 @@ footer p{margin:0 0 8px}
     <button id="themeBtn" type="button" aria-label="Toggle light and dark mode">Dark</button>
   </div>
   <div class="setrow">
+    <span>Colorblind-friendly colors<br><small class="hint" style="text-align:left;margin:0">Blue and orange instead of green and red. The check, cross, and wording never depend on color.</small></span>
+    <button class="btn sec sm swbtn" type="button" id="cbBtn" aria-pressed="false">Off</button>
+  </div>
+  <div class="setrow" id="ttsRow">
+    <span>Read questions aloud<br><small class="hint" style="text-align:left;margin:0">Adds a Read aloud button to each question. Uses your device's own voice, offline.</small></span>
+    <button class="btn sec sm swbtn" type="button" id="ttsBtn" aria-pressed="false">Off</button>
+  </div>
+  <div class="setrow">
     <span>Study data</span>
     <button class="btn sec sm" type="button" id="resetBtn">Reset study data</button>
+  </div>
+  <div class="setrow" style="display:block">
+    <span>Feedback</span>
+    <p class="hint" style="text-align:left;margin:4px 0 8px">Found a wrong answer or an outdated standard? Say so. Both open on your device; the app never sends anything itself.</p>
+    <div class="fbrow">
+      <a id="mailFb" href="#">Email feedback</a>
+      <a id="ghFb" href="https://github.com/JordanBesse/army-board-study-guide/issues/new" target="_blank" rel="noopener noreferrer">Open a GitHub issue</a>
+    </div>
   </div>
   <p class="hidden" id="resetConfirm">
     This clears your scores, missed questions, study stats, and readiness on this device. It cannot be undone.<br>
@@ -303,6 +359,14 @@ footer p{margin:0 0 8px}
     </div>
   </details>
 
+  <details class="cats" id="refs">
+    <summary>References <span id="refCount"></span></summary>
+    <div class="catbody" id="refBody">
+      <p class="hint">Every regulation and publication cited by a question in this guide. Built from the questions themselves, so it cannot drift.</p>
+      <ul class="reflist" id="refList"></ul>
+    </div>
+  </details>
+
   <div class="card">
     <h2>Quiz Length</h2>
     <div class="lens" id="lens">
@@ -341,6 +405,9 @@ footer p{margin:0 0 8px}
       <span class="counter" id="counter">Question 1 of 25<span class="clock hidden" id="clock"></span></span>
     </div>
     <p class="qtext" id="qtext"></p>
+    <div class="row hidden" id="speakRow" style="margin:0 0 10px;justify-content:flex-start">
+      <button id="speakBtn" type="button">Read aloud</button>
+    </div>
     <div class="opts" id="opts"></div>
     <div class="fb hidden" id="fb" role="status" aria-live="polite">
       <p class="verdict" id="verdict"></p>
@@ -864,6 +931,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
+var APP_VERSION = "v10";
 
 /* ---------------- helpers ---------------- */
 function $(id){ return document.getElementById(id); }
@@ -880,7 +948,7 @@ function rawGet(k){ try{ return localStorage.getItem(k); }catch(e){ storageOK=fa
 function rawSet(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ storageOK=false; return false; } }
 function rawDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
 
-function blankData(){ return { v:SCHEMA, theme:"light", stats:{}, scores:[] }; }
+function blankData(){ return { v:SCHEMA, theme:"light", cb:false, tts:false, stats:{}, scores:[] }; }
 function validShape(d){
   return !!d && typeof d==="object" && d.v===SCHEMA
       && d.stats && typeof d.stats==="object" && !Array.isArray(d.stats)
@@ -910,7 +978,14 @@ function loadData(){
   var raw = rawGet(KEY), parsed = null;
   if(raw){
     try{ parsed = JSON.parse(raw); }catch(e){ parsed = null; }
-    if(validShape(parsed)) return parsed;
+    /* cb and tts arrived after the v3 schema shipped. They are optional on purpose:
+       requiring them would invalidate every existing save and wipe real study history.
+       Default them instead so an older v3 record loads untouched. */
+    if(validShape(parsed)){
+      if(typeof parsed.cb !== "boolean") parsed.cb = false;
+      if(typeof parsed.tts !== "boolean") parsed.tts = false;
+      return parsed;
+    }
     rawDel(KEY);
     noticeMsg = "Your saved study history could not be read and has been reset. The question bank is unaffected.";
     return blankData();
@@ -1077,6 +1152,101 @@ $("themeBtn").addEventListener("click", function(){
   applyTheme(document.documentElement.getAttribute("data-theme")==="dark" ? "light" : "dark");
 });
 
+/* ---------------- colourblind palette ---------------- */
+function applyCb(on){
+  if(on) document.documentElement.setAttribute("data-cb","1");
+  else document.documentElement.removeAttribute("data-cb");
+  $("cbBtn").textContent = on ? "On" : "Off";
+  $("cbBtn").setAttribute("aria-pressed", on ? "true" : "false");
+  DATA.cb = !!on; save();
+}
+applyCb(DATA.cb === true);
+$("cbBtn").addEventListener("click", function(){ applyCb(!DATA.cb); });
+
+/* ---------------- read aloud (Web Speech API, on-device, no network) ---------------- */
+var SPEECH = (typeof window.speechSynthesis !== "undefined"
+           && typeof window.SpeechSynthesisUtterance !== "undefined") ? window.speechSynthesis : null;
+
+function stopSpeech(){
+  if(!SPEECH) return;
+  try{ SPEECH.cancel(); }catch(e){ /* nothing to cancel */ }
+  var b=$("speakBtn"); if(b) b.textContent="Read aloud";
+}
+function speakCurrent(){
+  if(!SPEECH) return;
+  var q=quiz[idx];
+  if(!q) return;
+  if(SPEECH.speaking){ stopSpeech(); return; }
+  var parts=[q.q].concat(q.opts.map(function(t,i){ return String.fromCharCode(65+i)+". "+t; }));
+  var u=new SpeechSynthesisUtterance(parts.join(". "));
+  u.rate=0.95;
+  u.onend=function(){ $("speakBtn").textContent="Read aloud"; };
+  u.onerror=function(){ $("speakBtn").textContent="Read aloud"; };
+  $("speakBtn").textContent="Stop";
+  try{ SPEECH.speak(u); }catch(e){ $("speakBtn").textContent="Read aloud"; }
+}
+function showSpeakRow(){
+  $("speakRow").classList.toggle("hidden", !(SPEECH && DATA.tts === true));
+}
+function applyTts(on){
+  /* With no Speech API the whole feature is hidden rather than shown dead. */
+  var want = !!on && !!SPEECH;
+  $("ttsBtn").textContent = want ? "On" : "Off";
+  $("ttsBtn").setAttribute("aria-pressed", want ? "true" : "false");
+  DATA.tts = want; save();
+  if(!want) stopSpeech();
+  if($("quiz").classList.contains("hidden")) $("speakRow").classList.add("hidden");
+  else showSpeakRow();
+}
+if(!SPEECH){
+  $("ttsRow").classList.add("hidden");        // no API on this device
+  $("speakRow").classList.add("hidden");
+}
+applyTts(DATA.tts === true);
+$("ttsBtn").addEventListener("click", function(){ applyTts(!DATA.tts); });
+$("speakBtn").addEventListener("click", speakCurrent);
+
+/* ---------------- references, built from the bank's citations ---------------- */
+function distinctSources(){
+  /* One pass. Test against undefined, not truthiness — a count of 0 is falsy and
+     would let every question re-add its source. */
+  var count={}, out=[];
+  QUESTIONS.forEach(function(q){
+    if(!q.s) return;
+    if(count[q.s]===undefined){ count[q.s]=0; out.push(q.s); }
+    count[q.s]++;
+  });
+  out.sort(function(a,b){ return a.localeCompare(b); });
+  return out.map(function(s){ return {src:s, n:count[s]}; });
+}
+function buildRefs(){
+  var list=distinctSources(), host=$("refList");
+  host.innerHTML="";
+  list.forEach(function(r){
+    var li=document.createElement("li");
+    li.appendChild(document.createTextNode(r.src));
+    var n=document.createElement("span"); n.className="n"; n.textContent="("+r.n+")";
+    li.appendChild(n);
+    host.appendChild(li);
+  });
+  $("refCount").textContent="("+list.length+")";
+  return list.length;
+}
+buildRefs();
+
+/* ---------------- feedback links ---------------- */
+/* Plain anchors. The mail client or the browser handles them; the app never
+   opens a connection of its own, so the offline promise is untouched. */
+(function(){
+  var body = "Describe the problem or suggestion here.\n\n"
+           + "-- please keep the lines below --\n"
+           + "App version: " + APP_VERSION + "\n"
+           + "Questions: " + QUESTIONS.length + "\n";
+  $("mailFb").href = "mailto:jordanbesse97@gmail.com"
+    + "?subject=" + encodeURIComponent("Army Board Study Guide feedback (" + APP_VERSION + ")")
+    + "&body=" + encodeURIComponent(body);
+})();
+
 /* ---------------- home ---------------- */
 var AM_PREFIX = "Audie Murphy";
 function isAM(name){ return name.indexOf(AM_PREFIX) === 0; }
@@ -1218,6 +1388,7 @@ function beginQuiz(list, runMode){
   $("sub").textContent = (mode==="quiz" ? scopeLabel(selectedCats()) : BOARDS[board].label) + suffix;
   $("home").classList.add("hidden"); $("results").classList.add("hidden");
   $("flash").classList.add("hidden"); $("quiz").classList.remove("hidden");
+  showSpeakRow();
   if(tick){ clearInterval(tick); tick=null; }
   $("clock").classList.toggle("hidden", !useTimer);
   if(useTimer){
@@ -1246,6 +1417,7 @@ function startQuiz(cats){
 function render(){
   var q=quiz[idx];
   if(!q){ finish(); return; }
+  stopSpeech();          // never let one question's audio run over the next
   locked=false;
   $("counter").firstChild.nodeValue="Question "+(idx+1)+" of "+quiz.length;
   $("qcat").textContent=q.c; $("qtext").textContent=q.q;
@@ -1273,11 +1445,16 @@ function answer(chosen, btn){
   Array.prototype.forEach.call($("opts").querySelectorAll("button"),function(b){
     b.disabled=true;
     var label=b.querySelector(".otext").textContent, m;
-    if(label===q.a){ b.classList.add("correct"); m=document.createElement("span"); m.className="mark"; m.textContent="CORRECT"; b.appendChild(m); }
-    if(b===btn && !right){ b.classList.add("wrong"); m=document.createElement("span"); m.className="mark"; m.textContent="YOUR ANSWER"; b.appendChild(m); }
+    /* The glyph and the word carry the result on their own, so the meaning survives
+       any colour vision. These are always on and ignore the colourblind toggle. */
+    if(label===q.a){ b.classList.add("correct"); m=document.createElement("span"); m.className="mark"; m.textContent="✓ CORRECT"; b.appendChild(m); }
+    if(b===btn && !right){ b.classList.add("wrong"); m=document.createElement("span"); m.className="mark"; m.textContent="✗ YOUR ANSWER"; b.appendChild(m); }
   });
   var v=$("verdict");
-  v.textContent = right?"Correct":"Incorrect";
+  v.textContent = "";
+  var cue=document.createElement("span"); cue.className="cue"; cue.textContent = right?"✓":"✗";
+  cue.setAttribute("aria-hidden","true");   // the word carries the meaning; the glyph is a visual echo
+  v.appendChild(cue); v.appendChild(document.createTextNode(" "+(right?"Correct":"Incorrect")));
   v.className="verdict "+(right?"ok":"no");
   $("expl").textContent=q.e;
   $("src").textContent="Source: "+q.s;
@@ -1327,6 +1504,7 @@ function finish(){
   var r=readiness(board);
   $("readyTally").textContent = (r===null) ? "" : (BOARDS[board].label+" readiness: "+band(r).t);
   refreshMissedBtn();
+  stopSpeech(); $("speakRow").classList.add("hidden");
   $("quiz").classList.add("hidden"); $("results").classList.remove("hidden");
   window.scrollTo(0,0);
 }
@@ -1350,6 +1528,7 @@ function refreshMissedBtn(){
 }
 function toMenu(){
   if(tick){ clearInterval(tick); tick=null; }
+  stopSpeech(); $("speakRow").classList.add("hidden");
   $("quiz").classList.add("hidden"); $("results").classList.add("hidden"); $("flash").classList.add("hidden");
   $("home").classList.remove("hidden");
   $("sub").textContent="Soldier of the Month, Promotion Board, and Audie Murphy Club preparation";
@@ -1368,6 +1547,7 @@ function startFlash(){
   if(!pool.length){ $("poolInfo").textContent="No flashcards match that board and category selection."; return; }
   flashSet=shuffle(pool); fIdx=0; fShown=false;
   $("sub").textContent="Flashcard Review — "+scopeLabel(cats);
+  stopSpeech(); $("speakRow").classList.add("hidden");
   $("home").classList.add("hidden"); $("flash").classList.remove("hidden");
   try{ history.pushState({view:"flash"},""); }catch(e){}
   renderFlash(); window.scrollTo(0,0);
@@ -1450,6 +1630,16 @@ function selfTest(){
     CAT_LIST.forEach(function(c){ if(BOARDS[b].w[c]===undefined) errs.push("board "+b+": missing weight for "+c); });
     if(!QUESTIONS.filter(function(q){return inBoard(q,b);}).length) errs.push("board "+b+": empty pool");
   });
+  /* The references list is generated from the citations, so the only way it can be
+     wrong is if the renderer and the bank disagree. Assert they never do. */
+  (function(){
+    var distinct={}, n=0;
+    QUESTIONS.forEach(function(q){ if(q.s && !distinct[q.s]){ distinct[q.s]=1; n++; } });
+    var rendered=$("refList") ? $("refList").children.length : -1;
+    if(rendered!==n) errs.push("references: list shows "+rendered+" entries but the bank cites "+n+" distinct sources");
+    var shown=$("refCount") ? $("refCount").textContent : "";
+    if(shown!=="("+n+")") errs.push("references: count label reads "+shown+", expected ("+n+")");
+  })();
   if(errs.length){
     console.error("SELF-TEST FAILED — "+errs.length+" problem(s) across "+QUESTIONS.length+" questions");
     errs.slice(0,40).forEach(function(e){ console.error("   "+e); });
@@ -1566,9 +1756,10 @@ $("resetNo").addEventListener("click", function(){
 });
 $("resetYes").addEventListener("click", function(){
   rawDel(KEY); rawDel("absg_theme"); rawDel("absg_missed"); rawDel("absg_scores");
-  var keepTheme = DATA.theme;
+  var keepTheme = DATA.theme, keepCb = DATA.cb, keepTts = DATA.tts;
   DATA = blankData();
-  DATA.theme = keepTheme;          // wipe the study record, not the display preference
+  // Wipe the study record, not the display and accessibility preferences.
+  DATA.theme = keepTheme; DATA.cb = keepCb; DATA.tts = keepTts;
   save();
   lastMissedIds=[]; lastWeakCats=[];
   $("resetConfirm").classList.add("hidden");
