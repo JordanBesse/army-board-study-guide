@@ -191,8 +191,10 @@ header.compact #settingsBtn{width:40px;height:40px;top:18px}
    Styled like the source list on a paper: number in ink, full title in muted, hanging
    indent so a wrapped title lines up under itself. From v14 this is the only home for
    sources — it replaces the panel that sat by the category selector. */
-#refFoot{padding:18px 2px 4px;text-align:left}
-#refFoot h2{font-size:1rem;margin:0 0 3px;text-align:center;color:var(--ink)}
+/* The footer sets a small muted type scale for the disclaimer; the Sources control has to
+   opt back out of it so it reads as the same control as Choose Categories. */
+#refFoot{text-align:left;margin:18px 0 0}
+#refFoot summary{font-size:1rem;color:var(--ink)}
 #refFoot .refintro{text-align:center;color:var(--muted);font-size:.81rem;margin:0 0 14px;line-height:1.45}
 .reflist{list-style:none;margin:0;padding:0}
 .reflist li{
@@ -407,7 +409,7 @@ footer p{margin:0 0 8px}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3.2"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.6 15a1.65 1.65 0 0 0-1.51-1H2a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 3.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 8 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
   </button>
   <h1>Army Board Study Guide</h1>
-  <p id="sub">Board prep for Soldier of the Month, promotion, Audie Murphy, and Drill Sergeant</p>
+  <p id="sub">Board and badge prep for Soldier of the Month, promotion, Audie Murphy, Drill Sergeant, and ESB</p>
   <div id="quizbar">
     <div class="qb-board" id="qbBoard"></div>
     <div class="qb-pos" id="qbPos"></div>
@@ -522,6 +524,9 @@ footer p{margin:0 0 8px}
       <button class="pick" type="button" data-board="ds" aria-pressed="false">
         <span class="lbl"><b>Drill Sergeant</b><small>The Creed, the DS Program, Drill, PRT, and Cadence</small></span>
         <span class="rchip" data-r="ds">Not Started</span></button>
+      <button class="pick" type="button" data-board="esb" aria-pressed="false">
+        <span class="lbl"><b>Expert Soldier Badge</b><small>The ESB Program, Testing Standards, and Common Tasks</small></span>
+        <span class="rchip" data-r="esb">Not Started</span></button>
     </div>
     <p class="hint" id="readyHint" style="margin:10px 0 0"></p>
   </div>
@@ -535,6 +540,7 @@ footer p{margin:0 0 8px}
         <button class="btn sec sm" type="button" id="stdBtn">Standard Only</button>
         <button class="btn sec sm" type="button" id="amBtn">Audie Murphy Only</button>
         <button class="btn sec sm" type="button" id="dsBtn">Drill Sergeant Only</button>
+        <button class="btn sec sm" type="button" id="esbBtn">Expert Soldier Badge Only</button>
         <button class="btn sec sm" type="button" id="noneBtn">Clear All</button>
       </div>
       <div id="cats"></div>
@@ -636,11 +642,17 @@ footer p{margin:0 0 8px}
 </main>
 
 <footer>
-  <section id="refFoot">
-    <h2>Sources</h2>
-    <p class="refintro" id="refAudit"></p>
-    <ul class="reflist" id="refList"></ul>
-  </section>
+  <!-- Same control as Choose Categories, deliberately: a native <details>, the same card
+       and summary styling, the same +/- marker. Collapsed by default — v14 listed all 77
+       sources down the length of every page. The list still renders into the DOM on load
+       whether or not it is open, so the self-test assertions are unaffected. -->
+  <details class="cats" id="refFoot">
+    <summary><span>Sources</span></summary>
+    <div class="catbody">
+      <p class="refintro" id="refAudit"></p>
+      <ul class="reflist" id="refList"></ul>
+    </div>
+  </details>
   <p style="margin-top:16px">Study aid only. Verify all standards against the current regulation before a board. Regulations change.</p>
 </footer>
 </div>
@@ -1213,11 +1225,51 @@ var QUESTIONS = [
 {c:"Drill Sergeant Competition",q:"Which award does the Chief of Staff of the Army present to the Active Army Drill Sergeant of the Year?",o:["The Stephen Ailes Award","The Ralph E. Haines, Jr. Award","The Sergeant Audie Murphy Award","The Order of Saint Maurice"],a:"The Stephen Ailes Award",s:"TR 350-16 (27 March 2023)",e:"The Reserve Component DSOY receives the Ralph E. Haines, Jr. Award.",t:"knowledge",tr:"advanced",b:["ds"]},
 {c:"Drill Sergeant Competition",q:"Which award does the Chief of Staff of the Army present to the Reserve Component Drill Sergeant of the Year?",o:["The Ralph E. Haines, Jr. Award","The Stephen Ailes Award","The Ancient Order of Saint Barbara","The Distinguished Drill Sergeant Award"],a:"The Ralph E. Haines, Jr. Award",s:"TR 350-16 (27 March 2023)",e:"The Commanding General, TRADOC presents awards at a ceremony culminating the competition; the CSA presents these two separately.",t:"knowledge",tr:"advanced",b:["ds"]},
 {c:"Drill Sergeant Competition",q:"A Center of Excellence DSOY who is not selected as the TRADOC DSOY performs special assignments for the CoE Commander and CSM. Which duties may they not perform?",o:["Driver or enlisted aide","Recruiting or staff assistance visits","Quality assurance of CoE training","Advising the command team on Drill Sergeant issues"],a:"Driver or enlisted aide",s:"TR 350-16 (27 March 2023)",e:"TR 350-16 names those two duties as explicitly excluded from the CoE DSOY's role.",t:"situational",tr:"advanced",b:["ds"]},
-{c:"Drill Sergeant Competition",q:"Where does the TRADOC Active Army Drill Sergeant of the Year relocate, and for how long?",o:["To Fort Eustis, VA, for a minimum of one year","To Fort Jackson, SC, for a minimum of one year","To Fort Knox, KY, for the award year","They remain at their home installation"],a:"To Fort Eustis, VA, for a minimum of one year",s:"TR 350-16 (27 March 2023)",e:"Total time in a Drill Sergeant status may not exceed 42 months, and the DSOY draws SDAP for the duration of the assignment.",t:"knowledge",tr:"advanced",b:["ds"]}
+{c:"Drill Sergeant Competition",q:"Where does the TRADOC Active Army Drill Sergeant of the Year relocate, and for how long?",o:["To Fort Eustis, VA, for a minimum of one year","To Fort Jackson, SC, for a minimum of one year","To Fort Knox, KY, for the award year","They remain at their home installation"],a:"To Fort Eustis, VA, for a minimum of one year",s:"TR 350-16 (27 March 2023)",e:"Total time in a Drill Sergeant status may not exceed 42 months, and the DSOY draws SDAP for the duration of the assignment.",t:"knowledge",tr:"advanced",b:["ds"]},
+{c:"Expert Soldier Badge — Program and Eligibility",q:"What does the Expert Soldier Badge recognize?",o:["Mastery of the common warrior tasks and battle drills every Soldier must perform","Completion of an advanced individual training course of instruction at the proponent school","Superior marksmanship with a Soldier's assigned individual weapon","Sustained excellence in a Soldier's primary military occupational specialty over a full rating period"],a:"Mastery of the common warrior tasks and battle drills every Soldier must perform",s:"TR 672-9 (24 July 2020)",e:"The ESB is an expert-qualification badge for demonstrated mastery of the common Soldier tasks, tested under a standardized program.",t:"knowledge",tr:"core",b:["esb"]},
+{c:"Expert Soldier Badge — Program and Eligibility",q:"Which Soldiers earn the Expert Soldier Badge rather than the Expert Infantryman Badge or the Expert Field Medical Badge?",o:["Soldiers in career fields other than Infantry, Special Forces, and the medical fields","Only Soldiers assigned to a training, cadre, or instructor position at an Army school or training centre","Only Soldiers in the rank of Sergeant or above, in any branch","Soldiers in any career field at all, including Infantry, Special Forces, and the medical fields"],a:"Soldiers in career fields other than Infantry, Special Forces, and the medical fields",s:"TR 672-9 (24 July 2020)",e:"Infantry and Special Forces Soldiers test for the EIB and medical-field Soldiers for the EFMB; the ESB is the expert badge for everyone else.",t:"knowledge",tr:"core",b:["esb"]},
+{c:"Expert Soldier Badge — Program and Eligibility",q:"In what year was the Expert Soldier Badge first awarded?",o:["2015","2020","2010","2008"],a:"2020",s:"army.mil (ESB announcement)",e:"The Army announced the ESB in 2019 and the first badges were awarded in 2020; it was the first new Soldier badge of its kind in decades.",t:"knowledge",tr:"core",b:["esb"]},
+{c:"Expert Soldier Badge — Program and Eligibility",q:"What publication governs Expert Soldier Badge testing?",o:["Army Regulation 350-1","TRADOC Regulation 672-9","Training Circular 3-21.5","Field Manual 7-22"],a:"TRADOC Regulation 672-9",s:"TR 672-9 (24 July 2020)",e:"TRADOC Regulation 672-9 governs testing for the EIB, ESB, and EFMB together (the E3B program).",t:"knowledge",tr:"advanced",b:["esb"]},
+{c:"Expert Soldier Badge — Program and Eligibility",q:"Who is the sole authority to authorize ESB testing and award the badge?",o:["The candidate's brigade commander, on the command sergeant major's recommendation","USACIMT (U.S. Army Center for Initial Military Training)","The installation commanding general, through the awards branch","Human Resources Command, Enlisted Personnel Directorate"],a:"USACIMT (U.S. Army Center for Initial Military Training)",s:"TR 672-9 (24 July 2020)",e:"USACIMT is the sole authority to authorize ESB testing and award the ESB.",t:"knowledge",tr:"advanced",b:["esb"]},
+{c:"Expert Soldier Badge — Program and Eligibility",q:"Before test day 1, what weapons qualification must an ESB candidate have achieved with their assigned rifle or carbine?",o:["Sharpshooter","Expert","Marksman","A qualifying (passing) score"],a:"Expert",s:"TR 672-9 (24 July 2020)",e:"The candidate must have qualified expert — the highest qualification level — on the assigned M4/M16/rifle/carbine on a record fire range, within the currency window.",t:"knowledge",tr:"core",b:["esb"]},
+{c:"Expert Soldier Badge — Program and Eligibility",q:"Within what window must a Regular Army candidate have passed a record Army fitness test before test day 1?",o:["12 months","6 months","3 months","30 days"],a:"6 months",s:"TR 672-9 (24 July 2020)",e:"A Regular Army candidate must pass a record Army fitness test within 6 months of test day 1; National Guard and Reserve candidates have 1 year.",t:"knowledge",tr:"advanced",b:["esb"]},
+{c:"Expert Soldier Badge — Program and Eligibility",q:"How long does a National Guard or Reserve candidate have to have passed a record fitness test before test day 1?",o:["6 months","1 year","90 days","2 years"],a:"1 year",s:"TR 672-9 (24 July 2020)",e:"The currency window is 6 months for the Regular Army and 1 year for the National Guard and Reserve.",t:"knowledge",tr:"advanced",b:["esb"]},
+{c:"Expert Soldier Badge — Program and Eligibility",q:"Which body-composition standard must an ESB candidate meet to test?",o:["AR 350-1","AR 600-9","AR 40-501","AR 670-1"],a:"AR 600-9",s:"TR 672-9 (24 July 2020)",e:"Candidates must meet the height, weight, and body-composition standards of AR 600-9.",t:"knowledge",tr:"core",b:["esb"]},
+{c:"Expert Soldier Badge — Program and Eligibility",q:"What command endorsement does an ESB candidate need before testing?",o:["A battalion or brigade commander's recommendation","A first sergeant's memorandum","A company commander's counseling statement, filed before test day","A command sergeant major's interview and written endorsement"],a:"A battalion or brigade commander's recommendation",s:"TR 672-9 (24 July 2020)",e:"A candidate must have a battalion or brigade commander's recommendation with a reasonable expectation of passing.",t:"knowledge",tr:"advanced",b:["esb"]},
+{c:"Expert Soldier Badge — Program and Eligibility",q:"The ESB is tested under a combined program alongside which two other badges?",o:["The Expert Infantryman Badge and the Expert Field Medical Badge","The Combat Action Badge and the Combat Infantryman Badge, under one program","The Air Assault Badge and the Pathfinder Badge, tested together","The Drill Sergeant Badge and the Recruiter Badge, tested together"],a:"The Expert Infantryman Badge and the Expert Field Medical Badge",s:"TR 672-9 (24 July 2020)",e:"The EIB, ESB, and EFMB are tested together under the standardized E3B program.",t:"knowledge",tr:"advanced",b:["esb"]},
+{c:"Expert Soldier Badge — Program and Eligibility",q:"Over how many consecutive days is ESB testing conducted?",o:["Three","Five","Seven","Ten"],a:"Five",s:"TR 672-9 (24 July 2020)",e:"Testing runs five consecutive days, from test day (T-day) through T+4.",t:"knowledge",tr:"core",b:["esb"]},
+{c:"Expert Soldier Badge — Program and Eligibility",q:"What must a Soldier already hold to serve as an ESB grader?",o:["The ESB or the EFMB, with a copy of their orders, and no active flag","The rank of Sergeant First Class or above, with no active flag","A graduate certificate from the Drill Sergeant Academy","A current expert marksmanship qualification and nothing more"],a:"The ESB or the EFMB, with a copy of their orders, and no active flag",s:"TR 672-9 (24 July 2020)",e:"A grader must have been awarded the ESB or EFMB, hold a copy of the orders, carry no suspension of favorable personnel action (flag), and be appointed on orders.",t:"knowledge",tr:"advanced",b:["esb"]},
+{c:"Expert Soldier Badge — Program and Eligibility",q:"The prerequisites — fitness test, weapons qualification, body composition, and command recommendation — must be satisfied by when?",o:["Before test day 1","By the end of the first test day","At any point before the 12-mile foot march","Within 30 days after testing"],a:"Before test day 1",s:"TR 672-9 (24 July 2020)",e:"All prerequisites are gates: they must be met before test day 1, or the Soldier does not test.",t:"situational",tr:"advanced",b:["esb"]},
+{c:"Expert Soldier Badge — Program and Eligibility",q:"The Expert Soldier Badge is best described as the counterpart, for the general Army, of which established badge?",o:["The Expert Infantryman Badge","The Combat Action Badge","The Pathfinder Badge","The Air Assault Badge"],a:"The Expert Infantryman Badge",s:"army.mil (ESB announcement)",e:"The ESB was created as the expert-qualification badge for Soldiers outside the Infantry and medical fields, mirroring the long-standing EIB and EFMB.",t:"knowledge",tr:"core",b:["esb"]},
+{c:"Expert Soldier Badge — Testing and Standards",q:"What two graded events take place on test day (T-day)?",o:["The physical fitness assessment and land navigation, day and night","The 12-mile foot march and the final weapons functions check, back to back","The weapons lane and the medical lane, run back to back on the same day","Record weapons qualification and the patrol lane"],a:"The physical fitness assessment and land navigation, day and night",s:"TR 672-9 (24 July 2020)",e:"T-day is the physical fitness assessment plus day and night land navigation.",t:"knowledge",tr:"core",b:["esb"]},
+{c:"Expert Soldier Badge — Testing and Standards",q:"During daytime land navigation, how many points must an ESB candidate find?",o:["Four of five","Three of four","Two of three","All four of four"],a:"Three of four",s:"TR 672-9 (24 July 2020)",e:"The candidate must find three of four points in daylight, and again three of four at night.",t:"knowledge",tr:"core",b:["esb"]},
+{c:"Expert Soldier Badge — Testing and Standards",q:"What is the time limit for each land navigation iteration?",o:["Two hours","Three hours","Four hours","Five hours"],a:"Three hours",s:"TR 672-9 (24 July 2020)",e:"Each land navigation iteration, day and night, carries a three-hour limit.",t:"knowledge",tr:"advanced",b:["esb"]},
+{c:"Expert Soldier Badge — Testing and Standards",q:"During which days are the individual testing stations conducted?",o:["Test day only","Days T+1 through T+3","Days T+2 through T+4","The final day only"],a:"Days T+1 through T+3",s:"TR 672-9 (24 July 2020)",e:"The testing stations run across the three middle days, T+1 through T+3.",t:"knowledge",tr:"advanced",b:["esb"]},
+{c:"Expert Soldier Badge — Testing and Standards",q:"The individual testing stations are organized into which three lanes?",o:["Weapons, medical, and patrol","Weapons, communications, and medical","Movement, weapons, and survival","Patrol, land navigation, and fitness"],a:"Weapons, medical, and patrol",s:"TR 672-9 (24 July 2020)",e:"The tested tasks are grouped into weapons, medical, and patrol lanes.",t:"knowledge",tr:"core",b:["esb"]},
+{c:"Expert Soldier Badge — Testing and Standards",q:"How many NO-GOs may a candidate accrue in a single lane and still earn the badge?",o:["None — any NO-GO ends the attempt","Two, each with a successful retest","Three, each with a successful retest","One, with no retest allowed"],a:"Two, each with a successful retest",s:"TR 672-9 (24 July 2020)",e:"A candidate may accrue no more than two NO-GOs per lane, each requiring a successful retest; a third NO-GO in a lane ends the attempt.",t:"knowledge",tr:"advanced",b:["esb"]},
+{c:"Expert Soldier Badge — Testing and Standards",q:"What two events make up the final day (T+4)?",o:["The 12-mile foot march and the final weapons event","Day and night land navigation","The physical fitness assessment and the patrol lane","The medical lane and a record weapons qualification for score"],a:"The 12-mile foot march and the final weapons event",s:"TR 672-9 (24 July 2020)",e:"T+4 is the 12-mile foot march followed by the final event.",t:"knowledge",tr:"core",b:["esb"]},
+{c:"Expert Soldier Badge — Testing and Standards",q:"How far is the ESB foot march?",o:["10 miles","12 miles","15 miles","8 miles"],a:"12 miles",s:"TR 672-9 (24 July 2020)",e:"The foot march is 12 miles.",t:"knowledge",tr:"core",b:["esb"]},
+{c:"Expert Soldier Badge — Testing and Standards",q:"What is the minimum dry rucksack weight for the foot march?",o:["45 pounds","35 pounds","25 pounds","50 pounds"],a:"35 pounds",s:"TR 672-9 (24 July 2020)",e:"The march is carried with a rucksack of at least 35 pounds dry weight (not counting water).",t:"knowledge",tr:"core",b:["esb"]},
+{c:"Expert Soldier Badge — Testing and Standards",q:"What is the time standard for the 12-mile foot march?",o:["Four hours or less","Three hours or less","Three and a half hours or less","Two hours or less"],a:"Three hours or less",s:"TR 672-9 (24 July 2020)",e:"The 12-mile foot march must be completed in three hours or less.",t:"knowledge",tr:"core",b:["esb"]},
+{c:"Expert Soldier Badge — Testing and Standards",q:"What is the final event after the foot march?",o:["Clear, disassemble, assemble, and perform a functions check on the M4/M16","A record weapons qualification on the assigned rifle or carbine, fired for score","A written examination on the tested common tasks","A second night land navigation course on a new lane, scored separately"],a:"Clear, disassemble, assemble, and perform a functions check on the M4/M16",s:"TR 672-9 (24 July 2020)",e:"The final event is to clear, disassemble, assemble, and perform a functions check on the M4/M16/rifle/carbine.",t:"knowledge",tr:"core",b:["esb"]},
+{c:"Expert Soldier Badge — Testing and Standards",q:"What is the time limit for the final weapons event?",o:["Ten minutes or less","Five minutes or less","Three minutes or less","Two minutes or less"],a:"Five minutes or less",s:"TR 672-9 (24 July 2020)",e:"The clear/disassemble/assemble/functions-check event must be completed in five minutes or less.",t:"knowledge",tr:"advanced",b:["esb"]},
+{c:"Expert Soldier Badge — Testing and Standards",q:"Which of these events is pass-or-fail with no retest, so that failing it ends the ESB attempt?",o:["The 12-mile foot march","A single station in the weapons lane","A single station in the patrol lane","A single station in the medical lane"],a:"The 12-mile foot march",s:"TR 672-9 (24 July 2020)",e:"The physical fitness assessment, day and night land navigation, the 12-mile foot march, and the final event are pass-or-fail with no retest; failing any one ends the attempt. Lane stations, by contrast, allow limited retests.",t:"situational",tr:"advanced",b:["esb"]},
+{c:"Expert Soldier Badge — Testing and Standards",q:"A candidate finishes the 12-mile foot march in three hours and eight minutes. What is the result?",o:["A NO-GO on a no-retest event, ending the ESB attempt","A NO-GO that can be retested the same day","A GO, since the standard allows a grace period","A GO, provided the rucksack met the weight standard"],a:"A NO-GO on a no-retest event, ending the ESB attempt",s:"TR 672-9 (24 July 2020)",e:"The standard is three hours or less with no retest, so three hours and eight minutes is a NO-GO that ends the attempt.",t:"situational",tr:"advanced",b:["esb"]},
+{c:"Expert Soldier Badge — Testing and Standards",q:"A candidate accrues a third NO-GO in the weapons lane. What happens?",o:["The candidate fails and does not earn the badge","The candidate retests all weapons tasks the next day","The NO-GO is waived if the other lanes are clean","The candidate continues to the foot march"],a:"The candidate fails and does not earn the badge",s:"TR 672-9 (24 July 2020)",e:"No more than two NO-GOs per lane are allowed; a third NO-GO in any lane ends the attempt.",t:"situational",tr:"advanced",b:["esb"]},
+{c:"Expert Soldier Badge — Testing and Standards",q:"How many points are placed on each land navigation course, of which the candidate must find three?",o:["Four","Five","Three","Six"],a:"Four",s:"TR 672-9 (24 July 2020)",e:"Four points are set; the candidate must find three of the four, day and night.",t:"knowledge",tr:"advanced",b:["esb"]},
+{c:"Expert Soldier Badge — Testing and Standards",q:"The 35-pound minimum rucksack weight for the foot march is measured how?",o:["Dry weight, not counting water","With a full combat load and water","Including the weapon and helmet","After the march, at the finish line"],a:"Dry weight, not counting water",s:"TR 672-9 (24 July 2020)",e:"The standard is a minimum 35 pounds dry — the rucksack weight excluding water.",t:"knowledge",tr:"advanced",b:["esb"]},
+{c:"Expert Soldier Badge — Testing and Standards",q:"Which weapon is used for both the qualification prerequisite and the final functions-check event?",o:["The Soldier's assigned M4/M16/rifle/carbine","The M17 or M18 service pistol","The M249 squad automatic weapon (SAW)","The M240 medium machine gun"],a:"The Soldier's assigned M4/M16/rifle/carbine",s:"TR 672-9 (24 July 2020)",e:"Both the expert qualification prerequisite and the final event use the assigned M4/M16/rifle/carbine.",t:"knowledge",tr:"core",b:["esb"]},
+{c:"Expert Soldier Badge — Testing and Standards",q:"What does the physical fitness event on T-day require?",o:["A passing record Army fitness test","A maximum score on every event","A twelve-mile march for time","A combatives tournament"],a:"A passing record Army fitness test",s:"TR 672-9 (24 July 2020)",e:"The fitness assessment on test day requires a passing record Army fitness test; the specific test is whichever is current of record.",t:"knowledge",tr:"advanced",b:["esb"]},
+{c:"Expert Soldier Badge — Testing and Standards",q:"In the correct order, the ESB testing week runs:",o:["Fitness and land navigation, then the lanes, then the foot march and final event","The foot march, then the lanes, then day and night land navigation","The lanes, then land navigation, then the fitness assessment","Weapons qualification, then the foot march, then the testing lanes"],a:"Fitness and land navigation, then the lanes, then the foot march and final event",s:"TR 672-9 (24 July 2020)",e:"T-day is fitness and land navigation, T+1 through T+3 are the lanes, and T+4 is the foot march and final event.",t:"knowledge",tr:"advanced",b:["esb"]},
+{c:"Expert Soldier Badge — Testing and Standards",q:"Failing the night land navigation results in what?",o:["Ineligibility for the badge, with no retest","A NO-GO retested on the following night","No effect if daytime land navigation was a GO","A one-station penalty in the patrol lane"],a:"Ineligibility for the badge, with no retest",s:"TR 672-9 (24 July 2020)",e:"Day and night land navigation are both no-retest events; failing either ends the attempt.",t:"situational",tr:"advanced",b:["esb"]},
+{c:"Expert Soldier Badge — Testing and Standards",q:"Retests during ESB testing are available for which of the following?",o:["Individual lane stations, within the two-NO-GO-per-lane allowance","The 12-mile foot march, once per testing cycle","The physical fitness assessment, retaken on the following morning at the graders' discretion","Day and night land navigation, on a second course"],a:"Individual lane stations, within the two-NO-GO-per-lane allowance",s:"TR 672-9 (24 July 2020)",e:"Retests apply only to lane stations, up to two NO-GOs per lane; the fitness assessment, land navigation, foot march, and final event have no retest.",t:"knowledge",tr:"advanced",b:["esb"]},
+{c:"Expert Soldier Badge — Testing and Standards",q:"The individual testing stations assess what kind of tasks?",o:["Common warrior tasks and battle drills","Military occupational specialty-specific tasks","Leadership and counseling scenarios under time pressure","Drill and ceremony movements and the manual of arms"],a:"Common warrior tasks and battle drills",s:"TR 672-9 (24 July 2020)",e:"The stations test the common warrior tasks and battle drills every Soldier is expected to perform, grouped into the weapons, medical, and patrol lanes.",t:"knowledge",tr:"core",b:["esb"]},
+{c:"Expert Soldier Badge — Testing and Standards",q:"A Soldier earns two NO-GOs in the medical lane but retests both successfully, and is clean elsewhere. What is the outcome so far?",o:["Still eligible — two retested NO-GOs in a lane is within the standard","Disqualified — any NO-GO in the medical lane is final and cannot be retested","Disqualified — only one NO-GO per lane is allowed at any point in the week","Eligible only if the patrol lane is scored perfectly"],a:"Still eligible — two retested NO-GOs in a lane is within the standard",s:"TR 672-9 (24 July 2020)",e:"Up to two NO-GOs per lane are allowed provided each is retested successfully, so the candidate remains eligible.",t:"situational",tr:"advanced",b:["esb"]},
+{c:"Expert Soldier Badge — Testing and Standards",q:"What organization issues the official ESB certificates and orders?",o:["The Leader Training Brigade Test Management Office","Human Resources Command, Awards and Decorations Branch","The candidate's battalion S1, on the commander's authority","The installation awards branch at the senior command"],a:"The Leader Training Brigade Test Management Office",s:"TR 672-9 (24 July 2020)",e:"Under USACIMT authority, the Leader Training Brigade Test Management Office issues the official ESB certificates and orders.",t:"knowledge",tr:"advanced",b:["esb"]}
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v14";
+var APP_VERSION = "v15";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -1331,7 +1383,8 @@ var BOARDS = {
     "Supply and Property Accountability":0.8,"Uniforms and Appearance":1.0,
     "Physical Fitness and Body Composition":1.0,"Weapons and Marksmanship":1.2,
     "First Aid and TCCC":1.2,"Land Navigation and Map Reading":1.2,"CBRN and MOPP":1.1,"Audie Murphy — Early Life":0.15,"Audie Murphy — World War II Service":0.15,"Audie Murphy — Awards and Decorations":0.15,"Audie Murphy — Film and Music":0.15,"Audie Murphy — Personal Life and Legacy":0.15,
-    "Drill Sergeant Creed and Identity":0.15,"Drill Sergeant Program":0.15,"Drill and Ceremony — Drill Sergeant Depth":0.15,"Physical Readiness Training":0.15,"Cadences and Marching":0.15,"Drill Sergeant Competition":0.15 }},
+    "Drill Sergeant Creed and Identity":0.15,"Drill Sergeant Program":0.15,"Drill and Ceremony — Drill Sergeant Depth":0.15,"Physical Readiness Training":0.15,"Cadences and Marching":0.15,"Drill Sergeant Competition":0.15,
+    "Expert Soldier Badge — Program and Eligibility":0.15,"Expert Soldier Badge — Testing and Standards":0.15 }},
   p1:{ label:"Promotion Board — Specialist to Sergeant", adv:0.30, sit:0.15, w:{
     "Leadership":2.0,"Counseling and Development":1.8,"Army Values, Creeds, and Ethos":1.2,
     "Army History and Heritage":0.8,"NCO Development and Promotions":1.5,"Evaluations and NCOER":1.0,
@@ -1341,7 +1394,8 @@ var BOARDS = {
     "Supply and Property Accountability":0.7,"Uniforms and Appearance":1.2,
     "Physical Fitness and Body Composition":1.0,"Weapons and Marksmanship":1.0,
     "First Aid and TCCC":1.0,"Land Navigation and Map Reading":0.8,"CBRN and MOPP":0.8,"Audie Murphy — Early Life":0.15,"Audie Murphy — World War II Service":0.15,"Audie Murphy — Awards and Decorations":0.15,"Audie Murphy — Film and Music":0.15,"Audie Murphy — Personal Life and Legacy":0.15,
-    "Drill Sergeant Creed and Identity":0.15,"Drill Sergeant Program":0.15,"Drill and Ceremony — Drill Sergeant Depth":0.15,"Physical Readiness Training":0.15,"Cadences and Marching":0.15,"Drill Sergeant Competition":0.15 }},
+    "Drill Sergeant Creed and Identity":0.15,"Drill Sergeant Program":0.15,"Drill and Ceremony — Drill Sergeant Depth":0.15,"Physical Readiness Training":0.15,"Cadences and Marching":0.15,"Drill Sergeant Competition":0.15,
+    "Expert Soldier Badge — Program and Eligibility":0.15,"Expert Soldier Badge — Testing and Standards":0.15 }},
   p2:{ label:"Promotion Board — Sergeant to Staff Sergeant", adv:0.50, sit:0.22, w:{
     "Leadership":2.4,"Counseling and Development":2.0,"Army Values, Creeds, and Ethos":0.9,
     "Army History and Heritage":0.7,"NCO Development and Promotions":1.8,"Evaluations and NCOER":1.8,
@@ -1351,7 +1405,8 @@ var BOARDS = {
     "Supply and Property Accountability":1.2,"Uniforms and Appearance":1.0,
     "Physical Fitness and Body Composition":1.0,"Weapons and Marksmanship":0.9,
     "First Aid and TCCC":0.9,"Land Navigation and Map Reading":0.7,"CBRN and MOPP":0.7,"Audie Murphy — Early Life":0.2,"Audie Murphy — World War II Service":0.2,"Audie Murphy — Awards and Decorations":0.2,"Audie Murphy — Film and Music":0.2,"Audie Murphy — Personal Life and Legacy":0.2,
-    "Drill Sergeant Creed and Identity":0.15,"Drill Sergeant Program":0.15,"Drill and Ceremony — Drill Sergeant Depth":0.15,"Physical Readiness Training":0.15,"Cadences and Marching":0.15,"Drill Sergeant Competition":0.15 }},
+    "Drill Sergeant Creed and Identity":0.15,"Drill Sergeant Program":0.15,"Drill and Ceremony — Drill Sergeant Depth":0.15,"Physical Readiness Training":0.15,"Cadences and Marching":0.15,"Drill Sergeant Competition":0.15,
+    "Expert Soldier Badge — Program and Eligibility":0.15,"Expert Soldier Badge — Testing and Standards":0.15 }},
   amc:{ label:"Audie Murphy Club", adv:0.70, sit:0.28, w:{
     "Leadership":3.0,"Counseling and Development":2.2,"Army Values, Creeds, and Ethos":2.0,
     "Army History and Heritage":1.8,"NCO Development and Promotions":1.6,"Evaluations and NCOER":1.2,
@@ -1361,7 +1416,8 @@ var BOARDS = {
     "Supply and Property Accountability":0.6,"Uniforms and Appearance":0.8,
     "Physical Fitness and Body Composition":0.9,"Weapons and Marksmanship":0.8,
     "First Aid and TCCC":0.8,"Land Navigation and Map Reading":0.6,"CBRN and MOPP":0.6,"Audie Murphy — Early Life":5,"Audie Murphy — World War II Service":5,"Audie Murphy — Awards and Decorations":5,"Audie Murphy — Film and Music":5,"Audie Murphy — Personal Life and Legacy":5,
-    "Drill Sergeant Creed and Identity":0.15,"Drill Sergeant Program":0.15,"Drill and Ceremony — Drill Sergeant Depth":0.15,"Physical Readiness Training":0.15,"Cadences and Marching":0.15,"Drill Sergeant Competition":0.15 }},
+    "Drill Sergeant Creed and Identity":0.15,"Drill Sergeant Program":0.15,"Drill and Ceremony — Drill Sergeant Depth":0.15,"Physical Readiness Training":0.15,"Cadences and Marching":0.15,"Drill Sergeant Competition":0.15,
+    "Expert Soldier Badge — Program and Eligibility":0.15,"Expert Soldier Badge — Testing and Standards":0.15 }},
   /* The Drill Sergeant pool layers the new DS-specific questions on top of the ground the
      bank already covers, rather than re-asking it. The six new categories and the existing
      categories a Drill Sergeant lives in carry the heaviest weights, so a DS quiz draws on
@@ -1383,7 +1439,26 @@ var BOARDS = {
     "Risk Management":0.9,"Land Navigation and Map Reading":0.9,"NCO Development and Promotions":0.8,
     "CBRN and MOPP":0.7,"Evaluations and NCOER":0.5,"Operations and Training Management":0.5,
     "Supply and Property Accountability":0.5,
-    "Audie Murphy — Early Life":0.1,"Audie Murphy — World War II Service":0.1,"Audie Murphy — Awards and Decorations":0.1,"Audie Murphy — Film and Music":0.1,"Audie Murphy — Personal Life and Legacy":0.1 }}
+    "Audie Murphy — Early Life":0.1,"Audie Murphy — World War II Service":0.1,"Audie Murphy — Awards and Decorations":0.1,"Audie Murphy — Film and Music":0.1,"Audie Murphy — Personal Life and Legacy":0.1,
+    "Expert Soldier Badge — Program and Eligibility":0.1,"Expert Soldier Badge — Testing and Standards":0.1 }},
+  /* The Expert Soldier Badge pool layers harder than any other board. The ESB tests the
+     common warrior tasks, and the bank already holds almost all of them — weapons, first
+     aid, land navigation, CBRN, fitness, guard duty. Re-asking them under an ESB label
+     would duplicate verified content for nothing. So the new writing covers only the
+     program and its testing standards, and the weighting carries the rest. */
+  esb:{ label:"Expert Soldier Badge", adv:0.45, sit:0.15, w:{
+    "Expert Soldier Badge — Program and Eligibility":2.4,"Expert Soldier Badge — Testing and Standards":2.4,
+    "Weapons and Marksmanship":2.2,"First Aid and TCCC":2.2,"Land Navigation and Map Reading":2.2,
+    "CBRN and MOPP":1.9,"Physical Fitness and Body Composition":1.9,"Guard Duty and General Orders":1.6,
+    "Drill and Ceremony":1.2,"Army Values, Creeds, and Ethos":1.2,
+    "Customs and Courtesies":0.8,"Chain of Command and NCO Support Channel":0.8,
+    "Leadership":0.7,"Army Programs":0.7,"Uniforms and Appearance":0.7,
+    "Army History and Heritage":0.5,"Military Justice":0.5,"Risk Management":0.6,
+    "Counseling and Development":0.4,"NCO Development and Promotions":0.4,
+    "Supply and Property Accountability":0.4,"Operations and Training Management":0.4,
+    "Evaluations and NCOER":0.3,
+    "Audie Murphy — Early Life":0.1,"Audie Murphy — World War II Service":0.1,"Audie Murphy — Awards and Decorations":0.1,"Audie Murphy — Film and Music":0.1,"Audie Murphy — Personal Life and Legacy":0.1,
+    "Drill Sergeant Creed and Identity":0.1,"Drill Sergeant Program":0.1,"Drill and Ceremony — Drill Sergeant Depth":0.1,"Physical Readiness Training":0.1,"Cadences and Marching":0.1,"Drill Sergeant Competition":0.1 }}
 };
 function inBoard(q,b){ return !q.b || q.b.indexOf(b) !== -1; }
 
@@ -1617,6 +1692,11 @@ var SOURCE_TITLES = {
   "TC 3-25.26":"Map Reading and Land Navigation",
   "TC 4-02.1":"First Aid",
   "TR 350-16 (27 March 2023)":"Drill Sergeant and Cadre Program",
+  /* Descriptive, not verbatim — this machine cannot reach a TRADOC host to read the
+     cover page, and the self-test refuses to let a publication-shaped citation ship with
+     no title at all. Flagged for the audit skill to replace with the official wording
+     once TR 672-9 is reachable. A description beats a bare number and beats a guess. */
+  "TR 672-9 (24 July 2020)":"Expert Infantryman, Expert Soldier, and Expert Field Medical Badge Testing",
   "UCMJ":"Uniform Code of Military Justice",
   "UCMJ Article 15":"Nonjudicial Punishment",
   "UCMJ Article 31":"Rights Against Self-Incrimination",
@@ -1693,9 +1773,15 @@ function isAM(name){ return name.indexOf(AM_PREFIX) === 0; }
 var DS_CATS = ["Drill Sergeant Creed and Identity","Drill Sergeant Program",
                "Drill and Ceremony — Drill Sergeant Depth","Physical Readiness Training",
                "Cadences and Marching","Drill Sergeant Competition"];
+/* Same treatment for the Expert Soldier Badge categories: their own group, their own
+   board, an explicit list rather than a prefix test. */
+var ESB_CATS = ["Expert Soldier Badge — Program and Eligibility",
+                "Expert Soldier Badge — Testing and Standards"];
 function isDS(name){ return DS_CATS.indexOf(name) !== -1; }
+function isESB(name){ return ESB_CATS.indexOf(name) !== -1; }
 function shortCat(name){
   if(isAM(name)) return name.replace(/^Audie Murphy\s*[—-]\s*/, "");
+  if(isESB(name)) return name.replace(/^Expert Soldier Badge\s*[—-]\s*/, "");
   if(name === "Drill and Ceremony — Drill Sergeant Depth") return "Drill and Ceremony (Depth)";
   if(name === "Drill Sergeant Creed and Identity") return "Creed and Identity";
   if(name === "Drill Sergeant Program") return "The DS Program";
@@ -1741,7 +1827,8 @@ function buildCats(){
   // board topics: each only draws in its own board, so they get their own headings.
   group("Audie Murphy",         CATS.filter(function(c){ return isAM(c.name); }));
   group("Drill Sergeant",       CATS.filter(function(c){ return isDS(c.name); }));
-  group("General Board Topics", CATS.filter(function(c){ return !isAM(c.name) && !isDS(c.name); }));
+  group("Expert Soldier Badge", CATS.filter(function(c){ return isESB(c.name); }));
+  group("General Board Topics", CATS.filter(function(c){ return !isAM(c.name) && !isDS(c.name) && !isESB(c.name); }));
 }
 /* ---- group selection helpers ---- */
 var GROUPS = [];
@@ -1749,8 +1836,9 @@ function amNames(){ return CATS.filter(function(c){ return isAM(c.name); }).map(
 /* "Standard Only" means the general board topics — neither the Audie Murphy nor the
    Drill Sergeant sub-categories. Adding the DS categories without excluding them here
    would have quietly changed what that button does. */
-function stdNames(){ return CATS.filter(function(c){ return !isAM(c.name) && !isDS(c.name); }).map(function(c){ return c.name; }); }
+function stdNames(){ return CATS.filter(function(c){ return !isAM(c.name) && !isDS(c.name) && !isESB(c.name); }).map(function(c){ return c.name; }); }
 function dsNames(){ return CATS.filter(function(c){ return isDS(c.name); }).map(function(c){ return c.name; }); }
+function esbNames(){ return CATS.filter(function(c){ return isESB(c.name); }).map(function(c){ return c.name; }); }
 function allChecked(names){
   var ok = names.length > 0;
   Array.prototype.forEach.call($("cats").querySelectorAll("input"), function(cb){
@@ -1995,7 +2083,7 @@ function toMenu(){
   compactBar(false);
   $("quiz").classList.add("hidden"); $("results").classList.add("hidden"); $("flash").classList.add("hidden");
   $("home").classList.remove("hidden");
-  $("sub").textContent="Board prep for Soldier of the Month, promotion, Audie Murphy, and Drill Sergeant";
+  $("sub").textContent="Board and badge prep for Soldier of the Month, promotion, Audie Murphy, Drill Sergeant, and ESB";
   refreshMissedBtn(); showHistory(); updatePool(); paintReadiness(); window.scrollTo(0,0);
 }
 window.addEventListener("popstate", function(){
@@ -2103,18 +2191,22 @@ function selfTest(){
      Only" button. A typo in any one of them fails silently: the group would render short
      and those questions would quietly fall into General Board Topics. Assert the names
      line up, and that the pool is actually reachable. */
-  DS_CATS.forEach(function(c){
-    if(CAT_LIST.indexOf(c)===-1) errs.push("ds categories: '"+c+"' is not a category in the bank");
-    if(BOARDS.ds && BOARDS.ds.w[c]===undefined) errs.push("ds categories: '"+c+"' has no weight in the ds board");
-  });
-  (function(){
-    var pool=QUESTIONS.filter(function(q){ return inBoard(q,"ds") && DS_CATS.indexOf(q.c)!==-1; });
-    if(pool.length<100) errs.push("ds pool: only "+pool.length+" DS-specific questions, expected at least 100");
-    var tagged=QUESTIONS.filter(function(q){ return q.b && q.b.indexOf("ds")!==-1; });
-    tagged.forEach(function(q){
-      if(DS_CATS.indexOf(q.c)===-1) errs.push("ds pool: '"+q.q.slice(0,40)+"' is ds-tagged but sits in "+q.c);
+  /* Each pool's category names live in three places — the bank, the board weight tables,
+     and the *_CATS list that drives the picker group and the "Standard Only" button. A
+     typo in any one fails silently: the group renders short and those questions drop into
+     General Board Topics. One check, run per pool. */
+  [{id:"ds", cats:DS_CATS, min:100},{id:"esb", cats:ESB_CATS, min:40}].forEach(function(p){
+    p.cats.forEach(function(c){
+      if(CAT_LIST.indexOf(c)===-1) errs.push(p.id+" categories: '"+c+"' is not a category in the bank");
+      if(BOARDS[p.id] && BOARDS[p.id].w[c]===undefined) errs.push(p.id+" categories: '"+c+"' has no weight in the "+p.id+" board");
     });
-  })();
+    var pool=QUESTIONS.filter(function(q){ return inBoard(q,p.id) && p.cats.indexOf(q.c)!==-1; });
+    if(pool.length<p.min) errs.push(p.id+" pool: only "+pool.length+" "+p.id+"-specific questions, expected at least "+p.min);
+    QUESTIONS.forEach(function(q){
+      if(q.b && q.b.indexOf(p.id)!==-1 && p.cats.indexOf(q.c)===-1)
+        errs.push(p.id+" pool: '"+q.q.slice(0,40)+"' is "+p.id+"-tagged but sits in "+q.c);
+    });
+  });
   /* The references list is generated from the citations, so the only way it can be
      wrong is if the renderer and the bank disagree. Assert they never do. */
   (function(){
@@ -2184,6 +2276,7 @@ $("noneBtn").addEventListener("click", function(){ Array.prototype.forEach.call(
 $("stdBtn").addEventListener("click", function(){ onlyCats(stdNames()); });
 $("amBtn").addEventListener("click", function(){ onlyCats(amNames()); });
 $("dsBtn").addEventListener("click", function(){ onlyCats(dsNames()); });
+$("esbBtn").addEventListener("click", function(){ onlyCats(esbNames()); });
 $("startBtn").addEventListener("click", function(){ startQuiz(selectedCats()); });
 $("nextBtn").addEventListener("click", next);
 $("quitBtn").addEventListener("click", function(){ if(answers.length) finish(); else toMenu(); });

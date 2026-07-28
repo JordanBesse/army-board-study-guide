@@ -1,0 +1,6 @@
+# Every file in this repo is committed and checked out byte-for-byte, with no line-ending
+# translation. The published SHA-256 of army-board-study-guide.html is the integrity
+# guarantee for anyone who downloads it, and `core.autocrlf=true` is set globally on the
+# build machine — without this, a fresh clone checks out CRLF working-tree files and every
+# hash comparison fails even though the committed blobs are correct.
+* -text
