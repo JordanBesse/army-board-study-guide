@@ -94,6 +94,8 @@ h1{font-size:1.3rem;margin:0;letter-spacing:-.01em;font-weight:700}
 #speakBtn:hover{background:var(--surface2);border-color:var(--accent)}
 #speakBtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .cue{font-weight:700;margin-right:5px}
+.auditline{margin:0 0 10px}
+.auditval{font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums}
 h2{font-size:.98rem;margin:0 0 10px;font-weight:650;text-align:center}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
 .hint{color:var(--muted);font-size:.84rem;margin:0 0 10px;text-align:center}
@@ -289,6 +291,10 @@ footer p{margin:0 0 8px}
     <button class="btn sec sm swbtn" type="button" id="ttsBtn" aria-pressed="false">Off</button>
   </div>
   <div class="setrow">
+    <span>Content last audited</span>
+    <span class="auditval" id="setAudit"></span>
+  </div>
+  <div class="setrow">
     <span>Study data</span>
     <button class="btn sec sm" type="button" id="resetBtn">Reset study data</button>
   </div>
@@ -363,6 +369,7 @@ footer p{margin:0 0 8px}
     <summary>References <span id="refCount"></span></summary>
     <div class="catbody" id="refBody">
       <p class="hint">Every regulation and publication cited by a question in this guide. Built from the questions themselves, so it cannot drift.</p>
+      <p class="hint auditline" id="refAudit"></p>
       <ul class="reflist" id="refList"></ul>
     </div>
   </details>
@@ -607,9 +614,9 @@ var QUESTIONS = [
 {c:"Physical Fitness and Body Composition",q:"The Army Fitness Test sets a higher standard for Soldiers in designated combat MOS's. What is the minimum total score for Soldiers in every other MOS?",o:["300 points","350 points","270 points","330 points"],a:"300 points",s:"AR 350-1",e:"The general standard stays both sex-normed and age-normed. Designated combat MOS's must reach the higher combat standard instead.",t:"knowledge",tr:"core"},
 {c:"Physical Fitness and Body Composition",q:"Which field manual covers Army physical readiness training?",o:["FM 7-22","FM 3-11","TC 3-21.5","AR 600-9"],a:"FM 7-22",s:"FM 7-22",e:"FM 7-22, Holistic Health and Fitness, governs physical readiness training.",t:"knowledge",tr:"core"},
 {c:"Physical Fitness and Body Composition",q:"Which regulation governs the Army Body Composition Program?",o:["AR 600-9","AR 600-20","AR 350-1","AR 670-1"],a:"AR 600-9",s:"AR 600-9",e:"AR 600-9 governs the Army Body Composition Program and its procedures. The assessment method is now the waist-to-height ratio.",t:"knowledge",tr:"core"},
-{"c":"Physical Fitness and Body Composition","q":"What measurement did the Army adopt in place of the height and weight tables, the tape test, and supplemental body fat assessments?","o":["The waist-to-height ratio (WHtR)","The body mass index (BMI) calculated from height and weight","A neck-and-waist tape measurement","A mandatory DEXA scan at the supporting medical facility"],"a":"The waist-to-height ratio (WHtR)","s":"AR 600-9 / ABCP WHtR policy (2026)","e":"Announced 7 July 2026, the waist-to-height ratio replaced the height and weight tables, the circumference-based tape test, and all supplemental body fat assessments.","t":"knowledge","tr":"core"},
-{"c":"Physical Fitness and Body Composition","q":"How is a Soldier's waist-to-height ratio measured?","o":["Waist circumference at the navel divided by height in inches","Neck circumference subtracted from waist circumference, then divided by height","Body weight in pounds divided by height in inches, then multiplied by 703","Waist circumference at the hips divided by total body weight in pounds"],"a":"Waist circumference at the navel divided by height in inches","s":"AR 600-9 / ABCP WHtR policy (2026)","e":"The waist is measured at the navel and divided by height, both in inches.","t":"knowledge","tr":"core"},
-{"c":"Physical Fitness and Body Composition","q":"Under the Army Body Composition Program, what waist-to-height ratio must a Soldier stay below?","o":["0.55","0.50","0.60","0.65"],"a":"0.55","s":"AR 600-9 / ABCP WHtR policy (2026)","e":"A ratio of less than 0.55 meets the standard. A ratio of 0.55 or greater triggers a confirmation measurement by a different team the same duty day, and a confirmed failure means a flag and enrollment in the ABCP.","t":"knowledge","tr":"core"},
+{"c":"Physical Fitness and Body Composition","q":"What measurement did the Army adopt in place of the height and weight tables, the tape test, and supplemental body fat assessments?","o":["The waist-to-height ratio (WHtR)","The body mass index (BMI) calculated from height and weight","A neck-and-waist tape measurement","A mandatory DEXA scan at the supporting medical facility"],"a":"The waist-to-height ratio (WHtR)","s":"Army Directive 2026-13 (Army Body Composition Program); AR 600-9 as amended","e":"Announced 7 July 2026, the waist-to-height ratio replaced the height and weight tables, the circumference-based tape test, and all supplemental body fat assessments.","t":"knowledge","tr":"core"},
+{"c":"Physical Fitness and Body Composition","q":"How is a Soldier's waist-to-height ratio measured?","o":["Waist circumference at the navel divided by height in inches","Neck circumference subtracted from waist circumference, then divided by height","Body weight in pounds divided by height in inches, then multiplied by 703","Waist circumference at the hips divided by total body weight in pounds"],"a":"Waist circumference at the navel divided by height in inches","s":"Army Directive 2026-13 (Army Body Composition Program); AR 600-9 as amended","e":"The waist is measured at the navel and divided by height, both in inches.","t":"knowledge","tr":"core"},
+{"c":"Physical Fitness and Body Composition","q":"Under the Army Body Composition Program, what waist-to-height ratio must a Soldier stay below?","o":["0.55","0.50","0.60","0.65"],"a":"0.55","s":"Army Directive 2026-13 (Army Body Composition Program); AR 600-9 as amended","e":"A ratio of less than 0.55 meets the standard. A ratio of 0.55 or greater triggers a confirmation measurement by a different team the same duty day, and a confirmed failure means a flag and enrollment in the ABCP.","t":"knowledge","tr":"core"},
 {c:"Physical Fitness and Body Composition",q:"What happens to a Soldier who fails to meet body composition standards?",o:["They are flagged, which suspends favorable personnel actions, and enrolled in the ABCP","They are immediately separated from the Army without any further administrative processing","They receive a written counseling statement only, with no other administrative action taken","They are reduced one grade in rank and permanently barred from reenlistment in the Army entirely"],a:"They are flagged, which suspends favorable personnel actions, and enrolled in the ABCP",s:"AR 600-9",e:"A flag blocks promotion, awards, schools, and reenlistment until the Soldier meets standards.",t:"knowledge",tr:"core"},
 {c:"Physical Fitness and Body Composition",q:"Which form is used to flag a Soldier for suspension of favorable personnel actions?",o:["DA Form 268","DA Form 4856","DA Form 705","DA Form 2166-9"],a:"DA Form 268",s:"AR 600-8-2",e:"DA Form 268 is the Report to Suspend Favorable Personnel Actions.",t:"knowledge",tr:"core"},
 {c:"Weapons and Marksmanship",q:"Which training circular covers the rifle and carbine?",o:["TC 3-22.9","TC 3-23.35","TC 3-25.26","TC 3-21.5"],a:"TC 3-22.9",s:"TC 3-22.9",e:"TC 3-22.9, Rifle and Carbine, replaced the older FM 3-22.9.",t:"knowledge",tr:"core"},
@@ -931,7 +938,12 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v11";
+var APP_VERSION = "v12";
+/* Date the question bank was last checked against current doctrine. A single global
+   date by design, not per-source. The army-study-guide-audit skill bumps this in the
+   same change as any content it corrects, so the displayed date can never claim an
+   audit that did not touch the bank. Display only: no logic, no storage, no network. */
+var AUDIT_DATE = "2026-07-28";
 
 /* ---------------- helpers ---------------- */
 function $(id){ return document.getElementById(id); }
@@ -1233,6 +1245,24 @@ function buildRefs(){
   return list.length;
 }
 buildRefs();
+
+/* ---------------- content last audited ---------------- */
+/* Formatted from the parts rather than parsed as a Date: "2026-07-28" parses as UTC
+   midnight and would render as the 27th anywhere west of Greenwich. */
+function auditDateLabel(iso){
+  var MONTHS=["January","February","March","April","May","June",
+              "July","August","September","October","November","December"];
+  var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(iso||"");
+  if(!m) return iso||"";
+  var mo=parseInt(m[2],10);
+  if(mo<1||mo>12) return iso;
+  return MONTHS[mo-1]+" "+parseInt(m[3],10)+", "+m[1];
+}
+(function(){
+  var label=auditDateLabel(AUDIT_DATE);
+  $("refAudit").textContent="Content last audited: "+label+".";
+  $("setAudit").textContent=label;
+})();
 
 /* ---------------- feedback links ---------------- */
 /* Plain anchors. The mail client or the browser handles them; the app never
@@ -1639,6 +1669,15 @@ function selfTest(){
     if(rendered!==n) errs.push("references: list shows "+rendered+" entries but the bank cites "+n+" distinct sources");
     var shown=$("refCount") ? $("refCount").textContent : "";
     if(shown!=="("+n+")") errs.push("references: count label reads "+shown+", expected ("+n+")");
+  })();
+  /* The audit skill bumps AUDIT_DATE automatically. A malformed bump would render
+     silently as raw text, so fail loudly instead. */
+  (function(){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(AUDIT_DATE)) { errs.push("audit date: '"+AUDIT_DATE+"' is not YYYY-MM-DD"); return; }
+    var mo=parseInt(AUDIT_DATE.slice(5,7),10), d=parseInt(AUDIT_DATE.slice(8,10),10);
+    if(mo<1||mo>12||d<1||d>31) errs.push("audit date: '"+AUDIT_DATE+"' is not a real date");
+    if($("refAudit") && !$("refAudit").textContent) errs.push("audit date: references line did not render");
+    if($("setAudit") && !$("setAudit").textContent) errs.push("audit date: settings line did not render");
   })();
   if(errs.length){
     console.error("SELF-TEST FAILED — "+errs.length+" problem(s) across "+QUESTIONS.length+" questions");
