@@ -24,6 +24,9 @@
   /* The "Getting There" band. Measured on this app's own surfaces, not taken from a
      palette: #8a6100 is 5.54:1 on the card and 4.87:1 on --surface2. */
   --amber:#8a6100;
+  /* The band WORD is a separate token from the bar, because colour-blind mode shifts the
+     word yellower without moving the bar. Same value outside that mode. */
+  --amber-word:#8a6100;
   /* Pointer hover — neutral, never the accent. Shipped as literals in v16; promoted to
      tokens here because the sub-rows and the picker now need the same pair. Values
      unchanged, so nothing rendered moves. */
@@ -56,6 +59,7 @@
      quoted 7.4:1 against the pre-v16 card (#191e18); v16 lifted the card, so these are the
      re-measured numbers on the surfaces it actually sits on. */
   --amber:#d8a24a;
+  --amber-word:#d8a24a;
   --hover-bg:#242b21; --hover-line:#4a5545;
   --dim-ink:#8f9a8d; --dim-line:#333b2f;
   --scrim:rgba(0,0,0,.55);
@@ -121,17 +125,29 @@ header.compact #settingsBtn{width:40px;height:40px;top:18px}
 :root[data-cb="1"]{
   --ok:#00669F; --ok-bg:#e7f0f7; --ok-line:#7fb0d4;
   --no:#B34F00; --no-bg:#fdeee4; --no-line:#e9a877;
-  /* v17 lifts the selected board's fill by one step in colour-blind mode ONLY. The new
-     readiness band word sits directly on the row, and a SELECTED row is --accent-soft:
-     the CB vermillion measures 4.490:1 there, a hair under the 4.5 floor. The palette
-     pair is locked and must not be re-darkened, so the surface moves instead. #ecf2ed
-     is the smallest step that clears it (4.58:1), and selection still reads — it also
-     carries the accent border, the inset ring, the 3px spine and the e2 lift. */
+  /* v18. Ready reads blue and Not Ready reads orange under this palette, but the
+     Getting-There amber sits close to the vermillion in hue — under a deuteranopia
+     simulation the solid amber and orange bars converge to the same olive. So the band
+     word shifts yellower here, and the bar picks up a diagonal hatch below. Texture
+     survives the hue collapse where a hue shift alone does not. */
+  --amber-word:#6f6300;
+}
+/* v17 lifted the selected board's fill one step in colour-blind mode: the readiness band
+   word sits directly on the row, a SELECTED row is --accent-soft, and the CB vermillion
+   measured 4.490:1 on the light tint — a hair under the floor. The palette pair is locked
+   and must not be re-darkened, so the surface moved instead (#ecf2ed, 4.58:1).
+   v18 SCOPES IT TO THE LIGHT THEME, which is what v17 should have done. `:root[data-cb="1"]`
+   is theme-agnostic and outranks `:root[data-theme="dark"]`, so the light tint was also
+   painting the selected row in DARK colour-blind mode — a near-white card on a dark page,
+   with the band word at 1.85:1. Dark needs no lift of its own: the CB vermillion already
+   measures 6.11:1 on the dark --accent-soft. */
+:root[data-cb="1"][data-theme="light"]{
   --accent-soft:#ecf2ed;
 }
 :root[data-cb="1"][data-theme="dark"]{
   --ok:#5fb0e0; --ok-bg:#0e1c26; --ok-line:#2a5a7c;
   --no:#f0895a; --no-bg:#2a1a11; --no-line:#8a4a24;
+  --amber-word:#cbb24c;
 }
 .cbpreview{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
 .cbsw{border:1px solid;border-radius:999px;padding:5px 11px;font-size:.72rem;font-weight:700;letter-spacing:.04em;white-space:nowrap}
@@ -310,9 +326,27 @@ h2{font-size:.98rem;margin:0 0 10px;font-weight:650;text-align:center}
 .rdy .track{display:block;margin-top:5px;height:4px;border-radius:999px;background:var(--line);overflow:hidden}
 .rdy .fill{display:block;height:100%;width:0;border-radius:999px}
 .band-ns{color:var(--muted)}
-.band-nr{color:var(--no)}   .fill-nr{background:var(--no)}
-.band-gt{color:var(--amber)}.fill-gt{background:var(--amber)}
-.band-rd{color:var(--ok)}   .fill-rd{background:var(--ok)}
+.band-nr{color:var(--no)}        .fill-nr{background-color:var(--no)}
+.band-gt{color:var(--amber-word)}.fill-gt{background-color:var(--amber)}
+.band-rd{color:var(--ok)}        .fill-rd{background-color:var(--ok)}
+/* The Getting-There hatch (v18), colour-blind mode only, every bar that carries the
+   amber band: the picker cluster, the score report's readiness track, and the amber
+   mastery segments. ~3px period at 45 degrees, static — no motion, nothing to reduce.
+   The stripe runs light on the light theme (the amber is dark there) and dark on the
+   dark theme (the amber is light), so it reads on both without touching the band hue.
+   Alphas are set by measurement, not taste: the hatch is the thing carrying the band
+   once the hue collapses, which makes it a graphical object needed to understand the
+   content, so it is held to the 3:1 non-text floor rather than treated as decoration.
+   At .5 the light stripe measured only 2.61:1 against its bar; .65 gives 3.34:1 and the
+   dark .6 gives 4.23:1. */
+:root[data-cb="1"] .fill-gt{
+  background-image:repeating-linear-gradient(45deg,
+    rgba(255,255,255,.65) 0 1.5px, rgba(255,255,255,0) 1.5px 3px);
+}
+:root[data-cb="1"][data-theme="dark"] .fill-gt{
+  background-image:repeating-linear-gradient(45deg,
+    rgba(0,0,0,.6) 0 1.5px, rgba(0,0,0,0) 1.5px 3px);
+}
 .sronly{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 /* The group row stands for two real boards, so it carries a disclosure chevron where the
    other rows carry a readiness cluster — it has no readiness of its own. */
@@ -327,8 +361,14 @@ h2{font-size:.98rem;margin:0 0 10px;font-weight:650;text-align:center}
   border-radius:8px;padding:9px 12px 9px 10px;min-height:44px;
 }
 #boardPicks .subpick .pick b{font-size:.9rem;font-weight:600}
+/* The sub-board cell is 26px rather than the main rows' 40px, but the MARK stays at the
+   26px the set was drawn and legibility-checked at — it just sits flush in its cell
+   instead of centred in a gutter. The rank insignia are the detailed end of the set (three
+   chevrons, and a rocker under them for Staff Sergeant); shrinking them to 22px to buy
+   padding cost detail the marks need and bought no title width, since the cell is the
+   same size either way. */
 #boardPicks .subpick .glyph{width:26px;height:26px}
-#boardPicks .subpick .glyph svg{width:22px;height:22px}
+#boardPicks .subpick .glyph svg{width:26px;height:26px}
 /* Spec'd at 88px. Measured: the longest band word, "GETTING THERE" at 11px/800/+0.03em,
    renders 92.0px — at 88 it wraps to two lines and the sub-row cluster stops aligning,
    which is the one thing a fixed-width cluster exists to do. 94px is the nearest width
@@ -721,33 +761,36 @@ footer p{margin:0 0 8px}
     <div class="stack" id="boardPicks">
       <button class="pick" type="button" data-board="som" aria-pressed="true">
         <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round"><path d="M12 3.7l2.55 5.17 5.7.83-4.13 4.02.98 5.68L12 16.9l-5.1 2.5.98-5.68L4.75 9.7l5.7-.83z"/></svg></span>
-        <span class="lbl"><b>Soldier of the Month</b><small>All Categories, Tested in Depth</small></span>
+        <span class="lbl"><b>Soldier of the Month</b><small>All categories, tested in depth</small></span>
         <span class="rdy" data-r="som"><span class="band"></span><span class="sronly"></span><span class="track"><span class="fill"></span></span></span></button>
       <button class="pick" type="button" data-board="promo" aria-pressed="false" aria-expanded="false">
         <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round"><path d="M5.5 12.2l6.5-4.5 6.5 4.5M5.5 16.5l6.5-4.5 6.5 4.5"/></svg></span>
-        <span class="lbl"><b>Promotion Board</b><small>Leadership, Counseling, and Situational Judgment</small></span>
+        <span class="lbl"><b>Promotion Board</b><small>Leadership, counseling, situational judgment · 2 boards</small></span>
         <span class="chev" aria-hidden="true">&#9662;</span></button>
       <div class="subpick hidden" id="promoSub">
+        <!-- Rank-accurate insignia, not a generic sub-board chevron: the sergeant stack
+             for the board a Specialist is sitting, and the same stack plus a rocker for
+             the Staff Sergeant board. The mark names the rank being competed for. -->
         <button class="pick" type="button" data-board="p1" aria-pressed="false">
-          <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round"><path d="M5.5 14.5l6.5-4.5 6.5 4.5"/></svg></span>
+          <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round"><path d="M5.5 9.5l6.5-4.5 6.5 4.5M5.5 13l6.5-4.5 6.5 4.5M5.5 16.5l6.5-4.5 6.5 4.5"/></svg></span>
           <span class="lbl"><b>Specialist to Sergeant</b></span>
           <span class="rdy" data-r="p1"><span class="band"></span><span class="sronly"></span><span class="track"><span class="fill"></span></span></span></button>
         <button class="pick" type="button" data-board="p2" aria-pressed="false">
-          <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round"><path d="M5.5 14.5l6.5-4.5 6.5 4.5"/></svg></span>
+          <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round"><path d="M6 8.5l6-4 6 4M6 11.5l6-4 6 4M6 14.5l6-4 6 4"/><path d="M5.5 17.2Q12 19.8 18.5 17.2"/></svg></span>
           <span class="lbl"><b>Sergeant to Staff Sergeant</b></span>
           <span class="rdy" data-r="p2"><span class="band"></span><span class="sronly"></span><span class="track"><span class="fill"></span></span></span></button>
       </div>
       <button class="pick" type="button" data-board="amc" aria-pressed="false">
         <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round"><circle cx="12" cy="9.6" r="4.5"/><path d="M12 7.5l.7 1.42 1.56.22-1.13 1.1.27 1.56L12 12.06l-1.4.74.27-1.56-1.13-1.1 1.56-.22z"/><path d="M9.9 13.2L8.7 20l3.3-2.2L15.3 20l-1.2-6.8"/></svg></span>
-        <span class="lbl"><b>Audie Murphy Club</b><small>Leadership Philosophy, Heritage, Situational Judgment</small></span>
+        <span class="lbl"><b>Audie Murphy Club</b><small>Leadership philosophy, heritage, judgment</small></span>
         <span class="rdy" data-r="amc"><span class="band"></span><span class="sronly"></span><span class="track"><span class="fill"></span></span></span></button>
       <button class="pick" type="button" data-board="ds" aria-pressed="false">
         <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round"><path d="M4 15.7c3.1 1.7 12.9 1.7 16 0"/><path d="M6.9 15.3c.3-4.4 1.9-6 5.1-6s4.8 1.6 5.1 6"/><path d="M7.6 13.7c2.6 1 6.2 1 8.8 0"/></svg></span>
-        <span class="lbl"><b>Drill Sergeant</b><small>The Creed, the DS Program, Drill, PRT, and Cadence</small></span>
+        <span class="lbl"><b>Drill Sergeant</b><small>The Creed, the DS Program, drill, PRT, cadence</small></span>
         <span class="rdy" data-r="ds"><span class="band"></span><span class="sronly"></span><span class="track"><span class="fill"></span></span></span></button>
       <button class="pick" type="button" data-board="esb" aria-pressed="false">
         <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round"><path d="M12 3.6l5.6 2v4.9c0 3.9-2.6 6.1-5.6 7.4-3-1.3-5.6-3.5-5.6-7.4V5.6z"/><path d="M12 7.5l1 1.6h-2z" fill="currentColor" stroke="none"/><path d="M12 8.9v4.4M10.5 12.7h3"/></svg></span>
-        <span class="lbl"><b>Expert Soldier Badge</b><small>The ESB Program, Testing Standards, and Common Tasks</small></span>
+        <span class="lbl"><b>Expert Soldier Badge</b><small>The ESB Program, testing standards, common tasks</small></span>
         <span class="rdy" data-r="esb"><span class="band"></span><span class="sronly"></span><span class="track"><span class="fill"></span></span></span></button>
     </div>
     <p class="hint" id="readyHint" style="margin:10px 0 0"></p>
@@ -1513,7 +1556,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v17";
+var APP_VERSION = "v18";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
