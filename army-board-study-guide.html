@@ -31,6 +31,9 @@
      .opt.dim for why element opacity cannot clear AA here. */
   --dim-ink:#6b736a; --dim-line:#ebeeeb;
   --m-tap:90ms; --m-state:140ms;
+  /* Screen mount: menu -> quiz, question -> question, -> results. The whole motion budget
+     for navigation, and it registers as responsiveness rather than as a slide-show. */
+  --m-screen:200ms;
   --r:10px;
   --scrim:rgba(20,30,20,.45);
   /* The app bar band is transparent in light mode; dark mode gives it a faint olive
@@ -70,40 +73,60 @@ body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%;
 }
-.wrap{max-width:780px;margin:0 auto;padding:14px 14px 40px}
-/* App bar. The gear is absolutely positioned in the top-right of the header, and the
-   title and subtitle carry a 52px inline padding — a 44px control plus 8px of air on
-   each side — so the centred text box can never reach the corner. Before v14 the h1 was
-   full-width under the button and clipped at 360 and 390px. The padding is the fix; at
-   360px the title wraps to two centred lines, which is correct, not broken.
-   The header bleeds the band to the full viewport width on mobile via the negative
-   margin, while the gear stays inside the centred column on desktop. */
+/* The bottom padding reserves the floating Settings button's lane — 52px of control plus
+   air — so no primary action (Start Quiz, Next, End Quiz, the Sources row) can ever come
+   to rest underneath it. The safe-area term keeps that true on a notched iPhone. */
+.wrap{max-width:780px;margin:0 auto;padding:14px 14px calc(84px + env(safe-area-inset-bottom))}
+/* App bar. From v19 the gear is gone from here — it floats bottom-right instead — so the
+   title and subtitle no longer reserve a 52px inline slot for it and the header centres
+   on the full column. That slot existed from v14 only because a control sat in the corner;
+   with the control moved, keeping the padding would just be a permanent indent.
+   The header still bleeds the band to the full viewport width on mobile via the negative
+   margin. */
 header{
   position:relative;text-align:center;padding:24px 0 16px;
   background:var(--barband);border-bottom:1px solid var(--line);
   margin:-14px -14px 14px;padding-left:14px;padding-right:14px;
 }
-h1{font-size:1.3rem;margin:0;letter-spacing:-.01em;font-weight:700;padding-inline:52px;line-height:1.25}
-#sub{margin:5px 52px 0;color:var(--muted);font-size:.88rem;line-height:1.35}
+h1{font-size:1.3rem;margin:0;letter-spacing:-.01em;font-weight:700;line-height:1.25}
+#sub{margin:5px 0 0;color:var(--muted);font-size:.88rem;line-height:1.35}
 /* Compact quiz bar: mid-quiz the marketing h1 is dead weight, so the board name and
-   position replace it and give the question back about 50px of vertical. */
+   position replace it and give the question back about 50px of vertical. v19 drops the
+   gear from here too, leaving just the board name and "Question N of M". */
 header.compact h1,header.compact #sub{display:none}
-#quizbar{display:none;padding-inline:52px}
+#quizbar{display:none}
 header.compact #quizbar{display:block}
 #quizbar .qb-board{font-size:1.06rem;font-weight:700;line-height:1.2;letter-spacing:-.01em}
 #quizbar .qb-pos{color:var(--muted);font-size:.78rem;margin-top:4px}
+/* ---------- Floating Settings (v19) ----------
+   Settings used to live in the top-right of the app bar, which meant that the moment a
+   Soldier scrolled or started a quiz it was a reach back to the corner. It now floats
+   bottom-right, fixed, so it is always one tap away.
+   Deliberately QUIET: --surface fill and a --line border, not an accent tint. Accent means
+   "selected" by law, and a permanently accent-tinted control on every screen would spend
+   that meaning on chrome. Discoverability comes from the fixed position and the e2 lift.
+   z-index sits above page content but below the settings scrim (60), so opening the sheet
+   covers the button exactly as the app-bar version was covered. */
 #settingsBtn{
-  position:absolute;top:20px;right:12px;width:44px;height:44px;
+  position:fixed;z-index:40;
+  right:max(16px, env(safe-area-inset-right));
+  bottom:max(16px, env(safe-area-inset-bottom));
+  width:52px;height:52px;
   display:flex;align-items:center;justify-content:center;
   border:1px solid var(--line);background:var(--surface);
-  color:var(--ink);border-radius:var(--r);padding:0;
+  color:var(--ink);border-radius:14px;padding:0;
+  box-shadow:var(--e2);
   font:inherit;cursor:pointer;
+  transition:background-color var(--m-tap) ease-out,transform var(--m-tap) ease-out;
 }
-header.compact #settingsBtn{width:40px;height:40px;top:18px}
-#settingsBtn svg{width:22px;height:22px;display:block}
+#settingsBtn svg{width:24px;height:24px;display:block}
 #settingsBtn:hover{background:var(--surface2)}
-#settingsBtn:active{background:var(--surface2)}
+#settingsBtn:active{background:var(--surface2);transform:scale(.96)}
 #settingsBtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){
+  #settingsBtn{transition:none}
+  #settingsBtn:active{transform:none}
+}
 #themeBtn{
   border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--r);
   min-height:44px;min-width:44px;padding:0 13px;font:inherit;font-size:.8rem;cursor:pointer;
@@ -197,14 +220,21 @@ header.compact #settingsBtn{width:40px;height:40px;top:18px}
 }
 #setGrip{width:40px;height:4px;border-radius:2px;background:var(--line);margin:10px auto 8px}
 #setSheet h2{text-align:center;font-size:1.05rem;margin:2px 0 4px}
-.setrow{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:14px 0;border-top:1px solid var(--line)}
-.setrow:first-of-type{border-top:0}
+/* v19: rhythm, not redesign. Every row used to carry its own hairline, so the sheet read as
+   one long undifferentiated stack. The rows now sit on the 14px rhythm with no internal
+   rules, and a single hairline separates the two things the sheet actually does — change how
+   the app looks and sounds, versus everything about your data. */
+.setrow{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:14px 0;border-top:0}
+.setrow.setsplit{border-top:1px solid var(--line);margin-top:4px;padding-top:18px}
 .setrow .setlab{font-weight:700;font-size:.94rem;color:var(--ink);margin:0 0 2px}
 .setrow .sethelp{color:var(--muted);font-size:.81rem;margin:0;line-height:1.35}
 .setrow .setval{color:var(--muted);font-size:.81rem;white-space:nowrap;align-self:center}
 #resetConfirm{font-size:.85rem;color:var(--muted);margin:10px 0 0;line-height:1.5}
+/* 44px, not the 40 this shipped with since v14 — it was the one control in the app under
+   the 44px floor, found by sweeping every button during the v19 pass. Geometry only; the
+   sheet's structure is untouched. */
 #setClose{
-  position:absolute;top:10px;right:12px;width:40px;height:40px;line-height:1;
+  position:absolute;top:10px;right:12px;width:44px;height:44px;line-height:1;
   border:1px solid var(--line);background:var(--surface);color:var(--muted);
   border-radius:var(--r);font:inherit;font-size:1.1rem;cursor:pointer;
 }
@@ -246,14 +276,30 @@ header.compact #settingsBtn{width:40px;height:40px;top:18px}
 #refFoot{text-align:left;margin:18px 0 0}
 #refFoot summary{font-size:1rem;color:var(--ink)}
 #refFoot .refintro{text-align:center;color:var(--muted);font-size:.81rem;margin:0 0 14px;line-height:1.45}
+/* v19: the sources list is grouped and uniform. Each source is a two-part row — the
+   name/number with its official title, and a one-line description beneath where one is
+   confirmed — under a quiet alphabetical letter header. */
 .reflist{list-style:none;margin:0;padding:0}
-.reflist li{
-  font-size:.84rem;line-height:1.4;color:var(--ink);
-  padding:5px 0 5px 22px;text-indent:-22px;border-top:1px solid var(--line);
+/* The letter header: an accent letter and a hairline running to the right edge. Accent is
+   legitimate here — it is a section label, not a state, and nothing selectable wears it. */
+.reflist li.lh{
+  display:flex;align-items:center;gap:8px;
+  padding:9px 0 5px;border:0;
 }
-.reflist li:first-child{border-top:0}
-.reflist .num{font-weight:700;color:var(--ink)}
-.reflist .ttl{color:var(--muted)}
+.reflist li.lh .l{
+  font-size:.69rem;font-weight:800;letter-spacing:.1em;color:var(--accent);
+  flex:0 0 auto;line-height:1;
+}
+.reflist li.lh .rule{flex:1;height:1px;background:var(--line)}
+.reflist li.lh:first-child{padding-top:0}
+.reflist li.refrow{
+  padding:8px 0;border-top:1px solid var(--line);
+}
+/* The row immediately after a letter header owns the group's top edge, so it does not
+   draw a second rule right under the hairline. */
+.reflist li.lh + li.refrow{border-top:0}
+.reflist .p{display:block;font-size:.88rem;font-weight:700;color:var(--ink);line-height:1.35}
+.reflist .d{display:block;font-size:.78rem;color:var(--muted);line-height:1.35;margin-top:2px}
 /* Read-aloud control on the quiz question. */
 #speakBtn{
   border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--r);
@@ -376,8 +422,76 @@ h2{font-size:.98rem;margin:0 0 10px;font-weight:650;text-align:center}
   text-align:center;font-size:.69rem;font-weight:800;letter-spacing:.14em;
   text-transform:uppercase;color:var(--accent);margin:0 0 4px;
 }
-.lens{display:flex;gap:8px;flex-wrap:wrap}
-.lens .pick{flex:1 1 140px}
+/* ---------- Quiz length (v19) ----------
+   Three equal buttons gave the 25-question run no more weight than the 100-question one,
+   even though the short run is what most Soldiers reach for. Quick leads as a full-width
+   card; Medium and Long recede to a two-up secondary row.
+   The selected treatment is the SAME one a selected board row wears — accent-soft fill,
+   accent border, 3px spine, e2 — so "selected" reads identically everywhere in the app. */
+.lens{display:block}
+.qprimary{
+  position:relative;overflow:hidden;width:100%;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  font:inherit;color:var(--ink);text-align:left;cursor:pointer;
+  border:1px solid var(--line);background:var(--surface);border-radius:var(--r);
+  padding:16px 15px;min-height:52px;
+}
+.qprimary .t{font-weight:800;font-size:1.19rem;line-height:1.2}
+.qprimary .s{font-size:.81rem;color:var(--muted);margin-top:2px}
+/* Quick SELECTED: the standard selection treatment, spine and all. */
+.qprimary[aria-pressed="true"]{
+  border-color:var(--accent);background:var(--accent-soft);
+  box-shadow:inset 0 0 0 1px var(--accent),var(--e2);
+}
+.qprimary[aria-pressed="true"]::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);
+}
+/* Quick UNSELECTED — defined explicitly, because a full-width primary card with no stated
+   rest state is exactly where an accent tint leaks in and starts meaning "important"
+   instead of "chosen". When Medium or Long is the chosen length, Quick keeps its size and
+   its pill and drops every accent signal. --accent appears here only when Quick is what
+   the Soldier picked. */
+.qsec{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.qsm{
+  position:relative;overflow:hidden;
+  font:inherit;color:var(--ink);text-align:left;cursor:pointer;
+  border:1px solid var(--line);background:var(--surface);border-radius:var(--r);
+  padding:10px 12px;min-height:44px;
+}
+.qsm .t{font-weight:650;font-size:.88rem;display:block}
+.qsm .s{font-size:.75rem;color:var(--muted);display:block}
+.qsm[aria-pressed="true"]{
+  border-color:var(--accent);background:var(--accent-soft);
+  box-shadow:inset 0 0 0 1px var(--accent),var(--e2);
+}
+.qsm[aria-pressed="true"]::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);
+}
+/* The "Recommended" pill is NEUTRAL, not accent. The chunk-1 mockup drew it in --accent
+   with an accent border; the project-manager resolution overrides that and it is the right
+   call — an always-on accent pill on the quiz-length card would compete with accent-as-
+   selection on the one screen where selection is the whole point. Muted ink on --surface2
+   says "our suggestion" without borrowing a state colour. */
+.rec{
+  flex:0 0 auto;font-size:.66rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);background:var(--surface2);border:1px solid var(--line);
+  border-radius:999px;padding:3px 8px;white-space:nowrap;
+}
+@media (hover:hover) and (pointer:fine){
+  .qprimary:hover,.qsm:hover{background:var(--hover-bg);border-color:var(--hover-line)}
+  .qprimary[aria-pressed="true"]:hover,.qsm[aria-pressed="true"]:hover{
+    background:var(--accent-soft);border-color:var(--accent);
+  }
+}
+.qprimary,.qsm{
+  transition:background-color var(--m-state) ease-out,border-color var(--m-state) ease-out,
+             transform var(--m-tap) ease-out;
+}
+.qprimary:active,.qsm:active{transform:scale(.985)}
+@media (prefers-reduced-motion: reduce){
+  .qprimary,.qsm{transition:none}
+  .qprimary:active,.qsm:active{transform:none}
+}
 .btn{
   font:inherit;font-weight:600;cursor:pointer;border-radius:var(--r);
   border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);
@@ -389,7 +503,7 @@ h2{font-size:.98rem;margin:0 0 10px;font-weight:650;text-align:center}
 .btn.sm{padding:10px 13px;min-height:44px;font-size:.86rem}
 .btn:disabled{opacity:.45;cursor:not-allowed;filter:none}
 .row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
-.btn:focus-visible,.pick:focus-visible,.opt:focus-visible,#themeBtn:focus-visible,#settingsBtn:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn:focus-visible,.pick:focus-visible,.opt:focus-visible,.qprimary:focus-visible,.qsm:focus-visible,#themeBtn:focus-visible,#settingsBtn:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 details.cats{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);margin-bottom:12px;box-shadow:var(--shadow)}
 /* Two stacked centred lines — the heading, then the count under it — with the +/-
    disclosure marker still pinned to the right edge. */
@@ -597,19 +711,62 @@ details.cats[open] summary::after{content:"\2212"}
 .grow{animation:absgGrow 400ms ease-out backwards}
 .hist{font-size:.83rem;color:var(--muted);margin:0;padding-left:18px}
 .hist li{margin-bottom:3px}
-/* Fixed width so the label swap between Show and Hide cannot shift the row. */
-#revealBtn{min-width:9.5rem;text-align:center}
+/* ---------- Flashcards (v19) ----------
+   Was a flat --surface2 box with a hint line and a haphazard button cluster. Now it gets the
+   same field-manual card the quiz has, and the answer face borrows the graded question's
+   discipline so flipping a card teaches the way answering one does. */
+#revealBtn{text-align:center}
+.fhead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.fprog{height:4px;border-radius:999px;background:var(--line);overflow:hidden;margin-bottom:14px}
+.fprog>span{display:block;height:100%;width:0;background:var(--accent);border-radius:999px}
 .flashcard{
-  border:1px solid var(--line);background:var(--surface2);border-radius:var(--r);
-  padding:18px 14px;min-height:170px;display:flex;flex-direction:column;justify-content:center;gap:10px;
+  position:relative;
+  border:1px solid var(--line);background:var(--surface);border-radius:12px;box-shadow:var(--e2);
+  padding:22px 18px;min-height:210px;display:flex;flex-direction:column;justify-content:center;
   cursor:pointer;
 }
-.flashcard:hover{border-color:var(--accent)}
-.flashcard .fhint{font-size:.76rem;color:var(--muted);margin-top:2px}
-.flashcard .fq{font-size:1.06rem;font-weight:640}
-.flashcard .fa{font-size:1rem;color:var(--ok);font-weight:640}
-.flashcard .fe{font-size:.9rem;color:var(--ink)}
-.flashcard .fs{font-size:.8rem;color:var(--muted)}
+/* The whole card is still tappable to flip, so the hover cue stays neutral — accent here
+   would read as "selected". */
+@media (hover:hover) and (pointer:fine){
+  .flashcard:hover{border-color:var(--hover-line)}
+}
+.flashcard .fq{font-size:1.19rem;font-weight:650;line-height:1.35;text-align:center;text-wrap:balance}
+.flashcard .fhint{
+  position:absolute;left:0;right:0;bottom:12px;text-align:center;
+  font-size:.72rem;color:var(--muted);
+}
+/* Answer face: left-aligned and top-anchored, because it is now prose to read rather than a
+   single centred line. */
+.flashcard.answer{justify-content:flex-start;text-align:left}
+.flashcard .alabel{
+  font-size:.69rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ok);margin-bottom:6px;
+}
+.flashcard .fa{font-size:1.06rem;font-weight:650;line-height:1.35;margin-bottom:8px;color:var(--ink)}
+.flashcard .fe{font-size:.88rem;color:var(--ink);line-height:1.45}
+/* The same source line as the graded screen and the sources panel — one component, three
+   places, so a Soldier learns one pattern. */
+.flashcard .fs{
+  display:flex;align-items:center;gap:7px;font-size:.78rem;color:var(--muted);
+  margin-top:12px;padding-top:10px;border-top:1px solid var(--line);
+}
+.flashcard .fs svg{width:15px;height:15px;flex:none}
+.flashcard .fs b{color:var(--ink);font-weight:650}
+/* A cross-fade, not a 3D spin: the flip should register as a state change, not a trick.
+   One-shot on a resting base, so a card that never animates is simply the right face. */
+@keyframes absgFade{from{opacity:0}}
+.flashcard.flip{animation:absgFade var(--m-state) ease-out}
+.fnav{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.fghost{
+  display:block;width:100%;margin-top:10px;
+  font:inherit;font-size:.83rem;font-weight:600;color:var(--muted);
+  background:none;border:0;cursor:pointer;padding:12px 8px;min-height:44px;
+}
+.fghost:hover{color:var(--ink)}
+.fghost:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){
+  .flashcard.flip{animation:none}
+}
 footer{margin-top:22px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:.78rem;text-align:center}
 footer p{margin:0 0 8px}
 .linkbtn{
@@ -620,10 +777,23 @@ footer p{margin:0 0 8px}
 .linkbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 #resetConfirm{line-height:1.6}
 #resetConfirm .btn{margin:6px 4px 0}
+/* ---------- Screen mount (v19) ----------
+   The incoming screen rises 6px and fades in over --m-screen. From-only keyframe on a
+   resting base, the house pattern: the content's real position is the base rule, so a screen
+   whose animation never runs is simply there. Applied to the <main> screens and, inside the
+   quiz, to the question card, so advancing a question registers as movement forward. */
+@keyframes absgMount{from{opacity:0;transform:translateY(6px)}}
+.mount{animation:absgMount var(--m-screen) ease-out}
+@media (prefers-reduced-motion: reduce){
+  .mount{animation:none}
+}
 .hidden{display:none!important}
 #printArea{display:none}
 @media(max-width:380px){
-  .wrap{padding:12px 10px 36px} h1{font-size:1.15rem}
+  /* The bottom value keeps the floating Settings button's reserved lane. This rule used to
+     end in a plain 36px, which silently cancelled the reservation at exactly the width
+     where the screen is tightest and the overlap would bite hardest. */
+  .wrap{padding:12px 10px calc(84px + env(safe-area-inset-bottom))} h1{font-size:1.15rem}
   header{margin-left:-10px;margin-right:-10px;padding-left:10px;padding-right:10px}
   .qtext{font-size:1.09rem} .opt{padding:11px 10px} .pct{font-size:2.5rem}
   .pick{padding:11px 10px}
@@ -645,12 +815,15 @@ footer p{margin:0 0 8px}
 <body>
 <div class="wrap">
 
+<!-- The Settings control is a sibling of the app bar, not a child of it: from v19 it is a
+     fixed floating button in the bottom-right, so nesting it in the header would only
+     misrepresent the reading order. It stays first in the document so a keyboard reaches
+     it early, before the page content. Inline SVG, stroke currentColor — no icon font and
+     no image file, because the offline promise means the gear is part of the document. -->
+<button id="settingsBtn" type="button" aria-label="Settings" aria-expanded="false" aria-controls="settingsPanel">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3.2"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.6 15a1.65 1.65 0 0 0-1.51-1H2a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 3.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 8 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+</button>
 <header id="appbar">
-  <!-- Inline SVG, stroke currentColor. No icon font, no image file — the offline
-       promise means the gear has to be part of the document. -->
-  <button id="settingsBtn" type="button" aria-label="Settings" aria-expanded="false" aria-controls="settingsPanel">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3.2"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.6 15a1.65 1.65 0 0 0-1.51-1H2a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 3.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 8 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-  </button>
   <h1>Army Board Study Guide</h1>
   <p id="sub">Board and badge prep for Soldier of the Month, promotion, Audie Murphy, Drill Sergeant, and ESB</p>
   <div id="quizbar">
@@ -703,7 +876,8 @@ footer p{margin:0 0 8px}
       </button>
     </div>
 
-    <div class="setrow">
+    <!-- The group break: toggles above, everything about content and data below. -->
+    <div class="setrow setsplit">
       <div><p class="setlab">Content last audited</p></div>
       <span class="setval" id="setAudit"></span>
     </div>
@@ -811,9 +985,14 @@ footer p{margin:0 0 8px}
   <div class="card">
     <h2>Quiz Length</h2>
     <div class="lens" id="lens">
-      <button class="pick" type="button" data-len="25" aria-pressed="true"><span class="lbl"><b>Quick</b><small>25 Questions</small></span></button>
-      <button class="pick" type="button" data-len="50" aria-pressed="false"><span class="lbl"><b>Medium</b><small>50 Questions</small></span></button>
-      <button class="pick" type="button" data-len="100" aria-pressed="false"><span class="lbl"><b>Long</b><small>100 Questions</small></span></button>
+      <button class="qprimary" type="button" data-len="25" aria-pressed="true">
+        <span><span class="t">Quick</span><span class="s">25 questions · a fast run</span></span>
+        <span class="rec">Recommended</span>
+      </button>
+      <div class="qsec">
+        <button class="qsm" type="button" data-len="50" aria-pressed="false"><span class="t">Medium</span><span class="s">50 questions</span></button>
+        <button class="qsm" type="button" data-len="100" aria-pressed="false"><span class="t">Long</span><span class="s">100 questions</span></button>
+      </div>
     </div>
     <label class="toggle"><input type="checkbox" id="timerChk"><span>Time This Quiz</span></label>
     <p class="hint" id="poolInfo"></p>
@@ -840,7 +1019,7 @@ footer p{margin:0 0 8px}
     <div class="bar"><div id="prog"></div></div>
     <span class="pctlabel" id="progPct">0%</span>
   </div>
-  <div class="card">
+  <div class="card" id="qcard">
     <div class="qhead">
       <span class="tag" id="qcat"></span>
       <!-- The position lives in the compact app bar from v16; this span now carries only
@@ -906,21 +1085,21 @@ footer p{margin:0 0 8px}
 
 <main id="flash" class="hidden">
   <div class="card">
-    <div class="qhead">
+    <div class="fhead">
       <span class="tag" id="fcat"></span>
       <span class="counter" id="fcounter"></span>
     </div>
+    <div class="fprog"><span id="fprogFill"></span></div>
     <div class="flashcard" id="fcard"></div>
-    <div class="row" style="margin-top:14px;justify-content:flex-start">
-      <button class="btn" type="button" id="revealBtn">Show Answer</button>
-      <!-- "Previous", not "Back": it sits a few pixels from "Back to Main Menu" and the
-           two read as the same action. -->
-      <button class="btn sec" type="button" id="fprev">Previous</button>
-      <button class="btn sec" type="button" id="fnext">Next</button>
+    <!-- Controls ordered by weight: the primary action, then paired navigation, then the
+         way out as a quiet ghost. The arrows retire the old two-"Back" ambiguity — until
+         v19 "Previous" and "Back to Main Menu" sat a few pixels apart and read alike. -->
+    <button class="btn" type="button" id="revealBtn" style="width:100%;margin-top:14px">Show Answer</button>
+    <div class="fnav">
+      <button class="btn sec" type="button" id="fprev">&#8249; Previous</button>
+      <button class="btn sec" type="button" id="fnext">Next &#8250;</button>
     </div>
-    <div class="row" style="margin-top:8px;justify-content:flex-start">
-      <button class="btn sec sm" type="button" id="fexit">Back to Main Menu</button>
-    </div>
+    <button class="fghost" type="button" id="fexit">Back to Main Menu</button>
   </div>
 </main>
 
@@ -1552,7 +1731,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v18";
+var APP_VERSION = "v19";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -2024,8 +2203,57 @@ var SOURCE_TITLES = {
   "UCMJ Article 15":"Nonjudicial Punishment",
   "UCMJ Article 31":"Rights Against Self-Incrimination",
   "UCMJ Article 86":"Absence Without Leave",
-  "UCMJ Article 92":"Failure to Obey an Order or Regulation"
+  "UCMJ Article 92":"Failure to Obey an Order or Regulation",
+  /* The acronym's own expansion, so the sources list stops showing four bare letters. */
+  "TCCC":"Tactical Combat Casualty Care"
 };
+/* ---- v19: display labels and descriptions for the sources list ----
+   Capitalization is fixed at DISPLAY time, not in the bank. The lowercase forms
+   ("Army family programs") are the literal `q.s` values on hundreds of questions, and the
+   bank is not touched by this build — rewriting them there would churn the citation on
+   every affected question and move the distinct-source set the self-test guards. A display
+   map gets the same reading with none of that risk.
+
+   Written out rather than run through an algorithmic title-caser on purpose: an algorithm
+   mangles "NCO", "U.S.", "army.mil", and "as amended". This is content, so it is explicit. */
+var SOURCE_LABEL = {
+  "Army family programs":"Army Family Programs",
+  "Army heritage":"Army Heritage",
+  "Army NCO programs":"Army NCO Programs",
+  "Army safety program":"Army Safety Program",
+  "Audie Murphy biography":"Audie Murphy Biography",
+  "Medal of Honor citation":"Medal of Honor Citation",
+  "U.S. history":"U.S. History",
+  "army.mil (ESB announcement)":"army.mil (ESB Announcement)"
+};
+/* One-line descriptions. These are CONTENT and follow the accuracy rule: only entries
+   confirmed by the Art Director's seeded set ship here. Every other source renders as its
+   name and title alone, which is the correct degradation — a bare correct name beats a
+   wrong gloss, and an invented description in a study aid is worse than a blank. The
+   remaining sources are an open content item for the audit lane, not a gap to fill by
+   guessing. */
+var SOURCE_DESC = {
+  "ADP 6-22":"The Army's foundational leadership doctrine.",
+  "AR 600-20":"Command authority, EO, and conduct policy.",
+  "AR 670-1":"Uniform and grooming standards.",
+  "Army family programs":"Army Community Service and family readiness.",
+  "Army heritage":"Army history, customs, and lineage.",
+  "Audie Murphy biography":"The life and service of Audie Murphy.",
+  "Code of Conduct":"The six articles for members of the Armed Forces.",
+  "FM 7-22":"Physical readiness training and fitness.",
+  "TC 3-21.5":"Movements, formations, and ceremonies.",
+  "TCCC":"Point-of-injury casualty care.",
+  "The Drill Sergeant Creed":"The creed, verbatim.",
+  "TR 350-16 (27 March 2023)":"Drill Sergeant selection, training, and duties."
+};
+function labelFor(src){ return SOURCE_LABEL[src] || src; }
+/* Group and sort on the first token of the DISPLAYED label, so a composite citation
+   ("ADP 6-22 / AR 608-1") files under its first publication rather than drifting. */
+function sortKeyFor(src){ return labelFor(src).split(" / ")[0]; }
+function letterFor(src){
+  var c = sortKeyFor(src).charAt(0).toUpperCase();
+  return /[A-Z]/.test(c) ? c : "#";
+}
 /* A citation like "ADP 6-22 / AR 608-1" is two publications. Split it, look each up,
    and join the titles the same way, so a composite still tells you what it is. */
 function titleFor(src){
@@ -2034,22 +2262,52 @@ function titleFor(src){
   var parts = src.split(" / ").map(function(p){ return SOURCE_TITLES[p] || ""; });
   return parts.every(function(p){ return p; }) ? parts.join(" / ") : "";
 }
-function buildRefs(){
+/* Whether the list is currently filtered to one quiz's citations. The self-test's
+   one-row-per-distinct-source assertion only holds for the full list, so it checks this. */
+var refsScoped = false;
+/* Build the sources list. Pass an array of citation strings to scope it to those; pass
+   nothing for the whole bank.
+
+   Letter headers group the 77 sources so the panel scans by section instead of blurring
+   into one column. Letters with no entries are skipped — an empty "J" is noise, not
+   structure. The grouping is presentation only: the set of sources is unchanged, and each
+   source still renders exactly one row. */
+function buildRefs(only){
   var list=distinctSources(), host=$("refList");
+  if(only){
+    var keep={}; only.forEach(function(s){ keep[s]=1; });
+    list = list.filter(function(r){ return keep[r.src]; });
+  }
+  refsScoped = !!only;
+  list.sort(function(a,b){
+    return sortKeyFor(a.src).localeCompare(sortKeyFor(b.src)) || a.src.localeCompare(b.src);
+  });
   host.innerHTML="";
+  var letter=null;
   list.forEach(function(r){
+    var L=letterFor(r.src);
+    if(L!==letter){
+      letter=L;
+      var lh=document.createElement("li");
+      lh.className="lh";
+      lh.setAttribute("aria-hidden","true");   // a divider, not a list item a reader needs
+      var ls=document.createElement("span"); ls.className="l"; ls.textContent=L;
+      var rule=document.createElement("span"); rule.className="rule";
+      lh.appendChild(ls); lh.appendChild(rule);
+      host.appendChild(lh);
+    }
     var li=document.createElement("li");
-    var num=document.createElement("span"); num.className="num"; num.textContent=r.src;
-    li.appendChild(num);
-    var t=titleFor(r.src);
-    if(t){
-      var ttl=document.createElement("span"); ttl.className="ttl"; ttl.textContent=" — "+t;
-      li.appendChild(ttl);
+    li.className="refrow";
+    var p=document.createElement("span"); p.className="p";
+    p.textContent = labelFor(r.src) + (titleFor(r.src) ? " — "+titleFor(r.src) : "");
+    li.appendChild(p);
+    var d=SOURCE_DESC[r.src];
+    if(d){
+      var ds=document.createElement("span"); ds.className="d"; ds.textContent=d;
+      li.appendChild(ds);
     }
     host.appendChild(li);
   });
-  /* The distinct count is still computed and still asserted against the rendered list
-     in the self-test. v14 removed the number from the screen, not the guard. */
   return list.length;
 }
 buildRefs();
@@ -2066,11 +2324,32 @@ function auditDateLabel(iso){
   if(mo<1||mo>12) return iso;
   return MONTHS[mo-1]+" "+parseInt(m[3],10)+", "+m[1];
 }
-(function(){
+/* The intro line has to tell the truth about which list is on screen. Once the panel can be
+   scoped to a single quiz, a fixed "every publication a question cites" would be wrong for
+   most of the time it is open. */
+function setRefIntro(){
   var label=auditDateLabel(AUDIT_DATE);
-  $("refAudit").textContent="Every regulation and publication a question cites. Built from the questions, so it can't drift. Content last audited "+label+".";
-  $("setAudit").textContent=label;
+  $("refAudit").textContent = refsScoped
+    ? "The publications cited by the questions in this quiz. Content last audited "+label+"."
+    : "Every regulation and publication a question cites. Built from the questions, so it can't drift. Content last audited "+label+".";
+}
+(function(){
+  setRefIntro();
+  $("setAudit").textContent=auditDateLabel(AUDIT_DATE);
 })();
+/* Scope the sources panel to the quiz in play, or back to the whole bank. One function so a
+   screen can never be left showing the wrong list — call it with the quiz on the way in and
+   with nothing on the way out, exactly like compactBar(). */
+function scopeRefs(list){
+  if(list && list.length){
+    var seen={}, only=[];
+    list.forEach(function(q){ if(q.s && !seen[q.s]){ seen[q.s]=1; only.push(q.s); } });
+    buildRefs(only);
+  } else {
+    buildRefs();
+  }
+  setRefIntro();
+}
 
 /* ---------------- feedback links ---------------- */
 /* Plain anchors. The mail client or the browser handles them; the app never
@@ -2251,6 +2530,15 @@ function compactBar(on, boardLabel){
   if(on){ $("qbBoard").textContent=boardLabel||""; h.classList.add("compact"); }
   else { h.classList.remove("compact"); }
 }
+/* Re-trigger the mount animation on an element. The class has to come off and go back on
+   around a forced reflow, because these are long-lived elements that are shown and hidden
+   rather than created — without the reflow the animation only ever plays once per page load. */
+function mount(el){
+  if(!el) return;
+  el.classList.remove("mount");
+  void el.offsetWidth;
+  el.classList.add("mount");
+}
 function beginQuiz(list, runMode){
   if(!list || !list.length) return false;
   mode = runMode || "quiz";
@@ -2261,7 +2549,11 @@ function beginQuiz(list, runMode){
   $("sub").textContent = (mode==="quiz" ? scopeLabel(selectedCats()) : BOARDS[board].label) + suffix;
   $("home").classList.add("hidden"); $("results").classList.add("hidden");
   $("flash").classList.add("hidden"); $("quiz").classList.remove("hidden");
+  mount($("quiz"));
   compactBar(true, BOARDS[board].label + suffix);
+  /* The Sources panel lives in the always-visible footer, so mid-quiz it should answer
+     "what is THIS quiz built on", not list all 77. */
+  scopeRefs(quiz);
   showSpeakRow();
   if(tick){ clearInterval(tick); tick=null; }
   $("clock").classList.toggle("hidden", !useTimer);
@@ -2328,6 +2620,11 @@ function render(){
     host.appendChild(b);
   });
   $("nextBtn").textContent = (idx===quiz.length-1) ? "See Results" : "Next";
+  /* Question to question is a screen change too — the card mounts rather than swapping its
+     text in place, so advancing reads as movement forward. Skipped on the first question,
+     which already rides the whole-screen mount from beginQuiz; animating both would fade a
+     card inside a fading screen. */
+  if(idx>0) mount($("qcard"));
 }
 function answer(chosen, btn){
   if(locked) return;
@@ -2461,6 +2758,7 @@ function finish(){
   stopSpeech(); $("speakRow").classList.add("hidden");
   compactBar(false);
   $("quiz").classList.add("hidden"); $("results").classList.remove("hidden");
+  mount($("results"));
   window.scrollTo(0,0);
 }
 /* The readiness panel. Called after the run is recorded, so `cur` already includes this
@@ -2515,6 +2813,8 @@ function toMenu(){
   $("quiz").classList.add("hidden"); $("results").classList.add("hidden"); $("flash").classList.add("hidden");
   $("home").classList.remove("hidden");
   $("sub").textContent="Board and badge prep for Soldier of the Month, promotion, Audie Murphy, Drill Sergeant, and ESB";
+  mount($("home"));
+  scopeRefs();                 // back to the whole bank on the way out
   refreshMissedBtn(); showHistory(); updatePool(); paintReadiness(); window.scrollTo(0,0);
 }
 window.addEventListener("popstate", function(){
@@ -2532,26 +2832,50 @@ function startFlash(){
   $("sub").textContent="Flashcard Review — "+scopeLabel(cats);
   stopSpeech(); $("speakRow").classList.add("hidden");
   compactBar(false);
+  /* Flashcards are not a quiz, so the panel goes back to the full list rather than keeping
+     a previous quiz's scope, which would silently be about the wrong set of questions. */
+  scopeRefs();
   $("home").classList.add("hidden"); $("flash").classList.remove("hidden");
+  mount($("flash"));
   try{ history.pushState({view:"flash"},""); }catch(e){}
   renderFlash(); window.scrollTo(0,0);
 }
-function flipFlash(){ fShown=!fShown; renderFlash(); }
-function renderFlash(){
+function flipFlash(){ fShown=!fShown; renderFlash(true); }
+/* The drawn manual glyph used by the graded verdict, the sources footer and now the
+   flashcard answer. Built here rather than copied into the markup three times. */
+function sourceLine(src){
+  var wrap=document.createElement("div"); wrap.className="fs";
+  wrap.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2z"></path><path d="M18 16H7a2 2 0 0 0-2 2"></path></svg>';
+  var sr=document.createElement("span"); sr.className="sronly"; sr.textContent="Source: ";
+  var txt=document.createElement("span");
+  var num=document.createElement("b"); num.textContent=src; txt.appendChild(num);
+  var t=titleFor(src);
+  if(t) txt.appendChild(document.createTextNode(" · "+t));
+  wrap.appendChild(sr); wrap.appendChild(txt);
+  return wrap;
+}
+function renderFlash(flipped){
   var q=flashSet[fIdx];
   if(!q) return;
-  $("fcat").textContent=q.c;
+  $("fcat").textContent=shortCat(q.c);
   $("fcounter").textContent="Card "+(fIdx+1)+" of "+flashSet.length;
+  $("fprogFill").style.width = Math.round((fIdx+1)/flashSet.length*100)+"%";
   var host=$("fcard"); host.innerHTML="";
-  var qq=document.createElement("div"); qq.className="fq"; qq.textContent=q.q; host.appendChild(qq);
+  host.className = "flashcard" + (fShown ? " answer" : "");
   if(fShown){
+    var lab=document.createElement("div"); lab.className="alabel"; lab.textContent="Answer"; host.appendChild(lab);
     var a=document.createElement("div"); a.className="fa"; a.textContent=q.a; host.appendChild(a);
     var e=document.createElement("div"); e.className="fe"; e.textContent=q.e; host.appendChild(e);
-    var s=document.createElement("div"); s.className="fs"; s.textContent="Source: "+q.s; host.appendChild(s);
+    host.appendChild(sourceLine(q.s));
+  } else {
+    var qq=document.createElement("div"); qq.className="fq"; qq.textContent=q.q; host.appendChild(qq);
+    var h=document.createElement("div"); h.className="fhint";
+    h.textContent="Tap the card to reveal the answer";
+    host.appendChild(h);
   }
-  var h=document.createElement("div"); h.className="fhint";
-  h.textContent = fShown ? "Tap the card to hide the answer" : "Tap the card to reveal the answer";
-  host.appendChild(h);
+  /* Only a flip cross-fades. Moving to the next card is a new card, not a flip, so it
+     should not fade — that would read as hesitation on every tap of Next. */
+  if(flipped){ void host.offsetWidth; host.classList.add("flip"); }
   $("revealBtn").textContent = fShown ? "Hide Answer" : "Show Answer";
 }
 
@@ -2643,8 +2967,13 @@ function selfTest(){
   (function(){
     var distinct={}, n=0;
     QUESTIONS.forEach(function(q){ if(q.s && !distinct[q.s]){ distinct[q.s]=1; n++; } });
-    var rendered=$("refList") ? $("refList").children.length : -1;
-    if(rendered!==n) errs.push("references: list shows "+rendered+" entries but the bank cites "+n+" distinct sources");
+    /* Counts `.refrow`, not raw children: from v19 the list also carries alphabetical letter
+       headers as siblings, so `children.length` would compare rows-plus-headers against a
+       source count and fail on a correct render. The assertion's meaning is unchanged — one
+       rendered row per distinct source — and it is skipped while the list is scoped to a
+       single quiz's citations, where a shorter list is the whole point. */
+    var rendered=$("refList") ? $("refList").querySelectorAll(".refrow").length : -1;
+    if(!refsScoped && rendered!==n) errs.push("references: list shows "+rendered+" rows but the bank cites "+n+" distinct sources");
     /* v14 moved the list to the footer and dropped the visible counter. The count is
        still computed and still asserted above — only the digit left the screen. */
     var untitled=[];
@@ -2694,10 +3023,13 @@ Array.prototype.forEach.call($("boardPicks").querySelectorAll(".pick"),function(
     }
   });
 });
-Array.prototype.forEach.call($("lens").querySelectorAll(".pick"),function(b){
+/* Quiz length. Selected by `data-len` rather than by class, so the primary Quick card and
+   the two secondary buttons are driven by one loop — and exactly one of the three ever
+   carries aria-pressed="true", which is what the accent treatment hangs off. */
+Array.prototype.forEach.call($("lens").querySelectorAll("[data-len]"),function(b){
   b.addEventListener("click", function(){
     chosenLen=parseInt(b.getAttribute("data-len"),10)||25;
-    Array.prototype.forEach.call($("lens").querySelectorAll(".pick"),function(o){ o.setAttribute("aria-pressed", o===b?"true":"false"); });
+    Array.prototype.forEach.call($("lens").querySelectorAll("[data-len]"),function(o){ o.setAttribute("aria-pressed", o===b?"true":"false"); });
     updatePool();
   });
 });
