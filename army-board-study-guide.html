@@ -436,8 +436,21 @@ h2{font-size:.98rem;margin:0 0 10px;font-weight:650;text-align:center}
   border:1px solid var(--line);background:var(--surface);border-radius:var(--r);
   padding:16px 15px;min-height:52px;
 }
-.qprimary .t{font-weight:800;font-size:1.19rem;line-height:1.2}
-.qprimary .s{font-size:.81rem;color:var(--muted);margin-top:2px}
+/* v20: the Quick title matches the Medium/Long titles exactly (.qsm .t below) rather than
+   running at 1.19rem/800. Quick's prominence comes from the full-width card, the
+   "Recommended" pill, and the selected accent treatment — it does not need a bigger title
+   as well, and on a real device the heavier one read as shouting next to the other two.
+   Line-height is left to inherit, which is what .qsm .t does, so the three titles are one
+   family. 4px between title and count, the app's rhythm (same as .qb-pos), replacing a 2px
+   gap that read as touching.
+
+   The `display:block` on both is load-bearing and was missing since v19: these are spans
+   inside a flex item, so without it they laid out INLINE and the card read "Quick25
+   questions" on a single line — and a vertical margin does nothing on an inline box, so the
+   4px below would have been inert. .qsm .t and .qsm .s already carry display:block, which is
+   why the secondary buttons stacked correctly and Quick did not. */
+.qprimary .t{display:block;font-weight:650;font-size:.88rem}
+.qprimary .s{display:block;font-size:.81rem;color:var(--muted);margin-top:4px}
 /* Quick SELECTED: the standard selection treatment, spine and all. */
 .qprimary[aria-pressed="true"]{
   border-color:var(--accent);background:var(--accent-soft);
@@ -986,7 +999,7 @@ footer p{margin:0 0 8px}
     <h2>Quiz Length</h2>
     <div class="lens" id="lens">
       <button class="qprimary" type="button" data-len="25" aria-pressed="true">
-        <span><span class="t">Quick</span><span class="s">25 questions · a fast run</span></span>
+        <span><span class="t">Quick</span><span class="s">25 questions</span></span>
         <span class="rec">Recommended</span>
       </button>
       <div class="qsec">
@@ -1731,7 +1744,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v19";
+var APP_VERSION = "v20";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
