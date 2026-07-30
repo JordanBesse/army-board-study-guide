@@ -123,7 +123,11 @@ header.compact #quizbar{display:block}
   font:inherit;cursor:pointer;
   transition:background-color var(--m-tap) ease-out,transform var(--m-tap) ease-out;
 }
-#settingsBtn svg{width:24px;height:24px;display:block}
+/* v21: 28px against the gear's widened 28-unit viewBox, so one user unit is one pixel and
+   the mark renders at the size it was always meant to be (ink 25x24px) instead of being
+   scaled down to fit the extra margin. Centred by the flex rules above, ~13.5px clear on
+   each side inside the 52px button. See the viewBox note on the button markup. */
+#settingsBtn svg{width:28px;height:28px;display:block}
 #settingsBtn:hover{background:var(--surface2)}
 #settingsBtn:active{background:var(--surface2);transform:scale(.96)}
 #settingsBtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -838,7 +842,14 @@ footer p{margin:0 0 8px}
      it early, before the page content. Inline SVG, stroke currentColor — no icon font and
      no image file, because the offline promise means the gear is part of the document. -->
 <button id="settingsBtn" type="button" aria-label="Settings" aria-expanded="false" aria-controls="settingsPanel">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3.2"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.6 15a1.65 1.65 0 0 0-1.51-1H2a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 3.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 8 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+  <!-- viewBox widened from "0 0 24 24" to "-2.5 -2 28 28" in v21. The gear's geometry runs
+       x 0..23 and y 1..23, but at stroke-width 2 the painted stroke reaches x -1, and an
+       SVG clips its own content at the viewBox edge — so exactly one unit was shaved off
+       the left of the gear on every screen since v19. Measured, not guessed: the ink extent
+       with stroke was x -1..24 against a 0..24 box. The box now surrounds the ink and
+       centres it (ink centre 11.5, 12 = box centre), so nothing is cut and the mark is
+       optically centred rather than merely box-centred. The path itself is untouched. -->
+  <svg viewBox="-2.5 -2 28 28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3.2"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.6 15a1.65 1.65 0 0 0-1.51-1H2a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 3.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 8 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
 </button>
 <header id="appbar">
   <h1>Army Board Study Guide</h1>
@@ -963,7 +974,7 @@ footer p{margin:0 0 8px}
           <span class="lbl"><b>Specialist to Sergeant</b></span>
           <span class="rdy" data-r="p1"><span class="band"></span><span class="sronly"></span><span class="track"><span class="fill"></span></span></span></button>
         <button class="pick" type="button" data-board="p2" aria-pressed="false">
-          <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round"><path d="M6 8.5l6-4 6 4M6 11.5l6-4 6 4M6 14.5l6-4 6 4"/><path d="M5.5 17.2Q12 19.8 18.5 17.2"/></svg></span>
+          <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round"><path d="M6 8.5l6-4 6 4M6 11.5l6-4 6 4M6 14.5l6-4 6 4"/><path d="M6 14.5Q12 18.4 18 14.5"/></svg></span>
           <span class="lbl"><b>Sergeant to Staff Sergeant</b></span>
           <span class="rdy" data-r="p2"><span class="band"></span><span class="sronly"></span><span class="track"><span class="fill"></span></span></span></button>
       </div>
@@ -1748,7 +1759,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v20";
+var APP_VERSION = "v21";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
