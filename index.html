@@ -4640,10 +4640,16 @@ function openReader(id){
     if(!meta.url) throw new Error("not-readable");
     if(navigator.onLine === false) throw new Error("offline-unsaved");
     rdSource = "stream";
-    /* rangeChunkSize is the request granularity. 256 KB keeps the request count sane on a
-       300-page publication without pulling far more than a page needs. */
+    /* disableStream:true is what makes this genuinely a range fetch. Measured against the
+       live host: with streaming left on, pdf.js opens one progressive full-file stream and
+       never falls back to ranges — a 12.1 MB publication pulled all 13 MB even though the
+       host advertises Accept-Ranges and answers 206 correctly. Turning the stream off leaves
+       only the range transport, so it fetches the tail for the cross-reference table and
+       then just the chunks the visible pages need. disableAutoFetch stops it quietly
+       back-filling the rest once open. rangeChunkSize is the request granularity: 256 KB
+       keeps the request count sane on a 300-page pub without over-pulling per page. */
     return window.pdfjsLib.getDocument({
-      url: meta.url, rangeChunkSize: 262144, disableAutoFetch: true, disableStream: false
+      url: meta.url, rangeChunkSize: 262144, disableAutoFetch: true, disableStream: true
     }).promise;
   }).then(function(doc){
     rdDoc = doc;
