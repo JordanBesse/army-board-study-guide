@@ -39,6 +39,7 @@
      colour alone cannot. */
   --page:#ffffff;
   --mark:rgba(201,167,58,.34); --mark-edge:rgba(150,120,20,.85);
+  --sel-wash:rgba(79,115,80,.30);
   --m-tap:90ms; --m-state:140ms;
   /* Screen mount: menu -> quiz, question -> question, -> results. The whole motion budget
      for navigation, and it registers as responsiveness rather than as a slide-show. */
@@ -75,6 +76,7 @@
      "Night read" is the opt-in for low light. */
   --page:#ffffff;
   --mark:rgba(214,180,80,.34); --mark-edge:rgba(214,180,80,.9);
+  --sel-wash:rgba(136,171,139,.34);
   --scrim:rgba(0,0,0,.55);
   /* Measured on this band: --ink 13.2:1, --muted 6.3:1. Both clear AA. This is the
      whole dark-identity change — no verdict colour and no accent moves. */
@@ -381,11 +383,24 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 /* ---- Markup overlay (v28, chunk 4) ----
    Three layers over the page canvas, in order: the wash, the text layer that carries the
    selection, and the note tabs. The PDF itself is never touched. */
+/* opacity:1, deliberately (v33). It was 0, and that is the whole reason drag-to-select
+   looked broken. Selecting always worked — a real click-drag captured the passage and
+   raised the Highlight/Note toolbar, measured — but a browser paints its selection
+   highlight ON this layer, so at opacity 0 the wash was transparent too and a Soldier
+   dragging across a line saw nothing at all happen. The glyphs are hidden the way pdf.js
+   hides them, with transparent TEXT rather than a transparent layer, which leaves the
+   selection free to show while the type stays invisible over the raster.
+   user-select is stated rather than inherited: iOS Safari is the platform this has to work
+   on, and "auto" there is one stray ancestor rule away from "none". */
 .rdtext{position:absolute;inset:0;overflow:hidden;line-height:1;
-  opacity:0;                       /* invisible but selectable — it exists to be selected */
-  z-index:2}
-.rdtext span{position:absolute;white-space:pre;transform-origin:0 0;color:transparent;cursor:text}
-#reader[data-markup="1"] .rdtext{opacity:0}
+  opacity:1;z-index:2;
+  -webkit-user-select:text;user-select:text}
+.rdtext span{position:absolute;white-space:pre;transform-origin:0 0;color:transparent;cursor:text;
+  -webkit-user-select:text;user-select:text}
+/* color stays transparent under selection: without it the UA repaints the selected glyphs
+   in its own colour and they double over the rasterised page. */
+.rdtext ::selection{background:var(--sel-wash);color:transparent}
+.rdtext ::-moz-selection{background:var(--sel-wash);color:transparent}
 .rdmarks{position:absolute;inset:0;pointer-events:none;z-index:1}
 /* The wash is --mark, deliberately outside the accent / ok / no lanes, so a highlight can
    never read as "selected" or "graded". The under-edge is the second, non-colour signal. */
@@ -394,15 +409,15 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 /* A noted passage also gets a margin tab, because colour is never the only signal. */
 .rdtab{position:absolute;left:-2px;width:4px;border-radius:2px;background:var(--mark-edge);z-index:3}
 /* Selection toolbar — a small dark popover, per the chunk. */
-#mkBar{position:fixed;z-index:90;display:flex;gap:2px;padding:4px;
+#mkBar,#mkPop{position:fixed;z-index:90;display:flex;gap:2px;padding:4px;
   background:#1d2a1f;border-radius:12px;box-shadow:var(--e2)}
-#mkBar.hidden{display:none}
-#mkBar button{min-height:44px;padding:0 14px;display:flex;align-items:center;gap:7px;
+#mkBar.hidden,#mkPop.hidden{display:none}
+#mkBar button,#mkPop button{min-height:44px;padding:0 14px;display:flex;align-items:center;gap:7px;
   background:none;border:0;color:#eef2ec;font:inherit;font-size:.82rem;font-weight:650;
   border-radius:9px;cursor:pointer}
-#mkBar button svg{width:17px;height:17px}
-#mkBar button:hover{background:rgba(255,255,255,.12)}
-#mkBar button:focus-visible{outline:2px solid #eef2ec;outline-offset:-2px}
+#mkBar button svg,#mkPop button svg{width:17px;height:17px}
+#mkBar button:hover,#mkPop button:hover{background:rgba(255,255,255,.12)}
+#mkBar button:focus-visible,#mkPop button:focus-visible{outline:2px solid #eef2ec;outline-offset:-2px}
 /* Note editor — a bottom sheet, the same shape as the outline sheet. */
 #mkSheet{position:fixed;inset:0;z-index:95;display:flex;align-items:flex-end;justify-content:center}
 #mkSheet.hidden{display:none}
@@ -425,19 +440,40 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
   font:inherit;font-size:.8rem;min-height:44px;cursor:pointer;border-radius:var(--r)}
 #mkDelete:hover{background:var(--hover-bg)}
 /* Marks jump-list rows inside the outline sheet. */
+/* v33: the row is a container, not a button. A checkbox cannot live inside a <button> —
+   nesting interactive content is invalid and the checkbox would swallow the jump — so the
+   row now holds the select box and a separate jump button beside it. */
 .mkitem{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;
-  background:none;border:0;border-bottom:1px solid var(--line);padding:11px 4px;
+  border-bottom:1px solid var(--line);padding:0}
+/* The box is 18px; the TARGET is 44. Measured at 360px, the bare checkbox came out 18x18,
+   which is under the tap-size rule the rest of the app holds to — so the label around it
+   carries the size and the checkbox just sits in the middle of it. */
+.mkselbox{flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  width:44px;min-height:44px;margin-top:4px;cursor:pointer}
+.mksel{width:18px;height:18px;margin:0;accent-color:var(--accent);cursor:pointer}
+.mkselbox:focus-within{outline:2px solid var(--accent);outline-offset:-2px;border-radius:var(--r)}
+.mkgo{display:flex;gap:10px;align-items:flex-start;flex:1;min-width:0;text-align:left;
+  background:none;border:0;padding:11px 4px;
   font:inherit;color:var(--ink);cursor:pointer;min-height:44px}
-.mkitem:hover{background:var(--hover-bg)}
-.mkitem:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.mkgo:hover{background:var(--hover-bg)}
+.mkgo:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+/* Deleting is deliberately NOT painted in --no. That lane means "graded wrong" everywhere
+   else in the app, and a destructive control borrowing it would teach the colour a second
+   meaning. Same reasoning as the note sheet's own Delete, which is muted ink. */
+.mkbulk{display:flex;justify-content:flex-end;padding:10px 0 2px}
+#mkBulkDel{min-height:44px;padding:0 14px;border-radius:var(--r);border:1px solid var(--line);
+  background:none;font:inherit;font-size:.8rem;font-weight:650;color:var(--ink);cursor:pointer}
+#mkBulkDel:hover{background:var(--hover-bg)}
+#mkBulkDel:disabled{color:var(--dim-ink);cursor:default;background:none}
+#mkBulkDel:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .mkswatch{flex:0 0 auto;width:16px;height:16px;border-radius:4px;background:var(--mark);
   border:1px solid var(--mark-edge);margin-top:2px}
 .mkswatch.note{display:flex;align-items:center;justify-content:center}
 .mkswatch.note svg{width:11px;height:11px;color:var(--mark-edge)}
-.mkitem .ex{flex:1;min-width:0;font-size:.81rem;line-height:1.35}
-.mkitem .ex b{display:block;font-weight:400;color:var(--ink);
+.mkgo .ex{flex:1;min-width:0;font-size:.81rem;line-height:1.35}
+.mkgo .ex b{display:block;font-weight:400;color:var(--ink);
   overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-.mkitem .ex i{font-style:normal;color:var(--muted);font-size:.74rem}
+.mkgo .ex i{font-style:normal;color:var(--muted);font-size:.74rem}
 .mknone{font-size:.8rem;color:var(--muted);padding:12px 4px}
 /* ---- Sources -> library (v29). Quiet: the sources list is a reference, not a shop. ---- */
 .refregs{display:flex;align-items:center;gap:14px;margin-top:2px}
@@ -1547,6 +1583,14 @@ footer p{margin:0 0 8px}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 4h11l4 4v12H5z"></path><path d="M16 4v4h4"></path><path d="M8.5 12.5h7M8.5 16h4.5"></path></svg>Note
   </button>
 </div>
+<div id="mkPop" class="hidden" role="toolbar" aria-label="Selected mark">
+  <button id="mkPopNote" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 4h11l4 4v12H5z"></path><path d="M16 4v4h4"></path><path d="M8.5 12.5h7M8.5 16h4.5"></path></svg>Note
+  </button>
+  <button id="mkPopDel" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"></path></svg>Remove
+  </button>
+</div>
 <div id="mkSheet" class="hidden" role="dialog" aria-modal="true" aria-label="Note">
   <div id="mkScrim"></div>
   <div id="mkPanel">
@@ -2197,7 +2241,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v32";
+var APP_VERSION = "v33";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -4745,6 +4789,8 @@ function rdOpenSheet(focus){
    resolve against. Normalized rects are carried alongside so the wash can be painted
    without re-searching the text on every repaint.                                        */
 var mkSel = null, mkEditing = null, mkTextCache = {};
+var mkPageMarks = {},        /* page number -> the marks on it, for tap hit-testing */
+    mkPicked = null;         /* the placed mark the popover is currently acting on */
 
 function markEnable(){ return true; }   /* presence of this function is what shows the toggle */
 
@@ -4881,18 +4927,67 @@ function markShowBar(){
 }
 function markHideBar(){ $("mkBar").classList.add("hidden"); }
 
+/* Do two normalized rect sets cover substantially the same passage? This is what makes the
+   highlight a toggle. Overlap is measured against the SMALLER of the two areas, so selecting
+   one word inside an already-highlighted sentence still counts as hitting it — which is the
+   behaviour of every office highlighter and the thing a Soldier will actually do. */
+function markRectsOverlap(a, b){
+  a = a || []; b = b || [];
+  var inter = 0, areaA = 0, areaB = 0, i, j;
+  for(i=0;i<a.length;i++) areaA += a[i].w * a[i].h;
+  for(j=0;j<b.length;j++) areaB += b[j].w * b[j].h;
+  if(areaA <= 0 || areaB <= 0) return 0;
+  for(i=0;i<a.length;i++){
+    for(j=0;j<b.length;j++){
+      var w = Math.min(a[i].x+a[i].w, b[j].x+b[j].w) - Math.max(a[i].x, b[j].x);
+      var h = Math.min(a[i].y+a[i].h, b[j].y+b[j].h) - Math.max(a[i].y, b[j].y);
+      if(w > 0 && h > 0) inter += w * h;
+    }
+  }
+  return inter / Math.min(areaA, areaB);
+}
+var MK_OVERLAP = 0.5;
+
+/* v33: highlighting the same passage twice used to add a SECOND mark over the first, so the
+   wash deepened with every pass and there was no way back short of the note sheet. It is a
+   toggle now: a highlight that lands on an existing highlight removes it. */
 function markSave(type, noteText){
   if(!mkSel) return Promise.resolve(null);
   var cap = mkSel;
+  if(type === "highlight" && noteText == null && rdId){
+    return REGLIB.marks.listForPage(rdId, cap.page).then(function(list){
+      var hit = null;
+      list.forEach(function(m){
+        if(hit || m.type === "bookmark") return;
+        if(markRectsOverlap(cap.rects, m.anchor && m.anchor.rects) >= MK_OVERLAP) hit = m;
+      });
+      if(!hit) return markCommit(type, noteText, cap);
+      markClearSelection();
+      /* A noted passage is never destroyed by a second tap on Highlight. The note is the
+         content and the wash is only its marker, so the note opens instead of vanishing —
+         and nothing stacks either way. */
+      if(hit.type === "note" || hit.note){ markOpenExisting(hit); return hit; }
+      return REGLIB.marks.drop(hit.id).then(function(){
+        markRepaint(cap.holder, cap.page + 1);
+        return null;
+      });
+    }).catch(function(){ return markCommit(type, noteText, cap); });
+  }
+  return markCommit(type, noteText, cap);
+}
+function markClearSelection(){
+  markHideBar();
+  var s = window.getSelection(); if(s) s.removeAllRanges();
+  mkSel = null;
+}
+function markCommit(type, noteText, cap){
   return REGLIB.marks.put({
     regId: rdId, page: cap.page, pageLabel: cap.pageLabel, type: type,
     anchor: { quote:cap.quote, prefix:cap.prefix, suffix:cap.suffix,
               textPosition:cap.textPosition, rects:cap.rects },
     color: "mark", note: noteText == null ? null : noteText
   }).then(function(m){
-    markHideBar();
-    var s = window.getSelection(); if(s) s.removeAllRanges();
-    mkSel = null;
+    markClearSelection();
     markRepaint(cap.holder, cap.page + 1);
     return m;
   });
@@ -4902,6 +4997,10 @@ function markSave(type, noteText){
 function markRepaint(holder, n){
   if(!rdId) return;
   REGLIB.marks.listForPage(rdId, n-1).then(function(list){
+    /* Cached for the tap-a-highlight path: a placed mark sits UNDER the text layer, so the
+       tap cannot be caught on the mark element itself without breaking selection through a
+       highlight. Hit-testing the stored rects keeps both. */
+    mkPageMarks[n] = list;
     var old = holder.querySelector(".rdmarks");
     if(old) old.remove();
     Array.prototype.forEach.call(holder.querySelectorAll(".rdtab"), function(t){ t.remove(); });
@@ -4930,6 +5029,42 @@ function markRepaint(holder, n){
   }).catch(function(){});
 }
 
+/* Which mark, if any, is under this point? Marks are stored in normalized page coordinates,
+   so the test is done there and works unchanged at any zoom or screen width. */
+function markHitAt(holder, n, cx, cy){
+  var list = mkPageMarks[n] || [];
+  var box = holder.getBoundingClientRect();
+  if(!box.width || !box.height) return null;
+  var x = (cx - box.left) / box.width, y = (cy - box.top) / box.height;
+  var found = null;
+  list.forEach(function(m){
+    if(m.type === "bookmark" || !m.anchor) return;
+    (m.anchor.rects || []).forEach(function(r){
+      if(x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) found = m;
+    });
+  });
+  return found;
+}
+function markShowPop(m, cx, cy){
+  mkPicked = m;
+  markHideBar();
+  var pop = $("mkPop");
+  pop.classList.remove("hidden");
+  /* Same measured band as the selection toolbar: at z-index 90 a popover parked over the
+     app bar silently eats taps on Back and the outline. */
+  var chrome = document.querySelector(".rdbar").getBoundingClientRect().bottom;
+  var floor  = $("rdPill").getBoundingClientRect().top;
+  var pw = pop.offsetWidth, ph = pop.offsetHeight;
+  var left = Math.min(Math.max(8, cx - pw/2), innerWidth - pw - 8);
+  var top = cy - ph - 12;
+  if(top < chrome + 6) top = cy + 14;
+  top = Math.min(top, floor - ph - 6);
+  if(top < chrome + 6) top = chrome + 6;
+  pop.style.left = Math.round(left) + "px";
+  pop.style.top  = Math.round(top) + "px";
+}
+function markHidePop(){ $("mkPop").classList.add("hidden"); mkPicked = null; }
+
 function markOpenSheet(quote, existing){
   mkEditing = existing || null;
   $("mkQuote").textContent = quote;
@@ -4950,11 +5085,15 @@ function markCloseSheet(){
    page pill over the page. */
 function markSheetSection(body){
   if(!rdId) return;
+  /* v33: one wrapper around the whole section, so a bulk delete can rebuild it in place —
+     with honest counts in the eyebrow — without disturbing the outline rows above it. */
+  var sec = document.createElement("div");
+  body.appendChild(sec);
   var head = document.createElement("div");
   head.className = "mkeyebrow"; head.style.margin = "16px 0 4px";
-  body.appendChild(head);
+  sec.appendChild(head);
   var host = document.createElement("div");
-  body.appendChild(host);
+  sec.appendChild(host);
   REGLIB.marks.listForReg(rdId).then(function(list){
     var hi = list.filter(function(m){ return m.type === "highlight"; }).length;
     var bm = list.filter(function(m){ return m.type === "bookmark"; }).length;
@@ -4967,8 +5106,52 @@ function markSheetSection(body){
       e.textContent = "Select text to highlight it or attach a note, or bookmark a page from the bar below.";
       host.appendChild(e); return;
     }
+    /* Bulk delete lives above the rows so it is reachable without scrolling a long list to
+       the bottom, and is disabled until something is actually selected. */
+    var bulk = document.createElement("div"); bulk.className = "mkbulk";
+    var del = document.createElement("button");
+    del.type = "button"; del.id = "mkBulkDel"; del.disabled = true;
+    del.textContent = "Delete";
+    bulk.appendChild(del);
+    host.appendChild(bulk);
+    var picked = {};
+    function syncBulk(){
+      var n = Object.keys(picked).length;
+      del.disabled = !n;
+      del.textContent = n ? "Delete " + n : "Delete";
+    }
+    del.addEventListener("click", function(){
+      var ids = Object.keys(picked);
+      if(!ids.length) return;
+      del.disabled = true;
+      Promise.all(ids.map(function(id){ return REGLIB.marks.drop(id); })).then(function(){
+        /* Repaint every page that lost a mark, not just the current one — a deleted mark
+           must leave the page as well as the store. */
+        var pages = {};
+        ids.forEach(function(id){ if(picked[id] != null) pages[picked[id]] = 1; });
+        Object.keys(pages).forEach(function(p){
+          var h = document.querySelector('.rdpage[data-page="' + (Number(p)+1) + '"]');
+          if(h) markRepaint(h, Number(p)+1);
+        });
+        markHidePop();
+        /* Rebuild the section in place so the counts in the eyebrow are honest again. */
+        sec.remove();
+        markSheetSection(body);
+      }).catch(function(){ syncBulk(); });
+    });
     list.forEach(function(m){
-      var b = document.createElement("button"); b.type = "button"; b.className = "mkitem";
+      var row = document.createElement("div"); row.className = "mkitem";
+      var cbox = document.createElement("label"); cbox.className = "mkselbox";
+      var cb = document.createElement("input");
+      cb.type = "checkbox"; cb.className = "mksel";
+      cb.setAttribute("aria-label", "Select " + (m.type === "bookmark"
+        ? ("bookmark on page " + (m.page+1))
+        : (m.type === "note" ? "note" : "highlight") + ": " + String(m.anchor.quote||"").slice(0,60)));
+      cb.addEventListener("change", function(){
+        if(cb.checked) picked[m.id] = m.page; else delete picked[m.id];
+        syncBulk();
+      });
+      var b = document.createElement("button"); b.type = "button"; b.className = "mkgo";
       var sw = document.createElement("span");
       sw.className = "mkswatch" + (m.type === "highlight" ? "" : " note");
       if(m.type === "note")
@@ -4991,21 +5174,24 @@ function markSheetSection(body){
         $("rdSheet").classList.add("hidden");
         rdGoto(m.page + 1);
       });
-      host.appendChild(b);
+      cbox.appendChild(cb);
+      row.appendChild(cbox); row.appendChild(b);
+      host.appendChild(row);
     });
   }).catch(function(){});
 }
 
 function markTeardown(){
-  mkSel = null; mkEditing = null; mkTextCache = {};
-  markHideBar(); markCloseSheet();
+  mkSel = null; mkEditing = null; mkTextCache = {}; mkPageMarks = {};
+  markHideBar(); markHidePop(); markCloseSheet();
 }
 /* Test seam. The whole app script is one IIFE, so the markup internals are private; the
    proof harness needs a handle to build a text layer and read back a captured anchor
    without a canvas. Exposes the markup functions only — same precedent as window.REGLIB. */
 window.__MARKUP__ = {
   paintPage: markPaintPage, capture: markCaptureSelection, repaint: markRepaint,
-  save: markSave, openSheet: markOpenSheet, pageText: function(n){ return mkTextCache[n]; }
+  save: markSave, openSheet: markOpenSheet, pageText: function(n){ return mkTextCache[n]; },
+  overlap: markRectsOverlap, hitAt: markHitAt
 };
 
 /* An outline destination can be a named string or an explicit ref; both have to resolve to
@@ -5239,6 +5425,74 @@ function selfTest(){
     if(notOpenable) errs.push("reader: "+notOpenable+" hosted publication(s) cannot be opened");
   })();
 
+  /* ---- v33: the markup edit path. Three things the build cannot be trusted without, and
+     all three are checkable without a PDF, a canvas or the network. ---- */
+  (function(){
+    /* 1. The text layer has to be VISIBLE enough to paint a selection. This is the exact
+       regression that made drag-to-select look broken for three versions: selection worked,
+       but the layer was at opacity 0 so the browser's own highlight was transparent too.
+       Measured on a real element, because that is the only way a stylesheet claim is worth
+       anything. */
+    var probe = document.createElement("div");
+    probe.className = "rdtext";
+    probe.style.position = "absolute"; probe.style.left = "-9999px";
+    var sp = document.createElement("span"); sp.textContent = "x";
+    probe.appendChild(sp);
+    document.body.appendChild(probe);
+    var pc = getComputedStyle(probe), sc = getComputedStyle(sp);
+    if(parseFloat(pc.opacity) === 0)
+      errs.push("markup: the text layer is at opacity 0 — a selection would be invisible");
+    if(pc.pointerEvents === "none")
+      errs.push("markup: the text layer does not take pointer events, so it cannot be dragged across");
+    [["layer",pc],["span",sc]].forEach(function(p){
+      if(p[1].userSelect === "none" || p[1].webkitUserSelect === "none")
+        errs.push("markup: the text " + p[0] + " is not selectable (user-select:none)");
+    });
+    if(sc.color !== "rgba(0, 0, 0, 0)" && sc.color !== "transparent")
+      errs.push("markup: text-layer glyphs are not transparent (" + sc.color + ") and would double over the page");
+    probe.remove();
+
+    /* 2. The highlight toggle's maths. A re-highlight has to RECOGNISE the existing mark or
+       it will stack a second wash on it, which is the bug being fixed. */
+    if(typeof markRectsOverlap !== "function"){
+      errs.push("markup: markRectsOverlap is not reachable, so highlighting cannot toggle");
+    } else {
+      var sentence = [{x:.1,y:.2,w:.6,h:.02}];
+      var word     = [{x:.3,y:.2,w:.08,h:.02}];   /* one word inside that sentence */
+      var elsewhere= [{x:.1,y:.8,w:.6,h:.02}];
+      if(markRectsOverlap(sentence, sentence) < .99)
+        errs.push("markup: an identical re-highlight is not detected as the same passage");
+      if(markRectsOverlap(word, sentence) < MK_OVERLAP)
+        errs.push("markup: highlighting a word inside a highlighted sentence would stack instead of toggling");
+      if(markRectsOverlap(sentence, elsewhere) !== 0)
+        errs.push("markup: two separate passages are being treated as the same mark");
+      if(markRectsOverlap([], sentence) !== 0)
+        errs.push("markup: an empty rect set is not handled");
+    }
+
+    /* 3. Tap size. The marks list grew a checkbox in v33 and the bare box measures 18px,
+       which is under the rule everything else in the app keeps to. */
+    var probeRow = document.createElement("div");
+    probeRow.className = "mkitem";
+    probeRow.style.position = "absolute"; probeRow.style.left = "-9999px"; probeRow.style.width = "360px";
+    var probeBox = document.createElement("label"); probeBox.className = "mkselbox";
+    probeBox.appendChild(document.createElement("input"));
+    probeRow.appendChild(probeBox);
+    document.body.appendChild(probeRow);
+    var tb = probeBox.getBoundingClientRect();
+    if(tb.width && (tb.width < 44 || tb.height < 44))
+      errs.push("markup: the marks checkbox target is " + Math.round(tb.width) + "x" + Math.round(tb.height) + ", under 44px");
+    probeRow.remove();
+
+    /* 4. The controls that make a placed mark editable at all. */
+    ["mkPop","mkPopNote","mkPopDel"].forEach(function(id){
+      if(!document.getElementById(id))
+        errs.push("markup: #" + id + " is missing, so a placed highlight cannot be removed");
+    });
+    if(typeof markHitAt !== "function")
+      errs.push("markup: markHitAt is not reachable, so a highlight cannot be tapped");
+  })();
+
   if(errs.length){
     console.error("SELF-TEST FAILED — "+errs.length+" problem(s) across "+QUESTIONS.length+" questions");
     errs.slice(0,40).forEach(function(e){ console.error("   "+e); });
@@ -5246,7 +5500,57 @@ function selfTest(){
     console.log("SELF-TEST PASSED — "+QUESTIONS.length+" questions, "+CAT_LIST.length+" categories, "+Object.keys(BOARDS).length+" boards, no problems found.");
   }
   regReachCheck();
+  markStoreCheck();
   return errs;
+}
+
+/* Does a mark actually round-trip and, more to the point, actually LEAVE? A delete that
+   clears the page but not the store looks fixed and is not, and that is exactly what the
+   Marks list's new multi-delete has to guarantee. Runs against a sentinel regId so it can
+   never touch a Soldier's real marks, and cleans up after itself. */
+function markStoreCheck(){
+  if(!window.REGLIB || !REGLIB.marks) return;
+  var REG = "__selftest__", problems = [];
+  var rects = [{x:.1,y:.2,w:.6,h:.02}];
+  var mk = function(note){
+    return REGLIB.marks.put({
+      regId: REG, page: 0, pageLabel: null, type: note ? "note" : "highlight",
+      anchor: { quote:"selftest", prefix:"", suffix:"", textPosition:null, rects:rects },
+      color: "mark", note: note || null
+    });
+  };
+  REGLIB.marks.countAll().then(function(before){
+    return mk(null).then(function(a){
+      return mk("a note").then(function(b){
+        return REGLIB.marks.listForPage(REG, 0).then(function(list){
+          if(list.length !== 2) problems.push("stored 2 marks, read back " + list.length);
+          var found = list.filter(function(m){
+            return markRectsOverlap(rects, m.anchor.rects) >= MK_OVERLAP;
+          }).length;
+          if(found !== 2) problems.push("a re-highlight would match " + found + " of 2 stored marks");
+          return Promise.all([REGLIB.marks.drop(a.id), REGLIB.marks.drop(b.id)]);
+        }).then(function(){
+          return REGLIB.marks.listForPage(REG, 0);
+        }).then(function(left){
+          if(left.length) problems.push(left.length + " mark(s) survived a delete");
+          return REGLIB.marks.countAll();
+        }).then(function(after){
+          if(after !== before) problems.push("mark count did not return to " + before + " (now " + after + ")");
+        });
+      });
+    });
+  }).then(function(){
+    window.__markCheck = problems;
+    if(problems.length){
+      console.error("MARK STORE CHECK FAILED — " + problems.length + " problem(s)");
+      problems.forEach(function(p){ console.error("   " + p); });
+    } else {
+      console.log("MARK STORE CHECK PASSED — marks save, match on re-highlight, and delete clean.");
+    }
+  }).catch(function(e){
+    window.__markCheck = ["store unavailable: " + (e && e.message)];
+    console.error("MARK STORE CHECK — could not run: " + (e && e.message));
+  });
 }
 
 /* Reachability of the hosted regulation files. Separate from selfTest() because it is
@@ -5450,6 +5754,7 @@ $("rdScroll").addEventListener("scroll", function(){
      Re-running the placement keeps it on the selection, or hides it once the selection has
      scrolled out of the readable band. */
   if(!$("mkBar").classList.contains("hidden")) markShowBar();
+  if(!$("mkPop").classList.contains("hidden")) markHidePop();
   if(now - rdScrollLast >= 100){ rdScrollLast = now; rdSyncPage(); return; }
   if(rdScrollTimer) return;
   rdScrollTimer = setTimeout(function(){
@@ -5469,6 +5774,33 @@ $("mkHi").addEventListener("click", function(){ markSave("highlight", null); });
 $("mkNote").addEventListener("click", function(){
   if(!mkSel) return;
   markOpenSheet(mkSel.quote, null);
+});
+/* A TAP on a placed highlight opens the popover; a DRAG is a selection and belongs to the
+   Highlight/Note toolbar instead. The two are told apart by whether the gesture left a
+   selection behind, which is the only honest signal — a mark sits under the text layer, so
+   the event target is always the text layer either way. */
+$("rdPages").addEventListener("click", function(e){
+  var sel = window.getSelection();
+  if(sel && !sel.isCollapsed) return;
+  var holder = e.target && e.target.closest && e.target.closest(".rdpage");
+  if(!holder){ markHidePop(); return; }
+  var n = parseInt(holder.getAttribute("data-page"), 10);
+  var m = markHitAt(holder, n, e.clientX, e.clientY);
+  if(!m){ markHidePop(); return; }
+  markShowPop(m, e.clientX, e.clientY);
+});
+$("mkPopNote").addEventListener("click", function(){
+  var m = mkPicked; if(!m) return;
+  markHidePop();
+  markOpenExisting(m);
+});
+$("mkPopDel").addEventListener("click", function(){
+  var m = mkPicked; if(!m) return;
+  markHidePop();
+  REGLIB.marks.drop(m.id).then(function(){
+    var h = document.querySelector('.rdpage[data-page="' + (m.page+1) + '"]');
+    if(h) markRepaint(h, m.page+1);
+  }).catch(function(){});
 });
 $("mkCancel").addEventListener("click", markCloseSheet);
 $("mkScrim").addEventListener("click", markCloseSheet);
