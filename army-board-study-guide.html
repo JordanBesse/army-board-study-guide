@@ -31,6 +31,14 @@
   /* Dimmed (un-picked) option on reveal. A colour, not an opacity — see the note on
      .opt.dim for why element opacity cannot clear AA here. */
   --dim-ink:#6b736a; --dim-line:#ebeeeb;
+  /* --page (v27): the regulation page card. Paper, not app surface — a PDF page is white,
+     and tinting it would misrepresent the document a Soldier is citing at a board.
+     --mark (v28): the annotation lane, promoted into the system on the chunk-4 lock. A warm
+     khaki deliberately OUTSIDE the accent / ok / no lanes, so a highlight can never be read
+     as "selected" or "graded". --mark-edge is the under-edge that carries the mark when
+     colour alone cannot. */
+  --page:#ffffff;
+  --mark:rgba(201,167,58,.34); --mark-edge:rgba(150,120,20,.85);
   --m-tap:90ms; --m-state:140ms;
   /* Screen mount: menu -> quiz, question -> question, -> results. The whole motion budget
      for navigation, and it registers as responsiveness rather than as a slide-show. */
@@ -62,6 +70,11 @@
   --amber-word:#d8a24a;
   --hover-bg:#242b21; --hover-line:#4a5545;
   --dim-ink:#8f9a8d; --dim-line:#333b2f;
+  /* The page stays white in dark mode ON PURPOSE — see the reader note. Only the chrome
+     darkens; recolouring the document would change what a Soldier is reading and citing.
+     "Night read" is the opt-in for low light. */
+  --page:#ffffff;
+  --mark:rgba(214,180,80,.34); --mark-edge:rgba(214,180,80,.9);
   --scrim:rgba(0,0,0,.55);
   /* Measured on this band: --ink 13.2:1, --muted 6.3:1. Both clear AA. This is the
      whole dark-identity change — no verdict colour and no accent moves. */
@@ -245,6 +258,92 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
   .librow .rttl{font-size:.75rem}
   #regBtn{font-size:.82rem;padding:0 12px}
   #regBtn svg{width:20px;height:20px}
+}
+/* ---- Reader (v27, chunk 3) ----
+   A full-viewport surface rather than a card inside .wrap: reading a 300-page regulation is
+   not a section of the study page, and the page card needs the whole width at 360px. */
+#reader{position:fixed;inset:0;z-index:70;background:var(--bg);display:flex;flex-direction:column}
+#reader.hidden{display:none}
+.rdbar{
+  flex:0 0 auto;display:flex;align-items:center;gap:8px;
+  background:var(--surface);border-bottom:1px solid var(--line);
+  padding:6px 8px;
+  padding-top:calc(6px + env(safe-area-inset-top));
+}
+.rdbar button{
+  min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;
+  background:none;border:0;color:var(--muted);border-radius:var(--r);cursor:pointer;font:inherit;padding:0;
+}
+.rdbar button svg{width:23px;height:23px}
+.rdbar button:hover{background:var(--surface2)}
+.rdbar button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+/* The markup toggle's active state is the ONE accent in the reader, and it is legitimate:
+   it is a selected mode, which is exactly what accent means. */
+.rdbar button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
+.rdtitle{flex:1;min-width:0;text-align:center;padding:0 2px}
+.rdtitle .n{font-size:.87rem;font-weight:700;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rdtitle .t{font-size:.7rem;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* position:relative is load-bearing, not decoration: it makes this the offsetParent for the
+   page holders. Without it the nearest positioned ancestor is #reader, so every .offsetTop
+   is measured from the top of the app bar and both the go-to-page scroll and the page
+   counter are off by the bar's height. */
+#rdScroll{position:relative;flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;
+  padding:14px 10px calc(84px + env(safe-area-inset-bottom));
+  touch-action:pan-x pan-y pinch-zoom;   /* pinch-zoom stays the browser's job */
+  overscroll-behavior:contain}
+.rdpage{position:relative;margin:0 auto 14px;max-width:100%;
+  background:var(--page);border-radius:6px;box-shadow:var(--e2);overflow:hidden}
+.rdpage canvas{display:block;width:100%;height:auto}
+.rdph{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.75rem}
+/* Night read: a VIEW filter only. It never touches stored bytes, and the mark overlay is
+   outside .rdpage's filter so a highlight is not inverted into a strange colour. */
+#reader[data-night="1"] .rdpage canvas{filter:invert(1) hue-rotate(180deg) brightness(.86) contrast(1.06)}
+#reader[data-night="1"] .rdpage{background:#12140f}
+.rdpill{
+  position:fixed;left:50%;transform:translateX(-50%);
+  bottom:calc(14px + env(safe-area-inset-bottom));
+  display:flex;align-items:center;gap:2px;
+  background:var(--surface);border:1px solid var(--line);border-radius:999px;
+  box-shadow:var(--e2);padding:3px;z-index:2;max-width:calc(100vw - 24px)
+}
+.rdpill button{min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;
+  background:none;border:0;color:var(--ink);border-radius:999px;cursor:pointer;font:inherit;padding:0}
+.rdpill button svg{width:19px;height:19px}
+.rdpill button:disabled{color:var(--dim-ink);cursor:default}
+.rdpill button:not(:disabled):hover{background:var(--surface2)}
+.rdpill button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+/* Single line, non-negotiable: the refinement on this chunk was that "p. 3-4 · 12 / 340"
+   must never wrap. Fixed against wrapping AND against the pill growing past the viewport. */
+#rdLabel{font-size:.76rem;color:var(--ink);font-weight:650;white-space:nowrap;
+  padding:0 8px;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+#rdStatus{padding:26px 10px;text-align:center;color:var(--muted);font-size:.82rem}
+/* Collapse once the document has opened. With padding alone it left 52px of empty space
+   above page 1 for the whole reading session. */
+#rdStatus:empty{display:none}
+/* Outline sheet — reuses the settings sheet's shape so there is one overlay pattern. */
+#rdSheet{position:fixed;inset:0;z-index:80;display:flex;align-items:flex-end;justify-content:center}
+#rdSheet.hidden{display:none}
+#rdSheetScrim{position:absolute;inset:0;background:rgba(10,14,10,.5)}
+#rdSheetPanel{position:relative;width:100%;max-width:480px;max-height:80vh;overflow:auto;
+  background:var(--surface);border:1px solid var(--line);border-radius:16px 16px 0 0;
+  padding:16px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:var(--e2)}
+@media(min-width:520px){
+  #rdSheet{align-items:center}
+  #rdSheetPanel{border-radius:16px;max-height:72vh}
+}
+#rdSheetPanel h3{margin:0 0 2px;font-size:.95rem}
+#rdSheetSub{font-size:.75rem;color:var(--muted);margin-bottom:10px}
+.rdout{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);
+  padding:11px 4px;font:inherit;font-size:.83rem;color:var(--ink);cursor:pointer;min-height:44px}
+.rdout:hover{background:var(--hover-bg)}
+.rdout:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.rdout .pg{float:right;color:var(--muted);font-size:.75rem;margin-left:10px}
+.rdout[data-depth="1"]{padding-left:18px;font-size:.79rem;color:var(--muted)}
+.rdout[data-depth="2"]{padding-left:32px;font-size:.77rem;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){
+  .track>span{transition:none}
 }
 #themeBtn{
   border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--r);
@@ -1267,6 +1366,44 @@ footer p{margin:0 0 8px}
   <div id="libList"></div>
 </main>
 
+<!-- The reader (v27, chunk 3). Fixed and full-viewport, outside .wrap, because a 300-page
+     publication is not a section of the study page. -->
+<div id="reader" class="hidden" role="dialog" aria-modal="true" aria-label="Regulation reader">
+  <div class="rdbar">
+    <button id="rdBack" type="button" aria-label="Back to the library">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7"></path></svg>
+    </button>
+    <div class="rdtitle"><div class="n" id="rdNum"></div><div class="t" id="rdTitle"></div></div>
+    <button id="rdMark" type="button" aria-label="Highlight and note" aria-pressed="false" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 20h4l9.5-9.5a2.1 2.1 0 0 0-3-3L5 17v3z"></path><path d="M13.5 5.5l3 3"></path></svg>
+    </button>
+    <button id="rdOutline" type="button" aria-label="Outline and marks">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h10"></path></svg>
+    </button>
+  </div>
+  <div id="rdScroll">
+    <div id="rdStatus"></div>
+    <div id="rdPages"></div>
+  </div>
+  <div class="rdpill" id="rdPill">
+    <button id="rdPrev" type="button" aria-label="Previous page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7"></path></svg>
+    </button>
+    <span id="rdLabel"></span>
+    <button id="rdNext" type="button" aria-label="Next page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"></path></svg>
+    </button>
+  </div>
+</div>
+<div id="rdSheet" class="hidden" role="dialog" aria-modal="true" aria-label="Outline">
+  <div id="rdSheetScrim"></div>
+  <div id="rdSheetPanel">
+    <h3 id="rdSheetTitle">Outline</h3>
+    <div id="rdSheetSub"></div>
+    <div id="rdSheetBody"></div>
+  </div>
+</div>
+
 <footer>
   <!-- Same control as Choose Categories, deliberately: a native <details>, the same card
        and summary styling, the same +/- marker. Collapsed by default — v14 listed all 77
@@ -1895,7 +2032,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v26";
+var APP_VERSION = "v27";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -3818,6 +3955,259 @@ function closeLibrary(){
   toMenu();
 }
 
+/* ==================== Regulation reader (v27, chunk 3) ====================
+   pdf.js in the app's chrome, reading the downloaded blob out of `absg_reglib`. Entirely
+   offline: the viewer is bundled and the PDF is already on the device.
+
+   Pages render LAZILY. TC 3-21.5 is 288 pages and DA PAM 670-1 is 368; rasterising a
+   document up front would freeze the app for minutes and hold every page bitmap in memory
+   at once. Each page gets a correctly-sized placeholder immediately — so the scrollbar is
+   honest and the page pill counts properly from the first frame — and is rasterised when it
+   comes near the viewport, then released when it goes far away.                          */
+var rdDoc = null, rdId = null, rdPage = 1, rdLabels = null, rdScale = 1,
+    rdObserver = null, rdRendering = {}, rdScrollLast = 0, rdScrollTimer = 0;
+
+function rdLabelFor(i){          /* i is 1-based */
+  var lab = rdLabels && rdLabels[i-1];
+  return (lab && String(lab).trim()) ? String(lab).trim() : null;
+}
+/* "p. 3-4 · 12 / 340" — the document's own page number first, because that is what a
+   Soldier cites at a board, then the position in the file. One line, never wrapped. */
+function rdPaintPill(){
+  if(!rdDoc) return;
+  var lab = rdLabelFor(rdPage);
+  $("rdLabel").textContent = (lab ? "p. " + lab + " · " : "") + rdPage + " / " + rdDoc.numPages;
+  $("rdPrev").disabled = rdPage <= 1;
+  $("rdNext").disabled = rdPage >= rdDoc.numPages;
+}
+
+function rdRenderPage(holder){
+  var n = parseInt(holder.getAttribute("data-page"), 10);
+  if(rdRendering[n] || holder.querySelector("canvas")) return;
+  rdRendering[n] = true;
+  rdDoc.getPage(n).then(function(page){
+    var host = $("rdScroll");
+    var avail = Math.max(120, host.clientWidth - 20);
+    var base = page.getViewport({scale:1});
+    /* Fit the column width, then multiply by the device pixel ratio so the raster is sharp
+       on a phone instead of a soft upscale. Capped at 2: past that the memory cost on a
+       300-page document buys nothing the eye can see. */
+    var css = avail / base.width;
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
+    var vp = page.getViewport({scale: css * dpr});
+    var cv = document.createElement("canvas");
+    cv.width = Math.floor(vp.width); cv.height = Math.floor(vp.height);
+    cv.setAttribute("role","img");
+    cv.setAttribute("aria-label","Page " + n + " of " + rdDoc.numPages);
+    var task = page.render({canvasContext: cv.getContext("2d"), viewport: vp});
+    /* A page that never finishes rasterising must not sit as a blank card forever. This is
+       a real guard, not a theoretical one: rasterisation could not be completed in the build
+       environment at any scale, so if a device ever behaves the same way a Soldier gets an
+       honest line instead of a silent white rectangle. 30s is deliberately generous — a
+       large page on a slow phone is allowed to be slow, it is just not allowed to be
+       silent. The render is cancelled so it stops competing for the main thread. */
+    var timed = false;
+    var timer = setTimeout(function(){
+      timed = true;
+      try{ task.cancel(); }catch(e){}
+      var ph = holder.querySelector(".rdph");
+      if(ph) ph.textContent = "This page is taking too long to display.";
+    }, 30000);
+    return task.promise.then(function(){
+      clearTimeout(timer);
+      if(timed) return;
+      var ph = holder.querySelector(".rdph");
+      if(ph) ph.remove();
+      holder.appendChild(cv);
+      if(typeof markPaintPage === "function") markPaintPage(holder, n, page, vp, css*dpr);
+    }, function(e){ clearTimeout(timer); throw e; });
+  }).catch(function(){
+    var ph = holder.querySelector(".rdph");
+    if(ph && !ph.textContent) ph.textContent = "This page could not be displayed.";
+  }).then(function(){ delete rdRendering[n]; });
+}
+/* Release a page that has scrolled well away. Without this, reading to the end of a 368-page
+   publication leaves every rasterised page resident. */
+function rdReleasePage(holder){
+  var cv = holder.querySelector("canvas");
+  if(!cv) return;
+  cv.remove();
+  var ph = document.createElement("div");
+  ph.className = "rdph"; ph.style.height = holder.style.minHeight;
+  ph.textContent = "";
+  holder.insertBefore(ph, holder.firstChild);
+}
+
+function rdBuildPages(aspect){
+  var wrap = $("rdPages"); wrap.textContent = "";
+  var avail = Math.max(120, $("rdScroll").clientWidth - 20);
+  for(var i=1; i<=rdDoc.numPages; i++){
+    var d = document.createElement("div");
+    d.className = "rdpage"; d.setAttribute("data-page", i);
+    /* A real height from the first page's aspect ratio, so the scroll length is right
+       before anything has rasterised. */
+    d.style.minHeight = Math.round(avail * aspect) + "px";
+    var ph = document.createElement("div");
+    ph.className = "rdph"; ph.style.height = Math.round(avail * aspect) + "px";
+    d.appendChild(ph);
+    wrap.appendChild(d);
+  }
+  if(rdObserver) rdObserver.disconnect();
+  rdObserver = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting) rdRenderPage(e.target);
+    });
+  }, { root: $("rdScroll"), rootMargin: "600px 0px" });
+  Array.prototype.forEach.call(wrap.children, function(c){ rdObserver.observe(c); });
+}
+
+/* Which page is the reader on? The one covering the middle of the viewport — using the top
+   would flip the counter the instant a page's last line scrolled off. */
+function rdSyncPage(){
+  if(!rdDoc) return;
+  var host = $("rdScroll"), mid = host.scrollTop + host.clientHeight/2;
+  var kids = $("rdPages").children, best = 1;
+  for(var i=0; i<kids.length; i++){
+    var el = kids[i];
+    if(el.offsetTop <= mid) best = i+1; else break;
+  }
+  if(best !== rdPage){
+    rdPage = best; rdPaintPill();
+    /* Far-away pages give their bitmaps back. */
+    for(var j=0; j<kids.length; j++)
+      if(Math.abs((j+1) - rdPage) > 6) rdReleasePage(kids[j]);
+  }
+}
+function rdGoto(n){
+  if(!rdDoc) return;
+  n = Math.max(1, Math.min(rdDoc.numPages, n));
+  var el = $("rdPages").children[n-1];
+  if(!el) return;
+  rdRenderPage(el);
+  /* Reduced motion means an instant jump, per the chunk: page changes do not slide. */
+  var smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  $("rdScroll").scrollTo({ top: el.offsetTop - 8, behavior: smooth ? "smooth" : "auto" });
+  rdPage = n; rdPaintPill();
+}
+
+function openReader(id){
+  var meta = REGLIB.byId(id);
+  if(!meta) return;
+  if(!REGLIB.viewerReady()){
+    $("noticeText").textContent = "The reader is not available in this build.";
+    $("notice").classList.remove("hidden");
+    return;
+  }
+  /* The worker comes from the inlined script block turned into a same-document blob URL at
+     load; nothing is fetched, which is why the hosted CSP carries worker-src 'self' blob:. */
+  var g = window.pdfjsLib.GlobalWorkerOptions;
+  if(!g.workerSrc && window.__ABSG_PDF_WORKER_SRC__) g.workerSrc = window.__ABSG_PDF_WORKER_SRC__;
+
+  rdId = id; rdPage = 1; rdDoc = null; rdLabels = null;
+  $("rdNum").textContent = meta.pubNumber;
+  $("rdTitle").textContent = meta.title;
+  $("rdPages").textContent = "";
+  $("rdLabel").textContent = "";
+  $("rdStatus").textContent = "Opening " + meta.pubNumber + "…";
+  $("reader").classList.remove("hidden");
+  $("rdMark").hidden = (typeof markEnable !== "function");
+  document.body.style.overflow = "hidden";
+
+  REGLIB.openBlob(id).then(function(blob){
+    return blob.arrayBuffer();
+  }).then(function(buf){
+    return window.pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+  }).then(function(doc){
+    rdDoc = doc;
+    return doc.getPageLabels().catch(function(){ return null; }).then(function(labels){
+      rdLabels = labels;
+      return doc.getPage(1);
+    });
+  }).then(function(p1){
+    var vp = p1.getViewport({scale:1});
+    $("rdStatus").textContent = "";
+    rdBuildPages(vp.height / vp.width);
+    rdPaintPill();
+    if(typeof markLoadForReg === "function") markLoadForReg(rdId);
+  }).catch(function(){
+    $("rdStatus").textContent = "This publication could not be opened. Try downloading it again.";
+  });
+}
+function closeReader(){
+  if(rdObserver){ rdObserver.disconnect(); rdObserver = null; }
+  if(rdDoc && rdDoc.destroy) { try{ rdDoc.destroy(); }catch(e){} }
+  rdDoc = null; rdId = null; rdRendering = {};
+  $("rdPages").textContent = "";
+  $("reader").classList.add("hidden");
+  $("rdSheet").classList.add("hidden");
+  document.body.style.overflow = "";
+  if(typeof markTeardown === "function") markTeardown();
+}
+
+/* Outline + Night read. The reading surface stays calm — the pill is the only chrome over
+   the page — so the document outline and the view toggle live in one sheet behind the
+   list control rather than adding permanent furniture to the page. */
+function rdOpenSheet(){
+  var body = $("rdSheetBody"); body.textContent = "";
+  var meta = REGLIB.byId(rdId);
+  $("rdSheetTitle").textContent = "Outline";
+  $("rdSheetSub").textContent = meta ? meta.pubNumber + " — " + meta.title : "";
+
+  var night = document.createElement("button");
+  night.type = "button"; night.className = "rdout";
+  var on = $("reader").getAttribute("data-night") === "1";
+  night.setAttribute("aria-pressed", on ? "true" : "false");
+  /* One control that always shows STATE, matching the settings sheet's rule. */
+  night.innerHTML = '<span class="pg">' + (on ? "On" : "Off") + "</span>";
+  night.appendChild(document.createTextNode("Night read"));
+  night.addEventListener("click", function(){
+    var now = $("reader").getAttribute("data-night") === "1";
+    $("reader").setAttribute("data-night", now ? "0" : "1");
+    rdOpenSheet();
+  });
+  body.appendChild(night);
+
+  if(typeof markSheetSection === "function") markSheetSection(body);
+
+  if(!rdDoc){ $("rdSheet").classList.remove("hidden"); return; }
+  rdDoc.getOutline().then(function(items){
+    if(!items || !items.length){
+      var none = document.createElement("div");
+      none.id = "libEmptyMsg";
+      none.textContent = "This publication has no outline.";
+      body.appendChild(none); return;
+    }
+    var flat = [];
+    (function walk(list, depth){
+      list.forEach(function(it){
+        flat.push({ title: it.title, dest: it.dest, depth: Math.min(2, depth) });
+        if(it.items && it.items.length) walk(it.items, depth+1);
+      });
+    })(items, 0);
+    flat.slice(0, 400).forEach(function(it){
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "rdout"; b.setAttribute("data-depth", it.depth);
+      b.textContent = it.title;
+      b.addEventListener("click", function(){
+        rdResolveDest(it.dest).then(function(n){
+          if(n){ $("rdSheet").classList.add("hidden"); rdGoto(n); }
+        });
+      });
+      body.appendChild(b);
+    });
+  }).catch(function(){}).then(function(){ $("rdSheet").classList.remove("hidden"); });
+}
+/* An outline destination can be a named string or an explicit ref; both have to resolve to
+   a page index before it can be jumped to. */
+function rdResolveDest(dest){
+  if(!rdDoc || !dest) return Promise.resolve(null);
+  var p = (typeof dest === "string") ? rdDoc.getDestination(dest) : Promise.resolve(dest);
+  return p.then(function(d){
+    if(!d || !d[0]) return null;
+    return rdDoc.getPageIndex(d[0]).then(function(i){ return i + 1; });
+  }).catch(function(){ return null; });
+}
+
 /* ---------------- self test (?selftest=1) ---------------- */
 function selfTest(){
   // Derived from BOARDS so a new board id cannot be tagged on a question without also
@@ -4155,6 +4545,36 @@ $("libSearch").addEventListener("input", function(){
    disable them — otherwise a Soldier taps a live-looking button that cannot work. */
 window.addEventListener("online",  function(){ if(!$("library").classList.contains("hidden")) libRefresh(); });
 window.addEventListener("offline", function(){ if(!$("library").classList.contains("hidden")) libRefresh(); });
+
+/* ---------------- regulation reader (v27) ---------------- */
+$("rdBack").addEventListener("click", closeReader);
+$("rdOutline").addEventListener("click", rdOpenSheet);
+$("rdSheetScrim").addEventListener("click", function(){ $("rdSheet").classList.add("hidden"); });
+$("rdPrev").addEventListener("click", function(){ rdGoto(rdPage - 1); });
+$("rdNext").addEventListener("click", function(){ rdGoto(rdPage + 1); });
+/* Scroll fires far faster than the page counter needs to change, so it is throttled — but
+   on a timestamp, deliberately NOT on requestAnimationFrame. Reading a scroll offset needs
+   no frame timing, and rAF is throttled in background tabs and can be starved during
+   momentum scrolling, which would freeze the page counter exactly while a Soldier is
+   scrolling fast. A trailing call guarantees the last position is always reflected. */
+$("rdScroll").addEventListener("scroll", function(){
+  var now = Date.now();
+  if(now - rdScrollLast >= 100){ rdScrollLast = now; rdSyncPage(); return; }
+  if(rdScrollTimer) return;
+  rdScrollTimer = setTimeout(function(){
+    rdScrollTimer = 0; rdScrollLast = Date.now(); rdSyncPage();
+  }, 100);
+}, {passive:true});
+document.addEventListener("keydown", function(e){
+  if($("reader").classList.contains("hidden")) return;
+  if(!$("rdSheet").classList.contains("hidden")){
+    if(e.key === "Escape"){ e.preventDefault(); $("rdSheet").classList.add("hidden"); }
+    return;
+  }
+  if(e.key === "Escape"){ e.preventDefault(); closeReader(); }
+  else if(e.key === "ArrowRight" || e.key === "PageDown"){ e.preventDefault(); rdGoto(rdPage + 1); }
+  else if(e.key === "ArrowLeft"  || e.key === "PageUp"){ e.preventDefault(); rdGoto(rdPage - 1); }
+});
 
 /* ---------------- settings sheet ----------------
    Opens over the page on a scrim instead of being injected into the flow. The page
