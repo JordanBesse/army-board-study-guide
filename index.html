@@ -248,6 +248,74 @@ header.compact #quizbar{display:block}
 #libBack:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 #library .libtitle{text-align:center;font-size:1.06rem;font-weight:700;margin:8px 0 0}
 #libCue{text-align:center;font-size:.75rem;color:var(--muted);margin-top:3px}
+/* The four views. Equal columns, so no view reads as more important than another; the
+   selected one is the only accent on the row, which is the colour law's "accent = selected".
+   Icon plus word, so the state survives without colour. */
+#libNav{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:12px;
+  background:var(--surface2);border:1px solid var(--line);border-radius:11px;padding:3px}
+.libseg{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-height:46px;padding:5px 2px;border:0;border-radius:8px;background:none;cursor:pointer;
+  font:inherit;font-size:.68rem;font-weight:700;color:var(--muted);letter-spacing:.01em}
+.libseg svg{width:16px;height:16px}
+.libseg[aria-selected="true"]{background:var(--accent-soft);color:var(--accent)}
+.libseg[aria-selected="true"] svg{stroke-width:2}
+.libseg:hover{color:var(--ink)}
+.libseg:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+/* The in-quiz chip pair. Same law: the active scope is the accent. */
+#libChips{display:flex;gap:8px;margin-top:10px}
+#libChips.hidden{display:none}
+.libchip{min-height:38px;padding:0 14px;border-radius:19px;border:1px solid var(--line);
+  background:var(--surface);color:var(--muted);font:inherit;font-size:.78rem;font-weight:650;cursor:pointer}
+.libchip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.libchip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#libAllLink{display:block;width:100%;margin:16px 0 4px;min-height:44px;background:none;border:0;
+  font:inherit;font-size:.83rem;font-weight:650;color:var(--accent);cursor:pointer}
+#libAllLink:hover{text-decoration:underline}
+#libAllLink:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r)}
+/* Fixed trailing columns. Without them the star walks left and right between rows as the
+   state label changes width ("Download" vs "Downloaded"), which is exactly what the AD
+   flagged: the same control landing in a different place on every publication. */
+.libfav{flex:0 0 44px;display:flex;align-items:center;justify-content:center;
+  min-height:44px;background:none;border:0;padding:0;cursor:pointer;color:var(--muted)}
+.libfav svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linejoin:round}
+.libfav[aria-pressed="true"]{color:var(--accent)}
+.libfav[aria-pressed="true"] svg{fill:currentColor;stroke:currentColor}
+.libfav:hover{color:var(--ink)}
+.libfav[aria-pressed="true"]:hover{color:var(--accent)}
+.libfav:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:var(--r)}
+/* A descriptive citation is not a document: no number, no controls, and a quoted-source
+   glyph so it never reads as something a Soldier failed to download. */
+.librow.desc{cursor:default}
+.libqt{flex:0 0 auto;width:20px;height:20px;color:var(--muted);margin-top:2px}
+.libqt svg{width:100%;height:100%}
+.libcited{flex:0 0 auto;font-size:.7rem;font-weight:700;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--dim-ink)}
+.rdesc{font-size:.78rem;color:var(--muted);line-height:1.4;margin-top:3px}
+/* Every view answers with something. A blank screen reads as a broken list. */
+.libempty{display:flex;flex-direction:column;align-items:center;text-align:center;
+  gap:10px;padding:44px 18px;color:var(--muted)}
+.libempty svg{width:26px;height:26px;color:var(--dim-ink)}
+.libempty .h{font-size:.9rem;font-weight:700;color:var(--ink)}
+.libempty p{margin:0;font-size:.82rem;line-height:1.5;max-width:30ch}
+/* Bookmark rows: the page is the thing, so it leads. */
+.bmrow{display:flex;align-items:flex-start;gap:12px;width:100%;text-align:left;
+  padding:11px 2px;border-bottom:1px solid var(--line);background:none;
+  border-left:0;border-right:0;border-top:0;font:inherit;color:var(--ink);cursor:pointer;min-height:44px}
+.bmrow:hover{background:var(--hover-bg)}
+.bmrow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.bmrow .g{flex:0 0 auto;width:18px;height:18px;color:var(--muted);margin-top:2px}
+.bmrow .g svg{width:100%;height:100%;fill:currentColor}
+.bmrow .b{flex:1;min-width:0}
+.bmrow .b .n{font-size:.84rem;font-weight:700}
+.bmrow .b .s{font-size:.76rem;color:var(--muted);margin-top:2px;
+  overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+/* Downloaded rows carry an overflow menu, because "remove" is destructive enough that it
+   should not sit under a thumb on the way to opening the publication. */
+.dlmore{flex:0 0 44px;min-height:44px;background:none;border:0;color:var(--muted);
+  font:inherit;font-size:1.1rem;line-height:1;cursor:pointer;border-radius:var(--r)}
+.dlmore:hover{background:var(--hover-bg);color:var(--ink)}
+.dlmore:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.dlsize{flex:0 0 auto;font-size:.76rem;color:var(--muted);font-variant-numeric:tabular-nums}
 .libsearch{margin-top:12px;display:flex;align-items:center;gap:8px;
   background:var(--surface2);border:1px solid var(--line);border-radius:9px;padding:0 12px}
 .libsearch svg{width:17px;height:17px;color:var(--muted);flex:0 0 auto}
@@ -265,6 +333,7 @@ header.compact #quizbar{display:block}
   color:var(--accent);padding:18px 2px 6px;display:flex;align-items:center;gap:6px}
 .libsec svg{width:13px;height:13px;fill:currentColor}
 .libsec.fam{color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:8px}
+.librow .libst{flex:0 0 104px;display:flex;justify-content:flex-end}
 .librow{display:flex;align-items:center;gap:12px;padding:11px 2px;border-bottom:1px solid var(--line);
   width:100%;text-align:left;background:none;border-left:0;border-right:0;border-top:0;
   font:inherit;color:var(--ink)}
@@ -457,6 +526,16 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 /* A noted passage also gets a margin tab, because colour is never the only signal. */
 .rdtab{position:absolute;left:-2px;width:4px;border-radius:2px;background:var(--mark-edge);z-index:3}
 /* Selection toolbar — a small dark popover, per the chunk. */
+#rdToast{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom));
+  z-index:88;max-width:calc(100% - 32px);padding:10px 16px;border-radius:20px;
+  background:#1d2a1f;color:#eef2ec;font-size:.8rem;font-weight:650;box-shadow:var(--e2);
+}
+#rdToast.hidden{display:none}
+@media (prefers-reduced-motion: no-preference){
+  #rdToast{animation:toastIn .18s ease-out}
+  @keyframes toastIn{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}
+}
 #mkBar,#mkPop{position:fixed;z-index:90;display:flex;gap:2px;padding:4px;
   background:#1d2a1f;border-radius:12px;box-shadow:var(--e2)}
 #mkBar.hidden,#mkPop.hidden{display:none}
@@ -464,6 +543,12 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
   background:none;border:0;color:#eef2ec;font:inherit;font-size:.82rem;font-weight:650;
   border-radius:9px;cursor:pointer}
 #mkBar button svg,#mkPop button svg{width:17px;height:17px}
+/* Thin inset dividers between the popover's actions — straight, and deliberately not
+   reaching the popover's top and bottom edges, so the group reads as one control rather
+   than three boxes. */
+#mkPop button + button{position:relative}
+#mkPop button + button::before{content:"";position:absolute;left:0;top:11px;bottom:11px;
+  width:1px;background:rgba(238,242,236,.22)}
 #mkBar button:hover,#mkPop button:hover{background:rgba(255,255,255,.12)}
 #mkBar button:focus-visible,#mkPop button:focus-visible{outline:2px solid #eef2ec;outline-offset:-2px}
 /* Note editor — a bottom sheet, the same shape as the outline sheet. */
@@ -509,8 +594,10 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
    else in the app, and a destructive control borrowing it would teach the colour a second
    meaning. Same reasoning as the note sheet's own Delete, which is muted ink. */
 .mkbulk{display:flex;justify-content:flex-end;padding:10px 0 2px}
-#mkBulkDel{min-height:44px;padding:0 14px;border-radius:var(--r);border:1px solid var(--line);
+#mkBulkDel{display:inline-flex;align-items:center;gap:7px;
+  min-height:44px;padding:0 16px;border-radius:22px;border:1px solid var(--line);
   background:none;font:inherit;font-size:.8rem;font-weight:650;color:var(--ink);cursor:pointer}
+#mkBulkDel svg{width:15px;height:15px}
 #mkBulkDel:hover{background:var(--hover-bg)}
 #mkBulkDel:disabled{color:var(--dim-ink);cursor:default;background:none}
 #mkBulkDel:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -713,9 +800,7 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
    sources — it replaces the panel that sat by the category selector. */
 /* The footer sets a small muted type scale for the disclaimer; the Sources control has to
    opt back out of it so it reads as the same control as Choose Categories. */
-#refFoot{text-align:left;margin:18px 0 0}
-#refFoot summary{font-size:1rem;color:var(--ink)}
-#refFoot .refintro{text-align:center;color:var(--muted);font-size:.81rem;margin:0 0 14px;line-height:1.45}
+.refintro{text-align:center;color:var(--muted);font-size:.81rem;margin:18px 0 12px;line-height:1.45}
 /* v19: the sources list is grouped and uniform. Each source is a two-part row — the
    name/number with its official title, and a one-line description beneath where one is
    confirmed — under a quiet alphabetical letter header. */
@@ -1594,9 +1679,30 @@ footer p{margin:0 0 8px}
      back affordance. -->
 <main id="library" class="hidden">
   <div class="libhdr">
-    <button id="libBack" type="button" aria-label="Back to main menu">&#8249;</button>
-    <h2 class="libtitle">Regulations</h2>
+    <button id="libBack" type="button" aria-label="Back">&#8249;</button>
+    <!-- v35: "References", not "Regulations". The hub lists three kinds of thing — hostable
+         publications, reference-only publications, and descriptive citations that are not
+         documents at all — and only one of those three is a regulation. -->
+    <h2 class="libtitle" id="libTitle">References</h2>
     <div id="libCue"></div>
+    <!-- The four views. A segmented control rather than chips, so all four are equal weight
+         and one tap apart, and "All" is a labelled default instead of an implied one. -->
+    <div id="libNav" role="tablist" aria-label="Reference views">
+      <button type="button" class="libseg" role="tab" data-view="all" aria-selected="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 5h16M4 12h16M4 19h16"/></svg><span>All</span>
+      </button>
+      <button type="button" class="libseg" role="tab" data-view="fav" aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.6l2.5 5.1 5.6.8-4.1 4 1 5.6L12 16.4l-5 2.7 1-5.6-4.1-4 5.6-.8z"/></svg><span>Favorites</span>
+      </button>
+      <button type="button" class="libseg" role="tab" data-view="bm" aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 4h12v16l-6-4-6 4z"/></svg><span>Bookmarks</span>
+      </button>
+      <button type="button" class="libseg" role="tab" data-view="dl" aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 4v10M8 11l4 4 4-4M5 19h14"/></svg><span>Downloaded</span>
+      </button>
+    </div>
+    <!-- Only rendered while the hub is scoped to a quiz. -->
+    <div id="libChips" class="hidden" role="group" aria-label="Which references"></div>
     <label class="libsearch" for="libSearch">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4-4"></path></svg>
       <input id="libSearch" type="search" placeholder="Search publications" autocomplete="off" spellcheck="false" aria-label="Search publications">
@@ -1614,10 +1720,17 @@ footer p{margin:0 0 8px}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7"></path></svg>
     </button>
     <div class="rdtitle"><div class="n" id="rdNum"></div><div class="t" id="rdTitle"></div></div>
+    <!-- Favoriting is a whole-document act, so it belongs on the document's own bar as well
+         as on the list row — a Soldier who decides a publication matters usually decides it
+         while reading it, not while scrolling past it. -->
+    <button id="rdFav" type="button" aria-label="Add to favorites" aria-pressed="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.6l2.5 5.1 5.6.8-4.1 4 1 5.6L12 16.4l-5 2.7 1-5.6-4.1-4 5.6-.8z"/></svg>
+    </button>
     <button id="rdOutline" type="button" aria-label="Outline and marks">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h10"></path></svg>
     </button>
   </div>
+  <div id="rdToast" class="hidden" role="status" aria-live="polite"></div>
   <div id="rdScroll">
     <div id="rdStatus"></div>
     <div id="rdPages"></div>
@@ -1667,6 +1780,9 @@ footer p{margin:0 0 8px}
   <button id="mkPopNote" type="button">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 4h11l4 4v12H5z"></path><path d="M16 4v4h4"></path><path d="M8.5 12.5h7M8.5 16h4.5"></path></svg>Note
   </button>
+  <button id="mkPopCopy" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 9h10v10H9z"/><path d="M15 9V5H5v10h4"/></svg>Copy
+  </button>
   <button id="mkPopDel" type="button">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"></path></svg>Remove
   </button>
@@ -1698,13 +1814,13 @@ footer p{margin:0 0 8px}
        and summary styling, the same +/- marker. Collapsed by default — v14 listed all 77
        sources down the length of every page. The list still renders into the DOM on load
        whether or not it is open, so the self-test assertions are unaffected. -->
-  <details class="cats" id="refFoot">
-    <summary><span>Sources</span></summary>
-    <div class="catbody">
-      <p class="refintro" id="refAudit"></p>
-      <ul class="reflist" id="refList"></ul>
-    </div>
-  </details>
+  <!-- v35: the footer used to carry a second, parallel list of all 77 citations. That list
+       and the Regulations library described the same publications in two different places
+       with two different vocabularies, so both are now one hub and this is the way in. The
+       audit line stays here, because it is a statement about the whole app, not about a
+       screen. -->
+  <p class="refintro" id="refAudit"></p>
+  <button class="btn sec" type="button" id="refOpen" style="width:100%">Sources &amp; references</button>
   <p style="margin-top:16px">Study aid only. Verify all standards against the current regulation before a board. Regulations change.</p>
 </footer>
 </div>
@@ -2321,7 +2437,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v34";
+var APP_VERSION = "v35";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -2870,7 +2986,6 @@ function titleFor(src){
 }
 /* Whether the list is currently filtered to one quiz's citations. The self-test's
    one-row-per-distinct-source assertion only holds for the full list, so it checks this. */
-var refsScoped = false;
 /* Build the sources list. Pass an array of citation strings to scope it to those; pass
    nothing for the whole bank.
 
@@ -2878,62 +2993,6 @@ var refsScoped = false;
    into one column. Letters with no entries are skipped — an empty "J" is noise, not
    structure. The grouping is presentation only: the set of sources is unchanged, and each
    source still renders exactly one row. */
-function buildRefs(only){
-  var list=distinctSources(), host=$("refList");
-  if(only){
-    var keep={}; only.forEach(function(s){ keep[s]=1; });
-    list = list.filter(function(r){ return keep[r.src]; });
-  }
-  refsScoped = !!only;
-  list.sort(function(a,b){
-    return sortKeyFor(a.src).localeCompare(sortKeyFor(b.src)) || a.src.localeCompare(b.src);
-  });
-  host.innerHTML="";
-  var letter=null;
-  list.forEach(function(r){
-    var L=letterFor(r.src);
-    if(L!==letter){
-      letter=L;
-      var lh=document.createElement("li");
-      lh.className="lh";
-      lh.setAttribute("aria-hidden","true");   // a divider, not a list item a reader needs
-      var ls=document.createElement("span"); ls.className="l"; ls.textContent=L;
-      var rule=document.createElement("span"); rule.className="rule";
-      lh.appendChild(ls); lh.appendChild(rule);
-      host.appendChild(lh);
-    }
-    var li=document.createElement("li");
-    li.className="refrow";
-    var p=document.createElement("span"); p.className="p";
-    p.textContent = labelFor(r.src) + (titleFor(r.src) ? " — "+titleFor(r.src) : "");
-    li.appendChild(p);
-    var d=SOURCE_DESC[r.src];
-    if(d){
-      var ds=document.createElement("span"); ds.className="d"; ds.textContent=d;
-      li.appendChild(ds);
-    }
-    var link = refLibraryLink(r.src);
-    if(link) li.appendChild(link);
-    /* The publication name itself is the obvious thing to tap, so it is the same jump as the
-       Read control rather than dead text next to a live button. Only on mapped rows — a
-       descriptive source has nowhere to go, and a tappable-looking line that does nothing is
-       worse than plain text. */
-    if(link && link.querySelector && link.querySelector("[data-reg-src]")){
-      var target = link.querySelector("[data-reg-src]").getAttribute("data-reg-src");
-      p.className = "p tap";
-      p.setAttribute("role","button");
-      p.setAttribute("tabindex","0");
-      p.addEventListener("click", function(){
-        if(REGLIB.viewerReady()) openReader(target); else openLibrary(target);
-      });
-      p.addEventListener("keydown", function(e){
-        if(e.key === "Enter" || e.key === " "){ e.preventDefault(); p.click(); }
-      });
-    }
-    host.appendChild(li);
-  });
-  return list.length;
-}
 /* ---- Sources tab -> the regulation library (v29) ----
    No hand-written key map: a manifest id is derived from the publication number, so the
    citation resolves to it by the same rule. A citation may pin an edition inline
@@ -2951,57 +3010,6 @@ function regForSource(src){
   }
   return null;
 }
-function refLibraryLink(src){
-  var reg = regForSource(src);
-  if(!reg) return null;
-  /* Reference-only publications are named, never offered — the same honesty as the library
-     row. Quiet text, not a control, because there is nothing to tap. */
-  if(reg.restricted){
-    var s = document.createElement("span");
-    s.className = "refreg muted";
-    s.textContent = "Restricted distribution — obtain through official channels";
-    return s;
-  }
-  if(!REGLIB.capabilities().available) return null;   /* bare file:// cannot store anything */
-  /* v30: two controls, not one. Reading and saving are now separate things, so the sources
-     row offers both — Read opens the publication directly (streamed), Save keeps it on the
-     device. Grouped on one line so the list still reads as a reference, not a storefront. */
-  var wrap = document.createElement("span");
-  wrap.className = "refregs";
-
-  var open = document.createElement("button");
-  open.type = "button"; open.className = "refreg";
-  open.setAttribute("data-reg-src", reg.id);
-  open.textContent = "Open";
-  open.addEventListener("click", function(e){
-    e.preventDefault(); e.stopPropagation();
-    if(REGLIB.viewerReady()) openReader(reg.id); else openLibrary(reg.id);
-  });
-  wrap.appendChild(open);
-
-  var save = document.createElement("button");
-  save.type = "button"; save.className = "refreg sec";
-  save.setAttribute("data-reg-save", reg.id);
-  save.textContent = "Download";
-  save.addEventListener("click", function(e){
-    e.preventDefault(); e.stopPropagation();
-    save.disabled = true; save.textContent = "Downloading…";
-    REGLIB.download(reg.id).then(function(){
-      save.textContent = "Downloaded";
-    }).catch(function(err){
-      save.disabled = false; save.textContent = "Download";
-      if(err && err.code === "cancelled") return;
-      $("noticeText").textContent = (err && err.message) || "That save did not finish.";
-      $("notice").classList.remove("hidden");
-    });
-  });
-  REGLIB.installed(reg.id).then(function(has){
-    if(has){ save.disabled = true; save.textContent = "Downloaded"; }
-  }).catch(function(){});
-  wrap.appendChild(save);
-  return wrap;
-}
-buildRefs();
 
 /* ---------------- content last audited ---------------- */
 /* Formatted from the parts rather than parsed as a Date: "2026-07-28" parses as UTC
@@ -3038,15 +3046,22 @@ function setRefIntro(){
 /* Scope the sources panel to the quiz in play, or back to the whole bank. One function so a
    screen can never be left showing the wrong list — call it with the quiz on the way in and
    with nothing on the way out, exactly like compactBar(). */
+/* v35: nothing is rendered up front any more — the hub builds its own list when it opens.
+   This just records WHICH citations the current quiz rests on, and says so on the way in. */
+var quizSources = null;
 function scopeRefs(list){
   if(list && list.length){
     var seen={}, only=[];
     list.forEach(function(q){ if(q.s && !seen[q.s]){ seen[q.s]=1; only.push(q.s); } });
-    buildRefs(only);
+    quizSources = only;
   } else {
-    buildRefs();
+    quizSources = null;
   }
   setRefIntro();
+  var b = $("refOpen");
+  if(b) b.textContent = quizSources
+    ? "Sources for this quiz · " + quizSources.length + " citation" + (quizSources.length===1?"":"s")
+    : "Sources & references";
 }
 
 /* ---------------- feedback links ---------------- */
@@ -3628,7 +3643,7 @@ function buildPrint(){
 var REGLIB = (function(){
   "use strict";
 
-  var DB_NAME = "absg_reglib", DB_VER = 2;
+  var DB_NAME = "absg_reglib", DB_VER = 3;
   var STORE_FILES = "files";      /* id -> {id, blob, meta} */
   var STORE_MARKS = "marks";      /* v24 store, key -> {regId, loc, kind, text, color, at} */
   /* v28's annotation overlay store. Its own store rather than reusing `marks` because the
@@ -3636,6 +3651,11 @@ var REGLIB = (function(){
      indexed by [regId,page] so painting one page never scans the whole set. Separate from
      the PDF blob and from `absg_v3`, as the spec requires. */
   var STORE_ANNOTS = "annots";    /* id -> Mark */
+  /* v35. A favorite is the whole PUBLICATION, which is why it is keyed by reg id alone and
+     kept apart from `annots` — a bookmark is a page and already lives there as a mark. Its
+     own store rather than a flag on the manifest, because the manifest ships with the build
+     and a Soldier's choices must survive the next one. */
+  var STORE_FAVS = "favs";        /* id -> {id, at} */
 
   /* ---- The manifest: every publication the bank cites, in one of three states.
 
@@ -3772,6 +3792,7 @@ var REGLIB = (function(){
           a.createIndex("byReg", "regId", {unique:false});
           a.createIndex("byRegPage", ["regId","page"], {unique:false});
         }
+        if(!d.objectStoreNames.contains(STORE_FAVS)) d.createObjectStore(STORE_FAVS, {keyPath:"id"});
       };
       rq.onsuccess = function(){
         var d = rq.result;
@@ -3972,6 +3993,26 @@ var REGLIB = (function(){
      keyed to a reg and a location, so they survive a re-download, cost almost
      nothing next to the document, and exist whether or not the heavy PDF was ever
      fetched. The PDF is never modified. ---- */
+  /* Favorites. Deliberately tiny: an id and a timestamp. Nothing about a publication is
+     copied in, so a manifest edit can never leave a favorite describing a pub that changed. */
+  var favs = {
+    list: function(){
+      return tx(STORE_FAVS,"readonly",function(st){ return st.getAll(); })
+             .then(function(r){ return (r||[]).map(function(x){ return x.id; }); })
+             .catch(function(){ return []; });
+    },
+    set: function(id, on){
+      id = String(id);
+      return on
+        ? tx(STORE_FAVS,"readwrite",function(st){ return st.put({id:id, at:new Date().toISOString()}); }).then(function(){ return true; })
+        : tx(STORE_FAVS,"readwrite",function(st){ return st.delete(id); }).then(function(){ return false; });
+    },
+    toggle: function(id){
+      return tx(STORE_FAVS,"readonly",function(st){ return st.get(String(id)); })
+             .then(function(hit){ return favs.set(id, !hit); });
+    }
+  };
+
   var marks = {
     /* v28: the LOCKED annotation record. Content-addressed on purpose — `quote` plus its
        surrounding context is what lets a mark survive a re-download or an updated edition,
@@ -4099,7 +4140,7 @@ var REGLIB = (function(){
     capabilities: capabilities, unavailableLine: UNAVAILABLE_LINE,
     backendName: function(){ return backend().name; },
     download: download, cancel: cancel, installed: installed, remove: remove, openBlob: openBlob,
-    status: status, marks: marks, render: render, viewerReady: viewerReady,
+    status: status, marks: marks, favs: favs, render: render, viewerReady: viewerReady,
     /* Test seam: lets the proof harness register a sample entry without shipping one. */
     _addTestReg: function(entry){ MANIFEST.push(entry); BY_ID[entry.id]=entry; return entry; }
   };
@@ -4110,13 +4151,6 @@ var REGLIB = (function(){
    the only way to exercise it from outside is a named handle. Same precedent as
    `window.__selfTestErrors`, and it exposes the module only, never the quiz internals. */
 window.REGLIB = REGLIB;
-
-/* The sources list is built near the top of the script, which is BEFORE this module exists —
-   so on the first pass every source-to-publication lookup returned null and not one
-   "Open in library" control rendered. Rebuild now that the manifest is reachable.
-   buildRefs() clears its host first, so this is idempotent, and the self-test's
-   one-row-per-source assertion would catch it if it ever stopped being. */
-buildRefs();
 
 /* ==================== Regulation library — list screen (v26) ====================
    Chunk 2, built to the approved spec. The list is a pure projection of the manifest:
@@ -4177,6 +4211,61 @@ var libProgress = {};    /* id -> last fraction, so a re-render mid-download kee
    absent row. The omission is reported by the self-test so it can never go unnoticed. */
 function libListable(st){ return st.restricted || st.downloadable; }
 
+/* ---- v35: the hub's row model. One list, three kinds.
+
+   The old surface split the same 77 citations across two places: the Regulations library
+   (publications we host) and the Sources footer (everything the bank cites). A Soldier had
+   to know which of the two to look in, and roughly forty publications were in both. This
+   builds ONE list from both inputs and tags each row with what it actually is, so nothing
+   is listed twice and nothing is dropped.
+
+   "kind" is the honest three-way answer, matching the manifest own "avail" logic:
+     "pub"        a hostable publication — reads, favorites, downloads.
+     "ref"        distribution-controlled — listed so a Soldier knows it exists, never offered.
+     "desc"       a citation that is not a document at all (Army heritage, the creed texts).
+                  No number, no controls; a control on one would promise something that
+                  cannot exist.                                                            */
+function libHubRows(scope){
+  /* Membership comes from the MANIFEST, which is the standing answer to what exists, and the
+     live download status is layered on top where a refresh has produced it. Deriving
+     membership from the refreshed list instead made the hub's contents depend on whether an
+     async status pass had finished — which is exactly what the self-test caught, asserting
+     against an empty list at load. What is in the hub should not depend on timing. */
+  var rows = [], live = {};
+  libRows.forEach(function(st){ live[st.id] = st; });
+  REGLIB.MANIFEST.forEach(function(m){
+    if(!m.restricted && !m.url) return;      /* not hosted and not listed-as-restricted */
+    var st = live[m.id] || m;
+    rows.push({ kind: m.restricted ? "ref" : "pub", id: m.id, st: st,
+                name: m.pubNumber, title: m.title, sortKey: m.pubNumber, srcs: [] });
+  });
+  var byId = {};
+  rows.forEach(function(r){ byId[r.id] = r; });
+  /* Every distinct citation is accounted for: it either resolves to a publication row that is
+     already in the list, or it becomes a descriptive row. Nothing falls between the two. */
+  distinctSources().forEach(function(d){
+    var reg = regForSource(d.src);
+    if(reg && byId[reg.id]){ byId[reg.id].srcs.push(d.src); return; }
+    rows.push({ kind:"desc", id:null, st:null, name: labelFor(d.src), title:"",
+                desc: SOURCE_DESC[d.src] || "", sortKey: labelFor(d.src), srcs:[d.src] });
+  });
+  if(scope && scope.length){
+    var want = {}; scope.forEach(function(x){ want[x] = 1; });
+    rows = rows.filter(function(r){
+      return r.srcs.some(function(x){ return want[x]; });
+    });
+  }
+  return rows;
+}
+
+/* Which distinct citations does the hub actually account for? The self-test's transparency
+   assertion runs on this, so the guarantee is measured on the surface that now carries it. */
+function libCoveredSources(){
+  var seen = {};
+  libHubRows(null).forEach(function(r){ r.srcs.forEach(function(x){ seen[x] = 1; }); });
+  return seen;
+}
+
 function libGroups(rows){
   var out = [];
   if(libQuery){
@@ -4204,6 +4293,23 @@ function libGroups(rows){
     out.push({ label:f + " — " + pres.join(" · "), rows:list });
   });
   return out;
+}
+
+var libView = "all",      /* all | fav | bm | dl */
+    libScope = null,      /* the quiz's source strings while the hub is scoped */
+    libFavs = {},         /* id -> true, mirrored from the store so a row paints synchronously */
+    libFrom = "menu",     /* which screen the hub was opened from */
+    libSubWas = "", libBarWas = null;
+
+function libSetView(v){
+  libView = v;
+  Array.prototype.forEach.call(document.querySelectorAll("#libNav .libseg"), function(b){
+    b.setAttribute("aria-selected", b.getAttribute("data-view") === v ? "true" : "false");
+  });
+  /* Search only means something against the list of everything. The other three views are
+     already a filter, and a second one stacked on top reads as a bug when it empties them. */
+  $("libSearch").parentNode.style.display = (v === "all" && !libScope) ? "" : "none";
+  libCue(); libRender();
 }
 
 function libMatch(st){
@@ -4310,9 +4416,9 @@ function libBuildRow(st){
    while the viewer is absent (see libBuildRow) — that is the clean gate the handoff asked
    for, rather than a tap that looks live and does nothing. v27 turns the bundle on and the
    same rows become interactive with no change here. */
-function libOpenReg(id){
+function libOpenReg(id, page){
   if(!REGLIB.viewerReady()) return;
-  if(typeof openReader === "function") openReader(id);
+  if(typeof openReader === "function") openReader(id, page);
 }
 
 function libRender(){
@@ -4340,23 +4446,219 @@ function libRender(){
       + "your device for reading without a signal."));
   }
 
-  var shown = libRows.filter(libMatch);
-  if(!shown.length){
+  if(libView === "fav"){ libRenderFavs(list); return; }
+  if(libView === "bm"){ libRenderBookmarks(list); return; }
+  if(libView === "dl"){ libRenderDownloads(list); return; }
+  libRenderAll(list);
+}
+
+function libSec(label, starred){
+  var h = document.createElement("div");
+  h.className = "libsec" + (starred ? "" : " fam");
+  if(starred) h.innerHTML = LIBICON.star;
+  h.appendChild(document.createTextNode(label));
+  return h;
+}
+
+/* The default view: Core Regulations, then the publications A-Z, then the citations that are
+   not documents. Three sections rather than one flat list, because the three kinds behave
+   differently and a Soldier scanning for something to READ should not have to step over
+   fourteen citations that cannot be opened. */
+function libRenderAll(list){
+  var rows = libHubRows(libScope).filter(function(r){
+    if(!libQuery) return true;
+    var hay = (r.name + " " + r.title + " " + (r.desc||"") + " " + (r.st ? r.st.category : "")).toLowerCase();
+    return hay.indexOf(libQuery) !== -1;
+  });
+  if(!rows.length){
     var none = document.createElement("div"); none.id = "libEmptyMsg";
-    none.textContent = "No publications match “" + libQuery + "”.";
+    none.textContent = libScope
+      ? "This quiz cites nothing that matches."
+      : "Nothing matches “" + libQuery + "”.";
     list.appendChild(none);
     return;
   }
-  libGroups(shown).forEach(function(g){
-    if(g.label){
-      var h = document.createElement("div");
-      h.className = "libsec" + (g.star ? "" : " fam");
-      if(g.star) h.innerHTML = LIBICON.star;
-      h.appendChild(document.createTextNode(g.label));
-      list.appendChild(h);
+  var pubs = rows.filter(function(r){ return r.kind !== "desc"; });
+  var desc = rows.filter(function(r){ return r.kind === "desc"; });
+  var core = pubs.filter(function(r){ return r.st && r.st.core; })
+                 .sort(function(a,b){ return libNat(a.sortKey, b.sortKey); });
+  if(core.length && !libQuery && !libScope){
+    list.appendChild(libSec("Core Regulations", true));
+    core.forEach(function(r){ list.appendChild(libBuildHubRow(r)); });
+  }
+  if(pubs.length){
+    list.appendChild(libSec(libScope ? "Publications" : "Publications · A–Z", false));
+    pubs.sort(function(a,b){ return libNat(a.sortKey, b.sortKey); })
+        .forEach(function(r){ list.appendChild(libBuildHubRow(r)); });
+  }
+  if(desc.length){
+    list.appendChild(libSec("Other cited sources", false));
+    desc.sort(function(a,b){ return a.sortKey.localeCompare(b.sortKey); })
+        .forEach(function(r){ list.appendChild(libBuildHubRow(r)); });
+  }
+  if(libScope){
+    var out = document.createElement("button");
+    out.type = "button"; out.id = "libAllLink";
+    out.textContent = "View all references";
+    out.addEventListener("click", function(){ libScope = null; libSetView("all"); libPaintHeader(); });
+    list.appendChild(out);
+  }
+}
+
+function libRenderFavs(list){
+  var rows = libHubRows(null).filter(function(r){ return r.kind === "pub" && libFavs[r.id]; });
+  if(!rows.length){
+    list.appendChild(libEmpty("star", "No favorites yet",
+      "Tap the star on any publication to keep it here, so the ones your board actually uses are one tap away."));
+    return;
+  }
+  rows.sort(function(a,b){ return libNat(a.sortKey, b.sortKey); })
+      .forEach(function(r){ list.appendChild(libBuildHubRow(r)); });
+}
+
+/* Bookmarks are pages, and they already live in the marks store — the reader has written
+   them there since v30. This view reads them; it does not keep a second copy that could
+   disagree with the reader. */
+function libRenderDownloads(list){
+  var rows = libRows.filter(function(st){ return st.downloaded || libProgress[st.id] !== undefined; });
+  if(!rows.length){
+    list.appendChild(libEmpty("down", "Nothing downloaded",
+      "Publications open without downloading. Download one to keep it on your device and read it with no signal."));
+    return;
+  }
+  rows.sort(function(a,b){ return libNat(a.pubNumber, b.pubNumber); }).forEach(function(st){
+    var row = document.createElement("div");
+    row.className = "librow"; row.setAttribute("data-reg", st.id);
+    var main = document.createElement("div"); main.className = "rmain";
+    var num = document.createElement("div"); num.className = "rnum";
+    num.appendChild(document.createTextNode(st.pubNumber));
+    var ttl = document.createElement("div"); ttl.className = "rttl"; ttl.textContent = st.title;
+    main.appendChild(num); main.appendChild(ttl);
+    /* An in-progress download reports here as well as on the row in All — this is the view a
+       Soldier watches it from. */
+    if(libProgress[st.id] !== undefined){
+      var p = document.createElement("div"); p.className = "rdesc";
+      p.textContent = "Downloading " + Math.round(libProgress[st.id]*100) + "% of " + libMB(st.sizeBytes);
+      main.appendChild(p);
     }
-    g.rows.forEach(function(st){ list.appendChild(libBuildRow(st)); });
+    row.appendChild(main);
+    var size = document.createElement("span"); size.className = "dlsize";
+    size.textContent = libMB(st.sizeBytes);
+    row.appendChild(size);
+    var more = document.createElement("button");
+    more.type = "button"; more.className = "dlmore";
+    more.setAttribute("aria-label", "Remove the downloaded copy of " + st.pubNumber);
+    more.textContent = "···";
+    more.addEventListener("click", function(e){
+      e.stopPropagation();
+      if(libProgress[st.id] !== undefined){ libCancel(st.id); return; }
+      REGLIB.remove(st.id).then(function(){ libRefresh(); });
+    });
+    row.appendChild(more);
+    /* The row still opens the publication — removing is the deliberate act behind the menu. */
+    row.addEventListener("click", function(){ libOpenReg(st.id); });
+    list.appendChild(row);
   });
+}
+
+function libRenderBookmarks(list){
+  var host = document.createElement("div");
+  list.appendChild(host);
+  var pubs = libRows.filter(function(st){ return !st.restricted; });
+  Promise.all(pubs.map(function(st){
+    return REGLIB.marks.listForReg(st.id).then(function(ms){
+      return ms.filter(function(m){ return m.type === "bookmark"; })
+               .map(function(m){ return { st: st, m: m }; });
+    }).catch(function(){ return []; });
+  })).then(function(sets){
+    var all = [];
+    sets.forEach(function(x){ all = all.concat(x); });
+    if(!all.length){
+      host.appendChild(libEmpty("book", "No bookmarks yet",
+        "While reading, tap the bookmark in the bottom bar to save the page you are on. Saved pages land here."));
+      return;
+    }
+    all.sort(function(a,b){
+      return libNat(a.st.pubNumber, b.st.pubNumber) || (a.m.page - b.m.page);
+    });
+    all.forEach(function(x){
+      var b = document.createElement("button"); b.type = "button"; b.className = "bmrow";
+      var g = document.createElement("span"); g.className = "g";
+      g.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 4h12v16l-6-4-6 4z"/></svg>';
+      var body = document.createElement("div"); body.className = "b";
+      var n = document.createElement("div"); n.className = "n";
+      n.textContent = x.st.pubNumber + " · "
+        + (x.m.pageLabel ? "p. " + x.m.pageLabel + " · " : "") + "page " + (x.m.page + 1);
+      var sn = document.createElement("div"); sn.className = "s";
+      sn.textContent = x.st.title;
+      body.appendChild(n); body.appendChild(sn);
+      b.appendChild(g); b.appendChild(body);
+      b.addEventListener("click", function(){ libOpenReg(x.st.id, x.m.page + 1); });
+      host.appendChild(b);
+    });
+  }).catch(function(){});
+}
+
+function libEmpty(icon, head, body){
+  var e = document.createElement("div"); e.className = "libempty";
+  e.innerHTML = LIBICON[icon] || LIBICON.book;
+  var h = document.createElement("div"); h.className = "h"; h.textContent = head;
+  var p = document.createElement("p"); p.textContent = body;
+  e.appendChild(h); e.appendChild(p);
+  return e;
+}
+
+/* One row builder for all three kinds. Written as one function on purpose: the three share a
+   rhythm and trailing geometry, and splitting them is how they drift apart. */
+function libBuildHubRow(r){
+  if(r.kind === "desc"){
+    var d = document.createElement("div");
+    d.className = "librow desc";
+    var q = document.createElement("span"); q.className = "libqt";
+    q.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">'
+      + '<path d="M9.2 6.5c-2.6 1-4.2 3.2-4.2 5.9v5.1h5.4v-5.4H7.8c0-1.6.8-2.8 2.3-3.5zm8.6 0c-2.6 1-4.2 3.2-4.2 5.9v5.1H19v-5.4h-2.6c0-1.6.8-2.8 2.3-3.5z"/></svg>';
+    var dm = document.createElement("div"); dm.className = "rmain";
+    var dn = document.createElement("div"); dn.className = "rnum";
+    dn.appendChild(document.createTextNode(r.name));
+    dm.appendChild(dn);
+    if(r.desc){
+      var dd = document.createElement("div"); dd.className = "rdesc"; dd.textContent = r.desc;
+      dm.appendChild(dd);
+    }
+    var ct = document.createElement("span"); ct.className = "libcited"; ct.textContent = "Cited";
+    d.appendChild(q); d.appendChild(dm); d.appendChild(ct);
+    return d;
+  }
+  var st = r.st;
+  var row = libBuildRow(st);
+  /* The star is a control inside the row, and the row is itself a button when the publication
+     is readable — so it is inserted as a sibling of the state cell, and its handler stops the
+     row's own click. Reference-only rows get no star: you cannot open them, so keeping one
+     within reach would promise a shortcut to something that has no shortcut. */
+  if(r.kind === "pub"){
+    var fav = document.createElement("button");
+    fav.type = "button"; fav.className = "libfav";
+    var on = !!libFavs[st.id];
+    fav.setAttribute("aria-pressed", on ? "true" : "false");
+    fav.setAttribute("aria-label", (on ? "Remove " : "Add ") + st.pubNumber + (on ? " from" : " to") + " favorites");
+    fav.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">'
+      + '<path d="M12 3.6l2.5 5.1 5.6.8-4.1 4 1 5.6L12 16.4l-5 2.7 1-5.6-4.1-4 5.6-.8z"/></svg>';
+    fav.addEventListener("click", function(e){
+      e.stopPropagation(); e.preventDefault();
+      REGLIB.favs.toggle(st.id).then(function(now){
+        if(now) libFavs[st.id] = true; else delete libFavs[st.id];
+        /* Repaint every copy of this row — a core publication appears twice in All. */
+        Array.prototype.forEach.call(document.querySelectorAll('[data-reg="' + st.id + '"] .libfav'), function(b){
+          b.setAttribute("aria-pressed", now ? "true" : "false");
+          b.setAttribute("aria-label", (now ? "Remove " : "Add ") + st.pubNumber + (now ? " from" : " to") + " favorites");
+        });
+        if(libView === "fav") libRender();
+        if(typeof rdPaintFav === "function") rdPaintFav();
+      });
+    });
+    row.insertBefore(fav, row.querySelector(".libst"));
+  }
+  return row;
 }
 
 function libNote(icon, head, body){
@@ -4370,11 +4672,28 @@ function libNote(icon, head, body){
 }
 
 function libCue(){
-  var n = libRows.length;
   var dl = libRows.filter(function(r){ return r.downloaded; });
   var bytes = dl.reduce(function(s,r){ return s + (r.sizeBytes||0); }, 0);
-  $("libCue").textContent = n + " publication" + (n===1?"":"s") + " · "
-    + dl.length + " downloaded · " + libMB(bytes) + " stored";
+  if(libView === "dl"){
+    /* The download view answers a storage question, so it leads with the storage numbers. */
+    var doing = Object.keys(libProgress).length;
+    $("libCue").textContent = doing
+      ? doing + " of " + (dl.length + doing) + " · " + libMB(bytes) + " stored"
+      : dl.length + " downloaded · " + libMB(bytes) + " stored";
+    return;
+  }
+  if(libView === "fav"){
+    var f = Object.keys(libFavs).length;
+    $("libCue").textContent = f + " favorite" + (f===1?"":"s");
+    return;
+  }
+  if(libView === "bm"){ $("libCue").textContent = "Saved pages"; return; }
+  var rows = libHubRows(libScope);
+  var pubs = rows.filter(function(r){ return r.kind !== "desc"; }).length;
+  var other = rows.length - pubs;
+  $("libCue").textContent = pubs + " publication" + (pubs===1?"":"s")
+    + (other ? " · " + other + " other source" + (other===1?"":"s") : "")
+    + " · " + dl.length + " downloaded";
 }
 
 /* One refresh path: pull status, drop the unlistable, repaint. Everything that changes a
@@ -4383,6 +4702,11 @@ function libRefresh(){
   return REGLIB.status().then(function(rows){
     libRows = rows.filter(libListable);
     libStoreError = null;
+    return REGLIB.favs.list().then(function(ids){
+      libFavs = {};
+      ids.forEach(function(id){ libFavs[id] = true; });
+    }).catch(function(){ libFavs = {}; });
+  }).then(function(){
     libCue(); libRender();
   }).catch(function(e){
     /* An empty list with no explanation is the worst outcome — it looks like the library
@@ -4424,7 +4748,16 @@ function libCancel(id){
   REGLIB.cancel(id).then(function(){ return libRefresh(); });
 }
 
-function openLibrary(focusId){
+/* v35: the hub can be opened from the middle of a quiz, so it remembers what it covered up
+   and puts it back. A Soldier checking what a question was based on must not lose the quiz —
+   the screen is layered over it, and the quiz's own state is never touched. */
+function openLibrary(focusId, scope){
+  var fromQuiz = !$("quiz").classList.contains("hidden");
+  libFrom = fromQuiz ? "quiz" : "menu";
+  libSubWas = $("sub").textContent;
+  libBarWas = fromQuiz ? $("qbBoard").textContent : null;
+  libScope = (scope && scope.length) ? scope.slice() : null;
+  libView = "all"; libQuery = "";
   if(tick){ clearInterval(tick); tick=null; }
   stopSpeech(); $("speakRow").classList.add("hidden");
   compactBar(false);
@@ -4439,8 +4772,9 @@ function openLibrary(focusId){
      screen, once as library rows and again in the footer below them. The footer belongs to
      the study screens, not to the library. */
   document.querySelector("footer").style.display = "none";
-  $("sub").textContent = "Regulations — download publications for offline reading.";
-  libQuery = ""; $("libSearch").value = "";
+  $("libSearch").value = "";
+  libPaintHeader();
+  libSetView("all");
   mount($("library"));
   window.scrollTo(0,0);
   libRefresh().then(function(){
@@ -4460,7 +4794,52 @@ function closeLibrary(){
   $("library").classList.add("hidden");
   $("regBtn").style.display = ""; $("settingsBtn").style.display = "";
   document.querySelector("footer").style.display = "";
+  libScope = null;
+  /* Back out to wherever the hub was opened FROM. Falling through to toMenu() unconditionally
+     is what would silently end a quiz a Soldier was halfway through. */
+  if(libFrom === "quiz"){
+    libFrom = "menu";
+    $("quiz").classList.remove("hidden");
+    $("sub").textContent = libSubWas;
+    compactBar(true, libBarWas || "");
+    showSpeakRow();
+    mount($("quiz"));
+    window.scrollTo(0,0);
+    return;
+  }
   toMenu();
+}
+
+/* The title, the count line and the in-quiz chips are one thing, painted together, because
+   they always have to agree about which list is on screen. */
+function libPaintHeader(){
+  var chips = $("libChips");
+  chips.textContent = "";
+  if(!libScope){
+    $("libTitle").textContent = "References";
+    $("sub").textContent = "References — every publication and source the questions are built on.";
+    chips.classList.add("hidden");
+    $("libNav").style.display = "";
+    return;
+  }
+  var n = libScope.length;
+  $("libTitle").textContent = "Sources";
+  $("sub").textContent = "Sources · For this quiz · " + n + " citation" + (n===1?"":"s");
+  /* While scoped, the four views do not apply — the list is already a filter. The chip pair
+     is the only switch that means anything here. */
+  $("libNav").style.display = "none";
+  chips.classList.remove("hidden");
+  [["This quiz", true], ["All references", false]].forEach(function(pair){
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "libchip";
+    b.setAttribute("aria-pressed", pair[1] ? "true" : "false");
+    b.textContent = pair[0];
+    b.addEventListener("click", function(){
+      if(pair[1]) return;
+      libScope = null; libPaintHeader(); libSetView("all");
+    });
+    chips.appendChild(b);
+  });
 }
 
 /* ==================== Regulation reader (v27, chunk 3) ====================
@@ -4476,6 +4855,7 @@ var rdDoc = null, rdId = null, rdPage = 1, rdLabels = null,
     rdObserver = null, rdRendering = {}, rdScrollLast = 0, rdScrollTimer = 0,
     rdSource = null,        /* "saved" | "stream" — which path opened this document */
     rdZoom = 1,             /* 1 = fit to width; the user multiplies it from there */
+    rdWantPage = 0,         /* page to land on when the reader was opened from a bookmark */
     rdAspect = 1.29;
 
 /* Fit-to-width is the default because a PDF page is 612pt wide and a desktop window is not:
@@ -4645,6 +5025,24 @@ function rdPaintSave(){
     b.disabled = !rdDoc || saved;
   }).catch(function(){});
 }
+/* The star reads its state from the same store the list does, so the two can never disagree
+   about whether a publication is a favorite. */
+function rdPaintFav(){
+  var b = $("rdFav"); if(!b || !rdId) return;
+  var meta = REGLIB.byId(rdId);
+  var on = !!libFavs[rdId];
+  b.setAttribute("aria-pressed", on ? "true" : "false");
+  b.setAttribute("aria-label", (on ? "Remove " : "Add ") + (meta ? meta.pubNumber : "this publication")
+    + (on ? " from" : " to") + " favorites");
+  b.querySelector("svg").setAttribute("fill", on ? "currentColor" : "none");
+}
+function rdToggleFav(){
+  if(!rdId) return;
+  REGLIB.favs.toggle(rdId).then(function(now){
+    if(now) libFavs[rdId] = true; else delete libFavs[rdId];
+    rdPaintFav();
+  });
+}
 function rdPaintBookmark(){
   var b = $("rdBookmark"); if(!b || !rdId) return;
   REGLIB.marks.listForPage(rdId, rdPage - 1).then(function(list){
@@ -4656,10 +5054,23 @@ function rdPaintBookmark(){
 }
 /* A bookmark is page-level and carries no text anchor, which is exactly why it is a distinct
    `type` rather than a highlight with an empty quote. */
+/* A toast, not a modal: the page is already bookmarked by the time a Soldier reads the line,
+   so nothing should need dismissing. */
+var rdToastTimer = 0;
+function rdToast(msg){
+  var t = $("rdToast"); if(!t) return;
+  t.textContent = msg;
+  t.classList.remove("hidden");
+  if(rdToastTimer) clearTimeout(rdToastTimer);
+  rdToastTimer = setTimeout(function(){ t.classList.add("hidden"); rdToastTimer = 0; }, 1800);
+}
 function rdToggleBookmark(){
   if(!rdDoc || !rdId) return;
   REGLIB.marks.listForPage(rdId, rdPage - 1).then(function(list){
     var existing = list.filter(function(m){ return m.type === "bookmark"; })[0];
+    rdToast(existing
+      ? "Bookmark removed"
+      : "Page " + (rdLabelFor(rdPage) || rdPage) + " bookmarked");
     if(existing) return REGLIB.marks.drop(existing.id);
     return REGLIB.marks.put({
       regId: rdId, page: rdPage - 1, pageLabel: rdLabelFor(rdPage), type: "bookmark",
@@ -4724,7 +5135,7 @@ function rdStreamDoc(url){
   });
 }
 
-function openReader(id){
+function openReader(id, page){
   var meta = REGLIB.byId(id);
   if(!meta) return;
   if(!REGLIB.viewerReady()){
@@ -4738,6 +5149,7 @@ function openReader(id){
   if(!g.workerSrc && window.__ABSG_PDF_WORKER_SRC__) g.workerSrc = window.__ABSG_PDF_WORKER_SRC__;
 
   rdId = id; rdPage = 1; rdDoc = null; rdLabels = null; rdSource = null; rdZoom = 1;
+  rdWantPage = (page && page > 1) ? page : 0;   /* a Bookmarks jump lands here */
   $("rdNum").textContent = meta.pubNumber;
   $("rdTitle").textContent = meta.title;
   $("rdPages").textContent = "";
@@ -4773,6 +5185,8 @@ function openReader(id){
     rdBuildPages(vp.height / vp.width);
     rdPaintPill();
     rdPaintBottom();
+    rdPaintFav();
+    if(rdWantPage){ var p = rdWantPage; rdWantPage = 0; rdGoto(p); }
   }).catch(function(e){
     /* Each failure gets the sentence that fits it. "Try downloading it again" is useless
        advice to someone who never downloaded it and is simply offline. */
@@ -5253,14 +5667,18 @@ function markSheetSection(body){
     var bulk = document.createElement("div"); bulk.className = "mkbulk";
     var del = document.createElement("button");
     del.type = "button"; del.id = "mkBulkDel"; del.disabled = true;
-    del.textContent = "Delete";
+    /* Trash glyph plus the word, and no count: the AD's refined state. The count was on the
+       face of the button in v33 and read as part of the label rather than as feedback. */
+    del.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/></svg>';
+    del.appendChild(document.createTextNode("Delete"));
     bulk.appendChild(del);
     host.appendChild(bulk);
     var picked = {};
     function syncBulk(){
       var n = Object.keys(picked).length;
       del.disabled = !n;
-      del.textContent = n ? "Delete " + n : "Delete";
+      /* The count belongs in the accessible name, not on the face of the pill. */
+      del.setAttribute("aria-label", n ? "Delete " + n + " selected" : "Delete selected marks");
     }
     del.addEventListener("click", function(){
       var ids = Object.keys(picked);
@@ -5418,8 +5836,43 @@ function selfTest(){
        source count and fail on a correct render. The assertion's meaning is unchanged — one
        rendered row per distinct source — and it is skipped while the list is scoped to a
        single quiz's citations, where a shorter list is the whole point. */
-    var rendered=$("refList") ? $("refList").querySelectorAll(".refrow").length : -1;
-    if(!refsScoped && rendered!==n) errs.push("references: list shows "+rendered+" rows but the bank cites "+n+" distinct sources");
+    /* v35: the same guarantee, measured on the surface that now carries it. The footer's
+       parallel list is gone, so this asks the hub's own row model whether every distinct
+       citation is accounted for — either as a publication row or as a descriptive one.
+       A source that resolved to nothing used to vanish quietly between the two screens. */
+    if(typeof libHubRows === "function" && window.REGLIB){
+      try{
+      var covered = libCoveredSources(), lost = [];
+      distinctSources().forEach(function(d){ if(!covered[d.src]) lost.push(d.src); });
+      if(lost.length)
+        errs.push("references: " + lost.length + " cited source(s) appear nowhere in the hub — " + lost.slice(0,3).join("; "));
+      var hub = libHubRows(null);
+      var kinds = {pub:0, ref:0, desc:0};
+      hub.forEach(function(r){ kinds[r.kind]++; });
+      if(!kinds.pub)  errs.push("references: the hub renders no readable publication rows");
+      if(!kinds.ref)  errs.push("references: the hub renders no reference-only rows");
+      if(!kinds.desc) errs.push("references: the hub renders no descriptive source rows");
+      /* A reference-only row must never carry a way to download something we do not host. */
+      hub.forEach(function(r){
+        if(r.kind === "ref" && ((r.st && r.st.downloadable) || REGLIB.byId(r.id).url))
+          errs.push("references: reference-only " + r.name + " is offered for download");
+      });
+      /* Every publication row has to be reachable by exactly one manifest id, or a favorite
+         saved against it would point at nothing. */
+      var ids = {};
+      hub.forEach(function(r){
+        if(r.kind === "desc") return;
+        if(ids[r.id]) errs.push("references: " + r.name + " is listed twice in the hub");
+        ids[r.id] = 1;
+      });
+      if(!$("libNav") || document.querySelectorAll("#libNav .libseg").length !== 4)
+        errs.push("references: the four-view nav is not present");
+      }catch(e){
+        errs.push("references: the hub's row model threw — " + (e && e.message));
+      }
+    } else if(n !== 77 && n < 1){
+      errs.push("references: the bank cites " + n + " distinct sources");
+    }
     /* v14 moved the list to the footer and dropped the visible counter. The count is
        still computed and still asserted above — only the digit left the screen. */
     var untitled=[];
@@ -5719,7 +6172,24 @@ function markStoreCheck(){
       color: "mark", note: note || null
     });
   };
-  REGLIB.marks.countAll().then(function(before){
+  /* v35: a favorite has to survive a write and a read, or the Favorites view is decoration.
+     Chained into the same promise as the marks check so it cannot report after the verdict. */
+  var favCheck = function(){
+    return REGLIB.favs.toggle("__selftest__").then(function(on){
+      if(on !== true) problems.push("a favorite did not save");
+      return REGLIB.favs.list();
+    }).then(function(ids){
+      if(ids.indexOf("__selftest__") === -1) problems.push("a saved favorite did not read back");
+      return REGLIB.favs.toggle("__selftest__");
+    }).then(function(off){
+      if(off !== false) problems.push("a favorite did not clear");
+      return REGLIB.favs.list();
+    }).then(function(ids){
+      if(ids.indexOf("__selftest__") !== -1) problems.push("a cleared favorite survived");
+    }).catch(function(e){ problems.push("favorites store unavailable: " + (e && e.message)); });
+  };
+
+  favCheck().then(function(){ return REGLIB.marks.countAll(); }).then(function(before){
     return mk(null).then(function(a){
       return mk("a note").then(function(b){
         return REGLIB.marks.listForPage(REG, 0).then(function(list){
@@ -5886,7 +6356,11 @@ $("printBtn").addEventListener("click", function(){ buildPrint(); window.print()
 
 /* ---------------- regulation library (v26) ---------------- */
 $("regBtn").addEventListener("click", openLibrary);
+$("refOpen").addEventListener("click", function(){ openLibrary(null, quizSources); });
 $("libBack").addEventListener("click", closeLibrary);
+Array.prototype.forEach.call(document.querySelectorAll("#libNav .libseg"), function(b){
+  b.addEventListener("click", function(){ libSetView(b.getAttribute("data-view")); });
+});
 $("libSearch").addEventListener("input", function(){
   libQuery = this.value.trim().toLowerCase();
   libRender();
@@ -5911,6 +6385,7 @@ function rdTap(el, fn){
   });
 }
 rdTap($("rdBack"), closeReader);
+rdTap($("rdFav"), rdToggleFav);
 rdTap($("rdOutline"), rdOpenSheet);
 $("rdSheetScrim").addEventListener("click", function(){ $("rdSheet").classList.add("hidden"); });
 rdTap($("rdPrev"), function(){ rdGoto(rdPage - 1); });
@@ -5994,6 +6469,28 @@ $("mkPopNote").addEventListener("click", function(){
   markHidePop();
   markOpenExisting(m);
 });
+$("mkPopCopy").addEventListener("click", function(){
+  var m = mkPicked; if(!m) return;
+  var text = (m.anchor && m.anchor.quote) || "";
+  markHidePop();
+  if(!text) return;
+  /* The async clipboard is not available on every iOS/WebView combination this ships to, so
+     the old execCommand path stays as the fallback rather than the copy silently failing. */
+  var done = function(){ rdToast("Copied"); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(function(){ copyFallback(text, done); });
+  } else copyFallback(text, done);
+});
+function copyFallback(text, done){
+  var ta = document.createElement("textarea");
+  ta.value = text;
+  ta.setAttribute("readonly","");
+  ta.style.position = "fixed"; ta.style.top = "-1000px"; ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.select();
+  try{ document.execCommand("copy"); done(); }catch(e){}
+  ta.remove();
+}
 $("mkPopDel").addEventListener("click", function(){
   var m = mkPicked; if(!m) return;
   markHidePop();
