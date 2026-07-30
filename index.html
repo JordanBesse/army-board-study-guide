@@ -958,7 +958,7 @@ footer p{margin:0 0 8px}
          the row still reads. -->
     <div class="stack" id="boardPicks">
       <button class="pick" type="button" data-board="som" aria-pressed="true">
-        <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round"><path d="M12 3.7l2.55 5.17 5.7.83-4.13 4.02.98 5.68L12 16.9l-5.1 2.5.98-5.68L4.75 9.7l5.7-.83z"/></svg></span>
+        <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round"><path d="M12 3.7L14.55 8.87L20.25 9.7L16.13 13.72L17.1 19.4L12 16.72L6.9 19.4L7.87 13.72L3.75 9.7L9.45 8.87Z"/></svg></span>
         <span class="lbl"><b>Soldier of the Month</b><small>All categories, tested in depth</small></span>
         <span class="rdy" data-r="som"><span class="band"></span><span class="sronly"></span><span class="track"><span class="fill"></span></span></span></button>
       <button class="pick" type="button" data-board="promo" aria-pressed="false" aria-expanded="false">
@@ -979,7 +979,7 @@ footer p{margin:0 0 8px}
           <span class="rdy" data-r="p2"><span class="band"></span><span class="sronly"></span><span class="track"><span class="fill"></span></span></span></button>
       </div>
       <button class="pick" type="button" data-board="amc" aria-pressed="false">
-        <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round"><circle cx="12" cy="9.6" r="4.5"/><path d="M12 7.5l.7 1.42 1.56.22-1.13 1.1.27 1.56L12 12.06l-1.4.74.27-1.56-1.13-1.1 1.56-.22z"/><path d="M9.9 13.2L8.7 20l3.3-2.2L15.3 20l-1.2-6.8"/></svg></span>
+        <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round"><circle cx="12" cy="9.6" r="4.5"/><path d="M12 7.2L12.71 8.63L14.28 8.86L13.14 9.97L13.41 11.54L12 10.8L10.59 11.54L10.86 9.97L9.72 8.86L11.29 8.63Z"/><path d="M9.9 13.2L8.7 20l3.3-2.2L15.3 20l-1.2-6.8"/></svg></span>
         <span class="lbl"><b>Audie Murphy Club</b><small>Leadership philosophy, heritage, judgment</small></span>
         <span class="rdy" data-r="amc"><span class="band"></span><span class="sronly"></span><span class="track"><span class="fill"></span></span></span></button>
       <button class="pick" type="button" data-board="ds" aria-pressed="false">
@@ -1759,7 +1759,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v21";
+var APP_VERSION = "v22";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -2355,11 +2355,18 @@ function auditDateLabel(iso){
 /* The intro line has to tell the truth about which list is on screen. Once the panel can be
    scoped to a single quiz, a fixed "every publication a question cites" would be wrong for
    most of the time it is open. */
+/* The Sources panel's descriptive text. The date is rendered from AUDIT_DATE through
+   auditDateLabel(), never typed in — the audit skill owns that constant, so the sentence
+   stays true the next time the bank is audited without anyone editing this string.
+   One sentence serves both the full list and the in-quiz-scoped list. That works now
+   because the wording no longer claims to BE the complete list: v19 needed a separate
+   scoped variant only because the old copy said "every regulation and publication a
+   question cites", which is false when the panel is filtered to one quiz. This text makes
+   a claim about how the questions were written, which holds either way. */
 function setRefIntro(){
-  var label=auditDateLabel(AUDIT_DATE);
-  $("refAudit").textContent = refsScoped
-    ? "The publications cited by the questions in this quiz. Content last audited "+label+"."
-    : "Every regulation and publication a question cites. Built from the questions, so it can't drift. Content last audited "+label+".";
+  $("refAudit").textContent =
+    "Every question is formulated based on current regulations and publications. "
+    + "Content last audited for accuracy on " + auditDateLabel(AUDIT_DATE);
 }
 (function(){
   setRefIntro();
@@ -3015,8 +3022,17 @@ function selfTest(){
     if(!/^\d{4}-\d{2}-\d{2}$/.test(AUDIT_DATE)) { errs.push("audit date: '"+AUDIT_DATE+"' is not YYYY-MM-DD"); return; }
     var mo=parseInt(AUDIT_DATE.slice(5,7),10), d=parseInt(AUDIT_DATE.slice(8,10),10);
     if(mo<1||mo>12||d<1||d>31) errs.push("audit date: '"+AUDIT_DATE+"' is not a real date");
-    if($("refAudit") && !$("refAudit").textContent) errs.push("audit date: references line did not render");
-    if($("setAudit") && !$("setAudit").textContent) errs.push("audit date: settings line did not render");
+    /* Assert the formatted date is actually IN the rendered text, not merely that the
+       element is non-empty. From v22 the Sources sentence is where the audit date shows,
+       and a non-empty check would have passed even if the date had been dropped from the
+       copy or hardcoded to a stale string. Both surfaces are checked against the same
+       value derived from the constant, so they cannot drift apart either. */
+    var lbl=auditDateLabel(AUDIT_DATE);
+    if(!lbl) errs.push("audit date: '"+AUDIT_DATE+"' did not format to a long date");
+    if($("refAudit") && $("refAudit").textContent.indexOf(lbl)===-1)
+      errs.push("audit date: sources text does not carry the rendered date '"+lbl+"'");
+    if($("setAudit") && $("setAudit").textContent.indexOf(lbl)===-1)
+      errs.push("audit date: settings line does not carry the rendered date '"+lbl+"'");
   })();
   if(errs.length){
     console.error("SELF-TEST FAILED — "+errs.length+" problem(s) across "+QUESTIONS.length+" questions");
