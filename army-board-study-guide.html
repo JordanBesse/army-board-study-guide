@@ -852,6 +852,11 @@ h2{font-size:.98rem;margin:0 0 10px;font-weight:650;text-align:center}
 }
 .btn:hover{filter:brightness(1.06)}
 .btn.sec{background:var(--surface);color:var(--ink);border-color:var(--line)}
+/* v31: the Other Ways to Study titles carried the .btn base weight while every other title
+   on the home screen — board names, quiz lengths — is 650. Three secondary buttons reading
+   lighter than everything around them looked like disabled text rather than a set of
+   choices. Scoped to this stack so the graded-answer and navigation buttons keep theirs. */
+.stack .btn.sec{font-weight:650}
 .btn.sec:hover{background:var(--surface2);border-color:var(--accent)}
 .btn.sm{padding:10px 13px;min-height:44px;font-size:.86rem}
 .btn:disabled{opacity:.45;cursor:not-allowed;filter:none}
@@ -1530,7 +1535,7 @@ footer p{margin:0 0 8px}
       <button id="rdMarkup" type="button" aria-label="Highlights and notes">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 20h4l9.5-9.5a2.1 2.1 0 0 0-3-3L5 17v3z"></path><path d="M13.5 5.5l3 3"></path></svg>
       </button>
-      <button id="rdSave" type="button" aria-label="Save for offline">
+      <button id="rdSave" type="button" aria-label="Download for offline reading">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 4v10M8 11l4 4 4-4M5 19h14"></path></svg>
       </button>
     </div>
@@ -2194,7 +2199,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v30";
+var APP_VERSION = "v31";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -2844,7 +2849,7 @@ function refLibraryLink(src){
   var open = document.createElement("button");
   open.type = "button"; open.className = "refreg";
   open.setAttribute("data-reg-src", reg.id);
-  open.textContent = "Read";
+  open.textContent = "Open";
   open.addEventListener("click", function(e){
     e.preventDefault(); e.stopPropagation();
     if(REGLIB.viewerReady()) openReader(reg.id); else openLibrary(reg.id);
@@ -2854,21 +2859,21 @@ function refLibraryLink(src){
   var save = document.createElement("button");
   save.type = "button"; save.className = "refreg sec";
   save.setAttribute("data-reg-save", reg.id);
-  save.textContent = "Save";
+  save.textContent = "Download";
   save.addEventListener("click", function(e){
     e.preventDefault(); e.stopPropagation();
-    save.disabled = true; save.textContent = "Saving…";
+    save.disabled = true; save.textContent = "Downloading…";
     REGLIB.download(reg.id).then(function(){
-      save.textContent = "Saved";
+      save.textContent = "Downloaded";
     }).catch(function(err){
-      save.disabled = false; save.textContent = "Save";
+      save.disabled = false; save.textContent = "Download";
       if(err && err.code === "cancelled") return;
       $("noticeText").textContent = (err && err.message) || "That save did not finish.";
       $("notice").classList.remove("hidden");
     });
   });
   REGLIB.installed(reg.id).then(function(has){
-    if(has){ save.disabled = true; save.textContent = "Saved"; }
+    if(has){ save.disabled = true; save.textContent = "Downloaded"; }
   }).catch(function(){});
   wrap.appendChild(save);
   return wrap;
@@ -3391,6 +3396,7 @@ function toMenu(){
      the home screen with no gear and no Regulations button. */
   $("library").classList.add("hidden");
   $("regBtn").style.display = ""; $("settingsBtn").style.display = "";
+  document.querySelector("footer").style.display = "";
   $("home").classList.remove("hidden");
   $("sub").textContent="Soldier of the Month, Promotion Board, Audie Murphy, Drill Sergeant, and ESB preparation.";
   mount($("home"));
@@ -4114,7 +4120,7 @@ function libPaintState(cell, st){
   }
   if(st.downloaded){
     el = document.createElement("span"); el.className = "done";
-    el.innerHTML = LIBICON.check; el.appendChild(document.createTextNode("Saved"));
+    el.innerHTML = LIBICON.check; el.appendChild(document.createTextNode("Downloaded"));
     cell.appendChild(el); return;
   }
   /* Demoted in v30 from the way in to a secondary "keep it on the device" action. It reads
@@ -4127,7 +4133,7 @@ function libPaintState(cell, st){
      24 MB of phone storage, and the label carries the verb so the size is not left to imply
      one. The self-test asserts this number is present; it caught its removal. */
   el.appendChild(document.createTextNode(libMB(st.sizeBytes)));
-  el.setAttribute("aria-label", "Save " + st.pubNumber + " for offline reading, "
+  el.setAttribute("aria-label", "Download " + st.pubNumber + " for offline reading, "
     + libMB(st.sizeBytes));
   el.disabled = offline;
   el.addEventListener("click", function(e){ e.stopPropagation(); libDownload(st.id); });
@@ -4201,11 +4207,11 @@ function libRender(){
     edge.appendChild(libNote("info", "The library isn't available right now", libStoreError));
   } else if(navigator.onLine === false){
     edge.appendChild(libNote("offline", "You're offline",
-      "Publications you've saved still open. The rest need a connection — reading streams them "
+      "Publications you have downloaded still open. The rest need a connection — reading streams them "
       + "as you go."));
   } else if(!libRows.filter(function(r){ return r.downloaded; }).length){
     edge.appendChild(libNote("book", "Tap any publication to read it",
-      "Publications open straight away without downloading. Use Save on a row to keep one on "
+      "Publications open straight away. Use Download on a row to keep one on "
       + "your device for reading without a signal."));
   }
 
@@ -4243,7 +4249,7 @@ function libCue(){
   var dl = libRows.filter(function(r){ return r.downloaded; });
   var bytes = dl.reduce(function(s,r){ return s + (r.sizeBytes||0); }, 0);
   $("libCue").textContent = n + " publication" + (n===1?"":"s") + " · "
-    + dl.length + " saved offline · " + libMB(bytes) + " stored";
+    + dl.length + " downloaded · " + libMB(bytes) + " stored";
 }
 
 /* One refresh path: pull status, drop the unlistable, repaint. Everything that changes a
@@ -4303,6 +4309,11 @@ function openLibrary(focusId){
   /* Both floaters hide while the library is open: the Regulations pill would point at the
      screen you are already on, and the library owns its own back control. */
   $("regBtn").style.display = "none"; $("settingsBtn").style.display = "none";
+  /* v31: the page footer carries the Sources disclosure, which lists every cited
+     publication — so with the library open the same regulations appeared twice on one
+     screen, once as library rows and again in the footer below them. The footer belongs to
+     the study screens, not to the library. */
+  document.querySelector("footer").style.display = "none";
   $("sub").textContent = "Regulations — download publications for offline reading.";
   libQuery = ""; $("libSearch").value = "";
   mount($("library"));
@@ -4323,6 +4334,7 @@ function openLibrary(focusId){
 function closeLibrary(){
   $("library").classList.add("hidden");
   $("regBtn").style.display = ""; $("settingsBtn").style.display = "";
+  document.querySelector("footer").style.display = "";
   toMenu();
 }
 
@@ -4504,7 +4516,7 @@ function rdPaintSave(){
   if(b.getAttribute("data-state") === "saving") return;
   REGLIB.installed(rdId).then(function(saved){
     b.setAttribute("data-state", saved ? "saved" : "");
-    b.setAttribute("aria-label", saved ? "Saved for offline reading" : "Save for offline");
+    b.setAttribute("aria-label", saved ? "Downloaded for offline reading" : "Download for offline reading");
     b.disabled = !rdDoc || saved;
   }).catch(function(){});
 }
@@ -4534,7 +4546,7 @@ function rdSaveOffline(){
   if(!rdId) return;
   var b = $("rdSave");
   b.setAttribute("data-state","saving"); b.disabled = true;
-  b.setAttribute("aria-label","Saving for offline");
+  b.setAttribute("aria-label","Downloading for offline reading");
   libDownload(rdId);
   /* libDownload owns the transfer and the library row; the reader only reflects the result. */
   var poll = setInterval(function(){
@@ -4554,6 +4566,37 @@ function rdGoto(n){
   var smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   $("rdScroll").scrollTo({ top: el.offsetTop - 8, behavior: smooth ? "smooth" : "auto" });
   rdPage = n; rdPaintPill();
+}
+
+/* Open a hosted publication over the network, range-first with a full-GET fallback.
+
+   The fallback is not defensive padding — it is required. Measured against the live host
+   from a browser: a Range request for a LARGE publication returns 206 with Content-Range,
+   but the same request for a SMALL one returns 200 with no Content-Range and the whole body.
+   Cloudflare honours ranges on big objects and ignores them on small cached ones. In
+   range-only mode pdf.js takes that full body as if it were the chunk it asked for, so its
+   offsets run past the end and it throws "Bad end offset" — which is exactly the
+   "could not be opened" a Soldier saw. 26 of 36 publications failed this way.
+
+   Worth recording: a server-side sweep with PowerShell returned 206 for all 36. This only
+   reproduces from the browser, so testing the host with curl alone would have missed it
+   entirely and blamed the client.
+
+   Range mode is still tried first, because it is a real win on precisely the publications
+   the CDN does support it for — the 12-24 MB ones where pulling the whole file hurts most. */
+function rdStreamDoc(url){
+  var ranged = {
+    url: url, rangeChunkSize: 262144, disableAutoFetch: true, disableStream: true
+  };
+  var plain = {
+    /* No ranges at all: one progressive fetch. Slower to first page on a big file, but it
+       cannot be tripped up by a CDN that answers 200 to a Range request. */
+    url: url, disableRange: true, disableStream: false, disableAutoFetch: false
+  };
+  return window.pdfjsLib.getDocument(ranged).promise.catch(function(e){
+    rdSource = "stream-full";
+    return window.pdfjsLib.getDocument(plain).promise;
+  });
 }
 
 function openReader(id){
@@ -4592,17 +4635,7 @@ function openReader(id){
     if(!meta.url) throw new Error("not-readable");
     if(navigator.onLine === false) throw new Error("offline-unsaved");
     rdSource = "stream";
-    /* disableStream:true is what makes this genuinely a range fetch. Measured against the
-       live host: with streaming left on, pdf.js opens one progressive full-file stream and
-       never falls back to ranges — a 12.1 MB publication pulled all 13 MB even though the
-       host advertises Accept-Ranges and answers 206 correctly. Turning the stream off leaves
-       only the range transport, so it fetches the tail for the cross-reference table and
-       then just the chunks the visible pages need. disableAutoFetch stops it quietly
-       back-filling the rest once open. rangeChunkSize is the request granularity: 256 KB
-       keeps the request count sane on a 300-page pub without over-pulling per page. */
-    return window.pdfjsLib.getDocument({
-      url: meta.url, rangeChunkSize: 262144, disableAutoFetch: true, disableStream: true
-    }).promise;
+    return rdStreamDoc(meta.url);
   }).then(function(doc){
     rdDoc = doc;
     return doc.getPageLabels().catch(function(){ return null; }).then(function(labels){
@@ -4619,8 +4652,8 @@ function openReader(id){
     /* Each failure gets the sentence that fits it. "Try downloading it again" is useless
        advice to someone who never downloaded it and is simply offline. */
     var msg = (e && e.message) === "offline-unsaved"
-      ? "You're offline and this publication isn't saved to your device. Connect to read it, "
-        + "or save it for offline once you're back on."
+      ? "You are offline and this publication is not downloaded to your device. Connect to read it, "
+        + "or download it for offline once you are back on."
       : (e && e.message) === "not-readable"
       ? "This publication isn't available to read here."
       : "This publication could not be opened. Check your connection and try again.";
@@ -4648,6 +4681,9 @@ function rdOpenSheet(focus){
   $("rdSheetTitle").textContent = (focus === "marks") ? "Marks" : "Outline";
   $("rdSheetSub").textContent = meta ? meta.pubNumber + " — " + meta.title : "";
 
+  /* Night read is a view control, so it belongs with the outline, not in the marks list —
+     "only the user's marks" means only their marks. */
+  if(focus !== "marks"){
   var night = document.createElement("button");
   night.type = "button"; night.className = "rdout";
   var on = $("reader").getAttribute("data-night") === "1";
@@ -4661,8 +4697,14 @@ function rdOpenSheet(focus){
     rdOpenSheet();
   });
   body.appendChild(night);
+  }
 
   if(typeof markSheetSection === "function") markSheetSection(body);
+
+  /* v31: the Marks button lists ONLY the reader's marks. Document navigation stays with the
+     outline button top-right — the two were overlapping, so the pencil opened a full
+     navigation menu when a Soldier asked for their own highlights. */
+  if(focus === "marks"){ $("rdSheet").classList.remove("hidden"); return; }
 
   if(!rdDoc){ $("rdSheet").classList.remove("hidden"); return; }
   rdDoc.getOutline().then(function(items){
