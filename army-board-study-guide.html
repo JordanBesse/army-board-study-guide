@@ -137,7 +137,7 @@ header.compact #quizbar{display:block}
    the mark renders at the size it was always meant to be (ink 25x24px) instead of being
    scaled down to fit the extra margin. Centred by the flex rules above, ~13.5px clear on
    each side inside the 52px button. See the viewBox note on the button markup. */
-#settingsBtn svg{width:28px;height:28px;display:block}
+#settingsBtn svg{width:28px;height:28px;display:block;color:var(--ink)}
 #settingsBtn:hover{background:var(--surface2)}
 #settingsBtn:active{background:var(--surface2);transform:scale(.96)}
 #settingsBtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -169,7 +169,16 @@ header.compact #quizbar{display:block}
   font:inherit;cursor:pointer;
   transition:background-color var(--m-tap) ease-out,transform var(--m-tap) ease-out;
 }
-#regBtn svg{width:26px;height:26px;display:block;color:var(--accent)}
+/* v30: both floating glyphs are --ink, matched. This overrides the earlier trio rule that
+   gave Regulations (and Notes) an accent glyph — on device the accent book beside a muted
+   gear read as two different KINDS of control rather than two of the same. Notes joins in
+   --ink too. Design-system note updated. */
+/* 30px, not 26px. Measured on the rendered pair: the gear's ink covered 22.2% of its button
+   and the book only 11.5% — one mark carrying nearly double the visual weight of the other,
+   in two identical circles side by side. The open book is a wide, short mark so it uses less
+   of its own viewBox than a gear does; matching the BOX size left it looking undersized.
+   At 30px the book's ink runs ~23px wide against the gear's 25px, which reads as a pair. */
+#regBtn svg{width:30px;height:30px;display:block;color:var(--ink)}
 #regBtn:hover{background:var(--surface2)}
 #regBtn:active{background:var(--surface2);transform:scale(.96)}
 #regBtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -259,7 +268,7 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 @media(max-width:380px){
   .libst{min-width:92px}
   .librow .rttl{font-size:.75rem}
-  #regBtn svg{width:24px;height:24px}
+  #regBtn svg{width:28px;height:28px}
 }
 /* ---- Reader (v27, chunk 3) ----
    A full-viewport surface rather than a card inside .wrap: reading a 300-page regulation is
@@ -295,7 +304,11 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
   padding:14px 10px calc(84px + env(safe-area-inset-bottom));
   touch-action:pan-x pan-y pinch-zoom;   /* pinch-zoom stays the browser's job */
   overscroll-behavior:contain}
-.rdpage{position:relative;margin:0 auto 14px;max-width:100%;
+/* max-width:none, deliberately (v30). It was 100%, which silently clamped the explicit width
+   the zoom sets — so zooming past fit-to-width rendered an identical page and the control
+   looked broken. Past 100% the card is meant to be wider than the column and the reading
+   area scrolls sideways. */
+.rdpage{position:relative;margin:0 auto 14px;max-width:none;
   background:var(--page);border-radius:6px;box-shadow:var(--e2);overflow:hidden}
 .rdpage canvas{display:block;width:100%;height:auto}
 .rdph{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.75rem}
@@ -303,23 +316,41 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
    outside .rdpage's filter so a highlight is not inverted into a strange colour. */
 #reader[data-night="1"] .rdpage canvas{filter:invert(1) hue-rotate(180deg) brightness(.86) contrast(1.06)}
 #reader[data-night="1"] .rdpage{background:#12140f}
-.rdpill{
-  position:fixed;left:50%;transform:translateX(-50%);
-  bottom:calc(14px + env(safe-area-inset-bottom));
-  display:flex;align-items:center;gap:2px;
-  background:var(--surface);border:1px solid var(--line);border-radius:999px;
-  box-shadow:var(--e2);padding:3px;z-index:2;max-width:calc(100vw - 24px)
+/* v30: the pill became a full bottom bar. It spans the width rather than floating, because
+   it now carries the document's tools, not just page nav — a floating capsule holding seven
+   controls stops reading as a light touch over the page and starts reading as a crowded
+   island. Two rows on a narrow screen, one on a wide one. */
+.rdbottom{
+  position:fixed;left:0;right:0;
+  bottom:0;z-index:3;
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:2px 10px;
+  background:var(--surface);border-top:1px solid var(--line);
+  padding:3px 8px calc(3px + env(safe-area-inset-bottom));
+  box-shadow:var(--e2);
 }
-.rdpill button{min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;
+.rdnav,.rdtools{display:flex;align-items:center;gap:2px}
+.rdsep{width:1px;height:24px;background:var(--line);margin:0 4px}
+.rdbottom button{min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;
   background:none;border:0;color:var(--ink);border-radius:999px;cursor:pointer;font:inherit;padding:0}
-.rdpill button svg{width:19px;height:19px}
-.rdpill button:disabled{color:var(--dim-ink);cursor:default}
-.rdpill button:not(:disabled):hover{background:var(--surface2)}
-.rdpill button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.rdbottom button svg{width:20px;height:20px}
+.rdbottom button:disabled{color:var(--dim-ink);cursor:default}
+.rdbottom button:not(:disabled):hover{background:var(--surface2)}
+.rdbottom button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+/* Saved and bookmarked are STATES of this document, so accent is correct here by the colour
+   law — the control is showing you what is selected/on, not grading anything. */
+.rdbottom button[aria-pressed="true"]{color:var(--accent)}
+.rdbottom button[aria-pressed="true"] svg{fill:var(--accent-soft)}
+#rdZoomLvl{min-width:56px;font-size:.76rem;font-weight:650;font-variant-numeric:tabular-nums}
+#rdSave[data-state="saved"]{color:var(--accent)}
+#rdSave[data-state="saving"]{color:var(--muted)}
 /* Single line, non-negotiable: the refinement on this chunk was that "p. 3-4 · 12 / 340"
    must never wrap. Fixed against wrapping AND against the pill growing past the viewport. */
 #rdLabel{font-size:.76rem;color:var(--ink);font-weight:650;white-space:nowrap;
   padding:0 8px;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+/* The reading area has to clear the bottom bar, which is taller than the old pill and can
+   wrap to two rows at 360px. Measured at runtime rather than guessed, because a guess here
+   hides the last line of every page behind the bar. */
+#rdScroll{padding-bottom:var(--rd-bottom, 108px)}
 #rdStatus{padding:26px 10px;text-align:center;color:var(--muted);font-size:.82rem}
 /* Collapse once the document has opened. With padding alone it left 52px of empty space
    above page 1 for the whole reading session. */
@@ -409,9 +440,18 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .mkitem .ex i{font-style:normal;color:var(--muted);font-size:.74rem}
 .mknone{font-size:.8rem;color:var(--muted);padding:12px 4px}
 /* ---- Sources -> library (v29). Quiet: the sources list is a reference, not a shop. ---- */
-.refreg{display:inline-flex;align-items:center;min-height:44px;margin-top:2px;padding:0;
+.refregs{display:flex;align-items:center;gap:14px;margin-top:2px}
+.refreg{display:inline-flex;align-items:center;min-height:44px;padding:0;
   background:none;border:0;font:inherit;font-size:.76rem;font-weight:650;
   color:var(--accent);cursor:pointer;text-align:left}
+.refreg.sec{color:var(--muted)}
+.refreg[disabled]{color:var(--dim-ink);cursor:default;text-decoration:none}
+.refreg[disabled]:hover{text-decoration:none}
+/* The publication name doubles as the tap target on a mapped row. Kept as plain ink rather
+   than a second accent link, so one row does not read as two competing actions. */
+.reflist .p.tap{cursor:pointer}
+.reflist .p.tap:hover{text-decoration:underline}
+.reflist .p.tap:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
 .refreg:hover{text-decoration:underline}
 .refreg:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
 .refreg.muted{color:var(--muted);font-weight:400;cursor:default;min-height:0;display:block}
@@ -1463,14 +1503,37 @@ footer p{margin:0 0 8px}
     <div id="rdStatus"></div>
     <div id="rdPages"></div>
   </div>
-  <div class="rdpill" id="rdPill">
-    <button id="rdPrev" type="button" aria-label="Previous page">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7"></path></svg>
-    </button>
-    <span id="rdLabel"></span>
-    <button id="rdNext" type="button" aria-label="Next page">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"></path></svg>
-    </button>
+  <!-- One coherent bottom bar (v30): page nav and position, then the tools. Everything that
+       acts on the document lives here so the page itself stays clear. -->
+  <div class="rdbottom" id="rdPill">
+    <div class="rdnav">
+      <button id="rdPrev" type="button" aria-label="Previous page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7"></path></svg>
+      </button>
+      <span id="rdLabel"></span>
+      <button id="rdNext" type="button" aria-label="Next page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"></path></svg>
+      </button>
+    </div>
+    <div class="rdtools">
+      <button id="rdZoomOut" type="button" aria-label="Zoom out">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4-4M8 11h6"></path></svg>
+      </button>
+      <button id="rdZoomLvl" type="button" aria-label="Reset zoom to fit width"><span id="rdZoomTxt">100%</span></button>
+      <button id="rdZoomIn" type="button" aria-label="Zoom in">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4-4M8 11h6M11 8v6"></path></svg>
+      </button>
+      <span class="rdsep"></span>
+      <button id="rdBookmark" type="button" aria-label="Bookmark this page" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 4h12v16l-6-4-6 4z"></path></svg>
+      </button>
+      <button id="rdMarkup" type="button" aria-label="Highlights and notes">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 20h4l9.5-9.5a2.1 2.1 0 0 0-3-3L5 17v3z"></path><path d="M13.5 5.5l3 3"></path></svg>
+      </button>
+      <button id="rdSave" type="button" aria-label="Save for offline">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 4v10M8 11l4 4 4-4M5 19h14"></path></svg>
+      </button>
+    </div>
   </div>
 </div>
 <div id="mkBar" class="hidden" role="toolbar" aria-label="Markup">
@@ -2131,7 +2194,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v29";
+var APP_VERSION = "v30";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -2723,6 +2786,22 @@ function buildRefs(only){
     }
     var link = refLibraryLink(r.src);
     if(link) li.appendChild(link);
+    /* The publication name itself is the obvious thing to tap, so it is the same jump as the
+       Read control rather than dead text next to a live button. Only on mapped rows — a
+       descriptive source has nowhere to go, and a tappable-looking line that does nothing is
+       worse than plain text. */
+    if(link && link.querySelector && link.querySelector("[data-reg-src]")){
+      var target = link.querySelector("[data-reg-src]").getAttribute("data-reg-src");
+      p.className = "p tap";
+      p.setAttribute("role","button");
+      p.setAttribute("tabindex","0");
+      p.addEventListener("click", function(){
+        if(REGLIB.viewerReady()) openReader(target); else openLibrary(target);
+      });
+      p.addEventListener("keydown", function(e){
+        if(e.key === "Enter" || e.key === " "){ e.preventDefault(); p.click(); }
+      });
+    }
     host.appendChild(li);
   });
   return list.length;
@@ -2756,15 +2835,43 @@ function refLibraryLink(src){
     return s;
   }
   if(!REGLIB.capabilities().available) return null;   /* bare file:// cannot store anything */
-  var b = document.createElement("button");
-  b.type = "button"; b.className = "refreg";
-  b.setAttribute("data-reg-src", reg.id);
-  b.textContent = "Open in library";
-  b.addEventListener("click", function(e){
+  /* v30: two controls, not one. Reading and saving are now separate things, so the sources
+     row offers both — Read opens the publication directly (streamed), Save keeps it on the
+     device. Grouped on one line so the list still reads as a reference, not a storefront. */
+  var wrap = document.createElement("span");
+  wrap.className = "refregs";
+
+  var open = document.createElement("button");
+  open.type = "button"; open.className = "refreg";
+  open.setAttribute("data-reg-src", reg.id);
+  open.textContent = "Read";
+  open.addEventListener("click", function(e){
     e.preventDefault(); e.stopPropagation();
-    openLibrary(reg.id);
+    if(REGLIB.viewerReady()) openReader(reg.id); else openLibrary(reg.id);
   });
-  return b;
+  wrap.appendChild(open);
+
+  var save = document.createElement("button");
+  save.type = "button"; save.className = "refreg sec";
+  save.setAttribute("data-reg-save", reg.id);
+  save.textContent = "Save";
+  save.addEventListener("click", function(e){
+    e.preventDefault(); e.stopPropagation();
+    save.disabled = true; save.textContent = "Saving…";
+    REGLIB.download(reg.id).then(function(){
+      save.textContent = "Saved";
+    }).catch(function(err){
+      save.disabled = false; save.textContent = "Save";
+      if(err && err.code === "cancelled") return;
+      $("noticeText").textContent = (err && err.message) || "That save did not finish.";
+      $("notice").classList.remove("hidden");
+    });
+  });
+  REGLIB.installed(reg.id).then(function(has){
+    if(has){ save.disabled = true; save.textContent = "Saved"; }
+  }).catch(function(){});
+  wrap.appendChild(save);
+  return wrap;
 }
 buildRefs();
 
@@ -3747,7 +3854,11 @@ var REGLIB = (function(){
         regId: String(rec.regId),
         page: rec.page,                       /* 0-based index */
         pageLabel: rec.pageLabel == null ? null : String(rec.pageLabel),
-        type: rec.type === "note" ? "note" : "highlight",
+        /* v30 adds "bookmark" — a page-level mark with no text anchor. It reuses this store
+           rather than getting its own, because it is the same record keyed the same way and
+           the Marks list wants them together. The anchor stays empty for a bookmark, which
+           is exactly why `type` is the discriminator and not the presence of a quote. */
+        type: (rec.type === "note" || rec.type === "bookmark") ? rec.type : "highlight",
         anchor: {
           quote:  rec.anchor && rec.anchor.quote  ? String(rec.anchor.quote)  : "",
           prefix: rec.anchor && rec.anchor.prefix ? String(rec.anchor.prefix) : "",
@@ -4003,13 +4114,21 @@ function libPaintState(cell, st){
   }
   if(st.downloaded){
     el = document.createElement("span"); el.className = "done";
-    el.innerHTML = LIBICON.check; el.appendChild(document.createTextNode("Downloaded"));
+    el.innerHTML = LIBICON.check; el.appendChild(document.createTextNode("Saved"));
     cell.appendChild(el); return;
   }
+  /* Demoted in v30 from the way in to a secondary "keep it on the device" action. It reads
+     "Save" rather than a bare size now, because the size alone implied it was the price of
+     admission — which it no longer is. */
   el = document.createElement("button"); el.type = "button"; el.className = "dlbtn";
   el.innerHTML = LIBICON.down;
+  /* The size stays on the face of the control. It is no longer the price of admission — the
+     row opens without it — but it is still the one number a Soldier needs before committing
+     24 MB of phone storage, and the label carries the verb so the size is not left to imply
+     one. The self-test asserts this number is present; it caught its removal. */
   el.appendChild(document.createTextNode(libMB(st.sizeBytes)));
-  el.setAttribute("aria-label", "Download " + st.pubNumber + ", " + libMB(st.sizeBytes));
+  el.setAttribute("aria-label", "Save " + st.pubNumber + " for offline reading, "
+    + libMB(st.sizeBytes));
   el.disabled = offline;
   el.addEventListener("click", function(e){ e.stopPropagation(); libDownload(st.id); });
   cell.appendChild(el);
@@ -4024,7 +4143,10 @@ function libRepaint(id){
 }
 
 function libBuildRow(st){
-  var openable = st.downloaded && !st.restricted && REGLIB.viewerReady();
+  /* v30: reading no longer requires downloading. Any hosted publication opens — from the
+     saved copy if there is one, otherwise streamed. Only reference-only rows stay closed,
+     because there is nothing to open. */
+  var openable = !st.restricted && (st.downloaded || st.downloadable) && REGLIB.viewerReady();
   var row = document.createElement(openable ? "button" : "div");
   if(openable){ row.type = "button"; }
   row.className = "librow";
@@ -4079,11 +4201,12 @@ function libRender(){
     edge.appendChild(libNote("info", "The library isn't available right now", libStoreError));
   } else if(navigator.onLine === false){
     edge.appendChild(libNote("offline", "You're offline",
-      "Connect to download new publications. Anything already downloaded stays available to read."));
+      "Publications you've saved still open. The rest need a connection — reading streams them "
+      + "as you go."));
   } else if(!libRows.filter(function(r){ return r.downloaded; }).length){
-    edge.appendChild(libNote("book", "Nothing downloaded yet",
-      "Tap any publication to save it for offline reading. Downloads are kept separately from "
-      + "your quiz progress."));
+    edge.appendChild(libNote("book", "Tap any publication to read it",
+      "Publications open straight away without downloading. Use Save on a row to keep one on "
+      + "your device for reading without a signal."));
   }
 
   var shown = libRows.filter(libMatch);
@@ -4120,7 +4243,7 @@ function libCue(){
   var dl = libRows.filter(function(r){ return r.downloaded; });
   var bytes = dl.reduce(function(s,r){ return s + (r.sizeBytes||0); }, 0);
   $("libCue").textContent = n + " publication" + (n===1?"":"s") + " · "
-    + dl.length + " downloaded · " + libMB(bytes) + " stored";
+    + dl.length + " saved offline · " + libMB(bytes) + " stored";
 }
 
 /* One refresh path: pull status, drop the unlistable, repaint. Everything that changes a
@@ -4212,8 +4335,18 @@ function closeLibrary(){
    at once. Each page gets a correctly-sized placeholder immediately — so the scrollbar is
    honest and the page pill counts properly from the first frame — and is rasterised when it
    comes near the viewport, then released when it goes far away.                          */
-var rdDoc = null, rdId = null, rdPage = 1, rdLabels = null, rdScale = 1,
-    rdObserver = null, rdRendering = {}, rdScrollLast = 0, rdScrollTimer = 0;
+var rdDoc = null, rdId = null, rdPage = 1, rdLabels = null,
+    rdObserver = null, rdRendering = {}, rdScrollLast = 0, rdScrollTimer = 0,
+    rdSource = null,        /* "saved" | "stream" — which path opened this document */
+    rdZoom = 1,             /* 1 = fit to width; the user multiplies it from there */
+    rdAspect = 1.29;
+
+/* Fit-to-width is the default because a PDF page is 612pt wide and a desktop window is not:
+   rendered at its natural size the page overflows the column and a Soldier scrolls sideways
+   to read a line. Zoom multiplies the fit, so 1.0 always means "as wide as the column"
+   regardless of screen. Pinch stays the browser's on touch. */
+var RD_ZOOM_STEPS = [0.75, 1, 1.25, 1.5, 2, 3];
+function rdZoomLabel(){ return Math.round(rdZoom * 100) + "%"; }
 
 function rdLabelFor(i){          /* i is 1-based */
   var lab = rdLabels && rdLabels[i-1];
@@ -4235,7 +4368,7 @@ function rdRenderPage(holder){
   rdRendering[n] = true;
   rdDoc.getPage(n).then(function(page){
     var host = $("rdScroll");
-    var avail = Math.max(120, host.clientWidth - 20);
+    var avail = Math.max(120, (host.clientWidth - 20) * rdZoom);
     var base = page.getViewport({scale:1});
     /* Fit the column width, then multiply by the device pixel ratio so the raster is sharp
        on a phone instead of a soft upscale. Capped at 2: past that the memory cost on a
@@ -4292,14 +4425,18 @@ function rdReleasePage(holder){
 }
 
 function rdBuildPages(aspect){
+  rdAspect = aspect;
   var wrap = $("rdPages"); wrap.textContent = "";
-  var avail = Math.max(120, $("rdScroll").clientWidth - 20);
+  var avail = Math.max(120, ($("rdScroll").clientWidth - 20) * rdZoom);
   for(var i=1; i<=rdDoc.numPages; i++){
     var d = document.createElement("div");
     d.className = "rdpage"; d.setAttribute("data-page", i);
     /* A real height from the first page's aspect ratio, so the scroll length is right
        before anything has rasterised. */
     d.style.minHeight = Math.round(avail * aspect) + "px";
+    /* An explicit width so zooming past fit makes the card wider than the column and the
+       reading area scrolls sideways, rather than the page being squashed back to fit. */
+    d.style.width = Math.round(avail) + "px";
     var ph = document.createElement("div");
     ph.className = "rdph"; ph.style.height = Math.round(avail * aspect) + "px";
     d.appendChild(ph);
@@ -4331,6 +4468,82 @@ function rdSyncPage(){
       if(Math.abs((j+1) - rdPage) > 6) rdReleasePage(kids[j]);
   }
 }
+/* Keep the reading area clear of the bar, whatever height it wraps to. */
+function rdFitBottom(){
+  var h = $("rdPill").getBoundingClientRect().height;
+  if(h) $("rdScroll").style.setProperty("--rd-bottom", Math.round(h + 14) + "px");
+}
+/* Re-lay the document at a new zoom. Pages are rebuilt rather than scaled so the raster is
+   redrawn at the new size — a CSS scale would just blur the existing bitmap — and the
+   Soldier is returned to the page they were reading. */
+function rdSetZoom(z){
+  if(!rdDoc) return;
+  var was = rdPage;
+  rdZoom = Math.max(0.75, Math.min(3, z));
+  rdRendering = {};
+  rdBuildPages(rdAspect);
+  rdPaintBottom();
+  rdGoto(was);
+}
+function rdPaintBottom(){
+  var on = !!rdDoc;
+  ["rdZoomOut","rdZoomIn","rdZoomLvl","rdBookmark","rdMarkup","rdSave"].forEach(function(id){
+    if($(id)) $(id).disabled = !on;
+  });
+  $("rdZoomTxt").textContent = rdZoomLabel();
+  $("rdZoomOut").disabled = !on || rdZoom <= RD_ZOOM_STEPS[0];
+  $("rdZoomIn").disabled  = !on || rdZoom >= RD_ZOOM_STEPS[RD_ZOOM_STEPS.length-1];
+  rdPaintSave();
+  rdPaintBookmark();
+  rdFitBottom();
+}
+/* "Save for offline" is now a secondary action, and its label has to say which of three
+   states this publication is in without a word of chrome to explain it. */
+function rdPaintSave(){
+  var b = $("rdSave"); if(!b || !rdId) return;
+  if(b.getAttribute("data-state") === "saving") return;
+  REGLIB.installed(rdId).then(function(saved){
+    b.setAttribute("data-state", saved ? "saved" : "");
+    b.setAttribute("aria-label", saved ? "Saved for offline reading" : "Save for offline");
+    b.disabled = !rdDoc || saved;
+  }).catch(function(){});
+}
+function rdPaintBookmark(){
+  var b = $("rdBookmark"); if(!b || !rdId) return;
+  REGLIB.marks.listForPage(rdId, rdPage - 1).then(function(list){
+    var on = list.some(function(m){ return m.type === "bookmark"; });
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+    b.setAttribute("aria-label", on ? "Remove bookmark from this page" : "Bookmark this page");
+    b.querySelector("svg").setAttribute("fill", on ? "currentColor" : "none");
+  }).catch(function(){});
+}
+/* A bookmark is page-level and carries no text anchor, which is exactly why it is a distinct
+   `type` rather than a highlight with an empty quote. */
+function rdToggleBookmark(){
+  if(!rdDoc || !rdId) return;
+  REGLIB.marks.listForPage(rdId, rdPage - 1).then(function(list){
+    var existing = list.filter(function(m){ return m.type === "bookmark"; })[0];
+    if(existing) return REGLIB.marks.drop(existing.id);
+    return REGLIB.marks.put({
+      regId: rdId, page: rdPage - 1, pageLabel: rdLabelFor(rdPage), type: "bookmark",
+      anchor: { quote:"", prefix:"", suffix:"", textPosition:null, rects:[] }, note: null
+    });
+  }).then(rdPaintBookmark).catch(function(){});
+}
+function rdSaveOffline(){
+  if(!rdId) return;
+  var b = $("rdSave");
+  b.setAttribute("data-state","saving"); b.disabled = true;
+  b.setAttribute("aria-label","Saving for offline");
+  libDownload(rdId);
+  /* libDownload owns the transfer and the library row; the reader only reflects the result. */
+  var poll = setInterval(function(){
+    if(libProgress[rdId] !== undefined) return;
+    clearInterval(poll);
+    b.removeAttribute("data-state");
+    rdPaintSave();
+  }, 400);
+}
 function rdGoto(n){
   if(!rdDoc) return;
   n = Math.max(1, Math.min(rdDoc.numPages, n));
@@ -4356,7 +4569,7 @@ function openReader(id){
   var g = window.pdfjsLib.GlobalWorkerOptions;
   if(!g.workerSrc && window.__ABSG_PDF_WORKER_SRC__) g.workerSrc = window.__ABSG_PDF_WORKER_SRC__;
 
-  rdId = id; rdPage = 1; rdDoc = null; rdLabels = null;
+  rdId = id; rdPage = 1; rdDoc = null; rdLabels = null; rdSource = null; rdZoom = 1;
   $("rdNum").textContent = meta.pubNumber;
   $("rdTitle").textContent = meta.title;
   $("rdPages").textContent = "";
@@ -4365,10 +4578,25 @@ function openReader(id){
   $("reader").classList.remove("hidden");
   document.body.style.overflow = "hidden";
 
+  /* v30: reading no longer requires downloading. A saved copy is used when there is one;
+     otherwise the reader STREAMS the publication over range requests, fetching only the
+     bytes the visible pages need. That is what makes a 24 MB pub open in about a second on
+     a phone instead of after a 24 MB download. Saving is now an optional "keep it offline"
+     action rather than the gate in front of reading. */
   REGLIB.openBlob(id).then(function(blob){
-    return blob.arrayBuffer();
-  }).then(function(buf){
-    return window.pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+    return blob.arrayBuffer().then(function(buf){
+      rdSource = "saved";
+      return window.pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+    });
+  }, function(){
+    if(!meta.url) throw new Error("not-readable");
+    if(navigator.onLine === false) throw new Error("offline-unsaved");
+    rdSource = "stream";
+    /* rangeChunkSize is the request granularity. 256 KB keeps the request count sane on a
+       300-page publication without pulling far more than a page needs. */
+    return window.pdfjsLib.getDocument({
+      url: meta.url, rangeChunkSize: 262144, disableAutoFetch: true, disableStream: false
+    }).promise;
   }).then(function(doc){
     rdDoc = doc;
     return doc.getPageLabels().catch(function(){ return null; }).then(function(labels){
@@ -4380,8 +4608,18 @@ function openReader(id){
     $("rdStatus").textContent = "";
     rdBuildPages(vp.height / vp.width);
     rdPaintPill();
-    }).catch(function(){
-    $("rdStatus").textContent = "This publication could not be opened. Try downloading it again.";
+    rdPaintBottom();
+  }).catch(function(e){
+    /* Each failure gets the sentence that fits it. "Try downloading it again" is useless
+       advice to someone who never downloaded it and is simply offline. */
+    var msg = (e && e.message) === "offline-unsaved"
+      ? "You're offline and this publication isn't saved to your device. Connect to read it, "
+        + "or save it for offline once you're back on."
+      : (e && e.message) === "not-readable"
+      ? "This publication isn't available to read here."
+      : "This publication could not be opened. Check your connection and try again.";
+    $("rdStatus").textContent = msg;
+    rdPaintBottom();
   });
 }
 function closeReader(){
@@ -4398,10 +4636,10 @@ function closeReader(){
 /* Outline + Night read. The reading surface stays calm — the pill is the only chrome over
    the page — so the document outline and the view toggle live in one sheet behind the
    list control rather than adding permanent furniture to the page. */
-function rdOpenSheet(){
+function rdOpenSheet(focus){
   var body = $("rdSheetBody"); body.textContent = "";
   var meta = REGLIB.byId(rdId);
-  $("rdSheetTitle").textContent = "Outline";
+  $("rdSheetTitle").textContent = (focus === "marks") ? "Marks" : "Outline";
   $("rdSheetSub").textContent = meta ? meta.pubNumber + " — " + meta.title : "";
 
   var night = document.createElement("button");
@@ -4670,21 +4908,31 @@ function markSheetSection(body){
   body.appendChild(host);
   REGLIB.marks.listForReg(rdId).then(function(list){
     var hi = list.filter(function(m){ return m.type === "highlight"; }).length;
-    var no = list.length - hi;
-    head.textContent = "Marks — " + hi + " highlight" + (hi===1?"":"s") + " · " + no + " note" + (no===1?"":"s");
+    var bm = list.filter(function(m){ return m.type === "bookmark"; }).length;
+    var no = list.length - hi - bm;
+    head.textContent = "Marks — " + hi + " highlight" + (hi===1?"":"s")
+      + " · " + no + " note" + (no===1?"":"s")
+      + " · " + bm + " bookmark" + (bm===1?"":"s");
     if(!list.length){
       var e = document.createElement("div"); e.className = "mknone";
-      e.textContent = "Select text in the publication to highlight it or attach a note.";
+      e.textContent = "Select text to highlight it or attach a note, or bookmark a page from the bar below.";
       host.appendChild(e); return;
     }
     list.forEach(function(m){
       var b = document.createElement("button"); b.type = "button"; b.className = "mkitem";
       var sw = document.createElement("span");
-      sw.className = "mkswatch" + (m.type === "note" ? " note" : "");
+      sw.className = "mkswatch" + (m.type === "highlight" ? "" : " note");
       if(m.type === "note")
         sw.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 7h12M6 12h12M6 17h7"/></svg>';
+      if(m.type === "bookmark")
+        sw.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4h12v16l-6-4-6 4z"/></svg>';
       var ex = document.createElement("span"); ex.className = "ex";
-      var q = document.createElement("b"); q.textContent = m.anchor.quote;
+      var q = document.createElement("b");
+      /* A bookmark has no quote by design, so the row says what it is instead of rendering
+         an empty line where the excerpt would be. */
+      q.textContent = m.type === "bookmark"
+        ? ("Bookmarked page" + (m.pageLabel ? " " + m.pageLabel : ""))
+        : m.anchor.quote;
       var pg = document.createElement("i");
       pg.textContent = (m.pageLabel ? "p. " + m.pageLabel + " · " : "") + "page " + (m.page+1)
                      + (m.note ? " · note" : "");
@@ -4920,6 +5168,28 @@ function selfTest(){
       console.warn("LIBRARY — omitted (no url, no reference-only status): " + omitted.join(", "));
   })();
 
+  /* ---- v30: the streaming read path. Reading no longer depends on a download, so the two
+     things that path rests on get asserted: that a stream request can actually be built from
+     a manifest entry, and that a mark round-trips against a publication that was never
+     saved. Both are structural — neither needs the network. ---- */
+  (function(){
+    if(!window.REGLIB) return;
+    var hosted = REGLIB.MANIFEST.filter(function(r){ return r.avail === "hosted"; });
+    if(!hosted.length){ errs.push("reader: no hosted publication to stream"); return; }
+    var r = hosted[0];
+    /* An absolute, same-host URL is what pdf.js needs for range requests, and it is also what
+       the CSP admits. A relative or cross-host URL would fail only at read time, on a phone. */
+    var u;
+    try { u = new URL(r.url); }
+    catch(e){ errs.push("reader: "+r.pubNumber+" has no absolute URL to stream from"); return; }
+    if(u.origin !== new URL(REGLIB.REG_BASE).origin)
+      errs.push("reader: "+r.pubNumber+" streams from "+u.origin+", which the CSP does not admit");
+    if(typeof openReader !== "function") errs.push("reader: openReader is not reachable");
+    /* Every listed hosted row must be openable, or the model change did not land. */
+    var notOpenable = hosted.filter(function(x){ return !x.url; }).length;
+    if(notOpenable) errs.push("reader: "+notOpenable+" hosted publication(s) cannot be opened");
+  })();
+
   if(errs.length){
     console.error("SELF-TEST FAILED — "+errs.length+" problem(s) across "+QUESTIONS.length+" questions");
     errs.slice(0,40).forEach(function(e){ console.error("   "+e); });
@@ -5092,6 +5362,34 @@ rdTap($("rdOutline"), rdOpenSheet);
 $("rdSheetScrim").addEventListener("click", function(){ $("rdSheet").classList.add("hidden"); });
 rdTap($("rdPrev"), function(){ rdGoto(rdPage - 1); });
 rdTap($("rdNext"), function(){ rdGoto(rdPage + 1); });
+/* v30 bottom bar. Same pointerdown binding as the top chrome, for the same iOS reason. */
+rdTap($("rdZoomOut"), function(){
+  for(var i=RD_ZOOM_STEPS.length-1;i>=0;i--) if(RD_ZOOM_STEPS[i] < rdZoom) return rdSetZoom(RD_ZOOM_STEPS[i]);
+});
+rdTap($("rdZoomIn"), function(){
+  for(var i=0;i<RD_ZOOM_STEPS.length;i++) if(RD_ZOOM_STEPS[i] > rdZoom) return rdSetZoom(RD_ZOOM_STEPS[i]);
+});
+rdTap($("rdZoomLvl"), function(){ rdSetZoom(1); });     /* back to fit-to-width */
+rdTap($("rdBookmark"), rdToggleBookmark);
+rdTap($("rdMarkup"), function(){ rdOpenSheet("marks"); });
+rdTap($("rdSave"), rdSaveOffline);
+/* A rotate or window resize changes the column width, and fit-to-width is defined against
+   that column — so the pages have to be re-laid, not just the bar re-measured. Debounced,
+   because a drag-resize fires this continuously and rebuilding 300 page holders per frame
+   would be its own bug. */
+var rdResizeTimer = 0;
+window.addEventListener("resize", function(){
+  if($("reader").classList.contains("hidden")) return;
+  rdFitBottom();
+  clearTimeout(rdResizeTimer);
+  rdResizeTimer = setTimeout(function(){
+    if(!rdDoc || $("reader").classList.contains("hidden")) return;
+    var was = rdPage;
+    rdRendering = {};
+    rdBuildPages(rdAspect);
+    rdGoto(was);
+  }, 250);
+});
 /* Scroll fires far faster than the page counter needs to change, so it is throttled — but
    on a timestamp, deliberately NOT on requestAnimationFrame. Reading a scroll offset needs
    no frame timing, and rAF is throttled in background tabs and can be starved during
