@@ -154,19 +154,22 @@ header.compact #quizbar{display:block}
    also spend the accent's "selected" meaning on chrome, which the colour law forbids.
    Offset is the gear's own right inset plus its 52px width plus a 10px gap, so the pair
    stays glued together as the safe-area inset changes. */
+/* v29 reverts this to the LOCKED icon-only circle. v26 shipped the labelled pill (chunk-1
+   option A) by mistake; the locked pair is two matching 52px circles, and keeping them
+   identical is what lets Notes join as a third without redrawing the set. */
 #regBtn{
   position:fixed;z-index:40;
   right:calc(max(16px, env(safe-area-inset-right)) + 62px);
   bottom:max(16px, env(safe-area-inset-bottom));
-  height:52px;padding:0 15px;
-  display:flex;align-items:center;gap:8px;
+  width:52px;height:52px;padding:0;
+  display:flex;align-items:center;justify-content:center;
   border:1px solid var(--line);background:var(--surface);
   color:var(--ink);border-radius:14px;
-  box-shadow:var(--e2);
-  font:inherit;font-size:.87rem;font-weight:650;cursor:pointer;white-space:nowrap;
+  box-shadow:var(--e1);
+  font:inherit;cursor:pointer;
   transition:background-color var(--m-tap) ease-out,transform var(--m-tap) ease-out;
 }
-#regBtn svg{width:22px;height:22px;display:block;color:var(--accent)}
+#regBtn svg{width:26px;height:26px;display:block;color:var(--accent)}
 #regBtn:hover{background:var(--surface2)}
 #regBtn:active{background:var(--surface2);transform:scale(.96)}
 #regBtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -256,8 +259,7 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 @media(max-width:380px){
   .libst{min-width:92px}
   .librow .rttl{font-size:.75rem}
-  #regBtn{font-size:.82rem;padding:0 12px}
-  #regBtn svg{width:20px;height:20px}
+  #regBtn svg{width:24px;height:24px}
 }
 /* ---- Reader (v27, chunk 3) ----
    A full-viewport surface rather than a card inside .wrap: reading a 300-page regulation is
@@ -406,6 +408,31 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
   overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .mkitem .ex i{font-style:normal;color:var(--muted);font-size:.74rem}
 .mknone{font-size:.8rem;color:var(--muted);padding:12px 4px}
+/* ---- Sources -> library (v29). Quiet: the sources list is a reference, not a shop. ---- */
+.refreg{display:inline-flex;align-items:center;min-height:44px;margin-top:2px;padding:0;
+  background:none;border:0;font:inherit;font-size:.76rem;font-weight:650;
+  color:var(--accent);cursor:pointer;text-align:left}
+.refreg:hover{text-decoration:underline}
+.refreg:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.refreg.muted{color:var(--muted);font-weight:400;cursor:default;min-height:0;display:block}
+.refreg.muted:hover{text-decoration:none}
+/* Two seconds of accent-soft so a deep-linked row is findable without hunting. */
+.libfocus{background:var(--accent-soft);border-radius:var(--r)}
+@media (prefers-reduced-motion: no-preference){ .libfocus{transition:background-color var(--m-screen) ease-out} }
+/* ---- On-screen self-test panel (v29). Query-param gated; ships inert. ---- */
+#stPanel{position:fixed;inset:auto 8px 8px 8px;z-index:120;max-height:62vh;overflow:auto;
+  background:#0f1410;color:#e8efe6;border:1px solid #2c3a2c;border-radius:12px;
+  padding:12px 14px calc(12px + env(safe-area-inset-bottom));
+  font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;box-shadow:var(--e2)}
+#stPanel.hidden{display:none}
+#stPanel h4{margin:0 0 8px;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:#9fb79c}
+#stPanel .strow{display:flex;gap:8px;padding:4px 0;border-top:1px solid #1e2a1e;align-items:flex-start}
+#stPanel .strow:first-of-type{border-top:0}
+#stPanel .tick{flex:0 0 auto;font-weight:700}
+#stPanel .ok{color:#7fd18a} #stPanel .bad{color:#ff9e7a} #stPanel .skip{color:#c8b06a}
+#stPanel .msg{flex:1;min-width:0;word-break:break-word}
+#stClose{position:absolute;top:6px;right:8px;min-width:44px;min-height:44px;background:none;
+  border:0;color:#9fb79c;font:inherit;font-size:20px;cursor:pointer}
 #themeBtn{
   border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--r);
   min-height:44px;min-width:44px;padding:0 13px;font:inherit;font-size:.8rem;cursor:pointer;
@@ -629,12 +656,12 @@ h2{font-size:.98rem;margin:0 0 10px;font-weight:650;text-align:center}
 .glyph{width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
 .glyph svg{width:26px;height:26px;display:block}
 #boardPicks .pick[aria-pressed="true"] .glyph{color:var(--accent)}
-/* The spine: a 3px accent rule down the left edge of the chosen board. Structure, not
-   animation — the field-manual spine of the volume pulled off the rack. */
+/* v29: the 3px left spine is gone. On device it read as a heavy bar against a 1px border
+   on the other three edges — one edge shouting while the rest whispered. The selected
+   treatment is now a UNIFORM accent border: the 1px inset ring plus the accent border
+   colour, same weight all the way round. Accent still means selected; only its weight
+   changed. */
 #boardPicks .pick[aria-pressed="true"]{box-shadow:inset 0 0 0 1px var(--accent),var(--e2)}
-#boardPicks .pick[aria-pressed="true"]::before{
-  content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);
-}
 @media (hover:hover) and (pointer:fine){
   /* Selection keeps its lift under the cursor too, or hovering a chosen board drops it. */
   #boardPicks .pick[aria-pressed="true"]:hover{box-shadow:inset 0 0 0 1px var(--accent),var(--e2)}
@@ -735,9 +762,6 @@ h2{font-size:.98rem;margin:0 0 10px;font-weight:650;text-align:center}
   border-color:var(--accent);background:var(--accent-soft);
   box-shadow:inset 0 0 0 1px var(--accent),var(--e2);
 }
-.qprimary[aria-pressed="true"]::before{
-  content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);
-}
 /* Quick UNSELECTED — defined explicitly, because a full-width primary card with no stated
    rest state is exactly where an accent tint leaks in and starts meaning "important"
    instead of "chosen". When Medium or Long is the chosen length, Quick keeps its size and
@@ -755,9 +779,6 @@ h2{font-size:.98rem;margin:0 0 10px;font-weight:650;text-align:center}
 .qsm[aria-pressed="true"]{
   border-color:var(--accent);background:var(--accent-soft);
   box-shadow:inset 0 0 0 1px var(--accent),var(--e2);
-}
-.qsm[aria-pressed="true"]::before{
-  content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);
 }
 /* The "Recommended" pill is NEUTRAL, not accent. The chunk-1 mockup drew it in --accent
    with an accent border; the project-manager resolution overrides that and it is the right
@@ -1128,7 +1149,6 @@ footer p{margin:0 0 8px}
      means "read this", not "cited from this". -->
 <button id="regBtn" type="button" aria-label="Regulations library">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 7C9.2 5.4 5.6 5.4 3.6 6.3v11.1C5.6 16.5 9.2 16.5 12 18.1"></path><path d="M12 7c2.8-1.6 6.4-1.6 8.4-.7v11.1c-2-.9-5.6-.9-8.4.7"></path><path d="M12 7v11.1"></path></svg>
-  <span>Regulations</span>
 </button>
 <header id="appbar">
   <h1>Army Board Study Guide</h1>
@@ -1435,9 +1455,6 @@ footer p{margin:0 0 8px}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7"></path></svg>
     </button>
     <div class="rdtitle"><div class="n" id="rdNum"></div><div class="t" id="rdTitle"></div></div>
-    <button id="rdMark" type="button" aria-label="Highlight and note" aria-pressed="false" hidden>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 20h4l9.5-9.5a2.1 2.1 0 0 0-3-3L5 17v3z"></path><path d="M13.5 5.5l3 3"></path></svg>
-    </button>
     <button id="rdOutline" type="button" aria-label="Outline and marks">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h10"></path></svg>
     </button>
@@ -2114,7 +2131,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v28";
+var APP_VERSION = "v29";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -2704,9 +2721,50 @@ function buildRefs(only){
       var ds=document.createElement("span"); ds.className="d"; ds.textContent=d;
       li.appendChild(ds);
     }
+    var link = refLibraryLink(r.src);
+    if(link) li.appendChild(link);
     host.appendChild(li);
   });
   return list.length;
+}
+/* ---- Sources tab -> the regulation library (v29) ----
+   No hand-written key map: a manifest id is derived from the publication number, so the
+   citation resolves to it by the same rule. A citation may pin an edition inline
+   ("TR 350-16 (27 March 2023)") or be a composite ("ADP 6-22 / AR 608-1"), so both are
+   normalised before matching — the same normalisation the self-test already uses. A source
+   with no publication behind it, like "Army heritage", simply gets nothing. */
+function regForSource(src){
+  if(!window.REGLIB) return null;
+  var parts = labelFor(src).split(" / ");
+  for(var i=0; i<parts.length; i++){
+    var p = parts[i].replace(/\s*\([^)]*\)\s*$/, "").trim();
+    var hit = null;
+    REGLIB.MANIFEST.forEach(function(r){ if(!hit && r.pubNumber === p) hit = r; });
+    if(hit) return hit;
+  }
+  return null;
+}
+function refLibraryLink(src){
+  var reg = regForSource(src);
+  if(!reg) return null;
+  /* Reference-only publications are named, never offered — the same honesty as the library
+     row. Quiet text, not a control, because there is nothing to tap. */
+  if(reg.restricted){
+    var s = document.createElement("span");
+    s.className = "refreg muted";
+    s.textContent = "Restricted distribution — obtain through official channels";
+    return s;
+  }
+  if(!REGLIB.capabilities().available) return null;   /* bare file:// cannot store anything */
+  var b = document.createElement("button");
+  b.type = "button"; b.className = "refreg";
+  b.setAttribute("data-reg-src", reg.id);
+  b.textContent = "Open in library";
+  b.addEventListener("click", function(e){
+    e.preventDefault(); e.stopPropagation();
+    openLibrary(reg.id);
+  });
+  return b;
 }
 buildRefs();
 
@@ -3811,6 +3869,13 @@ var REGLIB = (function(){
    `window.__selfTestErrors`, and it exposes the module only, never the quiz internals. */
 window.REGLIB = REGLIB;
 
+/* The sources list is built near the top of the script, which is BEFORE this module exists —
+   so on the first pass every source-to-publication lookup returned null and not one
+   "Open in library" control rendered. Rebuild now that the manifest is reachable.
+   buildRefs() clears its host first, so this is idempotent, and the self-test's
+   one-row-per-source assertion would catch it if it ever stopped being. */
+buildRefs();
+
 /* ==================== Regulation library — list screen (v26) ====================
    Chunk 2, built to the approved spec. The list is a pure projection of the manifest:
    nothing about a publication is written here, so adding or hosting a pub stays a data
@@ -4105,7 +4170,7 @@ function libCancel(id){
   REGLIB.cancel(id).then(function(){ return libRefresh(); });
 }
 
-function openLibrary(){
+function openLibrary(focusId){
   if(tick){ clearInterval(tick); tick=null; }
   stopSpeech(); $("speakRow").classList.add("hidden");
   compactBar(false);
@@ -4119,7 +4184,18 @@ function openLibrary(){
   libQuery = ""; $("libSearch").value = "";
   mount($("library"));
   window.scrollTo(0,0);
-  libRefresh();
+  libRefresh().then(function(){
+    if(!focusId) return;
+    /* Deep link from the Sources tab. The pinned Board Core group means a publication can
+       appear twice, so scroll to the LAST match — the one in its family section, where a
+       Soldier would expect to find it by browsing. */
+    var rows = document.querySelectorAll('#libList [data-reg="' + focusId + '"]');
+    var el = rows[rows.length - 1];
+    if(!el) return;
+    el.scrollIntoView({ block:"center" });
+    el.classList.add("libfocus");
+    setTimeout(function(){ el.classList.remove("libfocus"); }, 2000);
+  });
 }
 function closeLibrary(){
   $("library").classList.add("hidden");
@@ -4287,7 +4363,6 @@ function openReader(id){
   $("rdLabel").textContent = "";
   $("rdStatus").textContent = "Opening " + meta.pubNumber + "…";
   $("reader").classList.remove("hidden");
-  $("rdMark").hidden = (typeof markEnable !== "function");
   document.body.style.overflow = "hidden";
 
   REGLIB.openBlob(id).then(function(blob){
@@ -4492,13 +4567,28 @@ function markShowBar(){
   var sel = window.getSelection();
   var r = sel.getRangeAt(0).getBoundingClientRect();
   var bar = $("mkBar");
+  /* The reading area, measured — not a magic number. The toolbar must never stray over the
+     app bar: at z-index 90 it sits above the reader's chrome, so a toolbar parked there
+     silently eats taps on Back, the outline and the page pill. That is what made the
+     top-bar buttons "do nothing" on device. */
+  var chrome = document.querySelector(".rdbar").getBoundingClientRect().bottom;
+  var floor  = $("rdPill").getBoundingClientRect().top;
+
   bar.classList.remove("hidden");
   var bw = bar.offsetWidth, bh = bar.offsetHeight;
+
+  /* A selection scrolled out of the readable band takes its toolbar with it. Without this
+     the bar stays pinned wherever the selection last was — including off the top of the
+     screen — because it is positioned from a viewport rect that scrolling invalidates. */
+  if(r.bottom < chrome || r.top > floor){ markHideBar(); return; }
+
   var left = Math.min(Math.max(8, r.left + r.width/2 - bw/2), innerWidth - bw - 8);
-  /* Above the selection by preference; below it when the selection is near the top, so the
-     toolbar never covers the very text it is about to mark. */
+  /* Above the selection by preference; below it when that would collide with the chrome,
+     so the toolbar never covers the text it is about to mark and never covers the bar. */
   var top = r.top - bh - 10;
-  if(top < 64) top = r.bottom + 10;
+  if(top < chrome + 6) top = r.bottom + 10;
+  top = Math.min(top, floor - bh - 6);
+  if(top < chrome + 6) top = chrome + 6;
   bar.style.left = Math.round(left) + "px";
   bar.style.top  = Math.round(top) + "px";
 }
@@ -4871,10 +4961,22 @@ function regReachCheck(){
   Promise.all(pick.map(function(r){
     out.checked.push(r.pubNumber);
     return fetch(r.url, {method:"HEAD", cache:"no-store"}).then(function(res){
-      if(!res.ok) out.failures.push(r.pubNumber+" -> HTTP "+res.status+" at "+r.url);
+      if(res.ok) return;
+      out.failures.push(r.pubNumber+" -> HTTP "+res.status+". The file is missing or renamed on the host.");
     }).catch(function(){
-      out.failures.push(r.pubNumber+" -> request blocked or unreachable at "+r.url
-        + " (online, so this is CORS, CSP, or a dead host — not offline)");
+      /* A thrown fetch is ambiguous — it means CORS, or a dead host, or no route — and the
+         three need completely different fixes. One extra no-cors probe separates them: if
+         the opaque request succeeds the bytes ARE reachable and only the CORS header is
+         missing, which is a bucket setting, not an app bug. This runs on the phone, where
+         the console is invisible, so the panel can name the actual cause. */
+      return fetch(r.url, {mode:"no-cors", cache:"no-store"}).then(function(){
+        out.failures.push(r.pubNumber+" -> CORS. The host reachable but sends no "
+          + "Access-Control-Allow-Origin, so the browser discards the response. "
+          + "Fix the bucket CORS policy; nothing to change in the app.");
+      }).catch(function(){
+        out.failures.push(r.pubNumber+" -> unreachable. The request never completed at all "
+          + "(dead host, DNS, or no route). Not a CORS problem.");
+      });
     });
   })).then(function(){
     if(out.failures.length){
@@ -4883,6 +4985,7 @@ function regReachCheck(){
     } else {
       console.log("REG URL CHECK PASSED — "+out.checked.join(", ")+" reachable from "+REGLIB.REG_BASE);
     }
+    if(typeof stPanelUpdate === "function") stPanelUpdate();
   });
 }
 
@@ -4971,11 +5074,24 @@ window.addEventListener("online",  function(){ if(!$("library").classList.contai
 window.addEventListener("offline", function(){ if(!$("library").classList.contains("hidden")) libRefresh(); });
 
 /* ---------------- regulation reader (v27) ---------------- */
-$("rdBack").addEventListener("click", closeReader);
-$("rdOutline").addEventListener("click", rdOpenSheet);
+/* Bound on pointerdown, not click (v29). On iOS the first tap after a text selection is
+   consumed dismissing that selection, so a `click` on the reader chrome never arrives —
+   which is why these buttons did nothing on device while markup, driven by the selection
+   itself, worked fine. pointerdown fires before the dismissal swallows the gesture.
+   preventDefault stops the same gesture also being read as the start of a new selection. */
+function rdTap(el, fn){
+  el.addEventListener("pointerdown", function(e){ e.preventDefault(); e.stopPropagation(); fn(); });
+  /* Keyboards and assistive tech send click, never pointerdown. */
+  el.addEventListener("click", function(e){ e.preventDefault(); });
+  el.addEventListener("keydown", function(e){
+    if(e.key === "Enter" || e.key === " "){ e.preventDefault(); fn(); }
+  });
+}
+rdTap($("rdBack"), closeReader);
+rdTap($("rdOutline"), rdOpenSheet);
 $("rdSheetScrim").addEventListener("click", function(){ $("rdSheet").classList.add("hidden"); });
-$("rdPrev").addEventListener("click", function(){ rdGoto(rdPage - 1); });
-$("rdNext").addEventListener("click", function(){ rdGoto(rdPage + 1); });
+rdTap($("rdPrev"), function(){ rdGoto(rdPage - 1); });
+rdTap($("rdNext"), function(){ rdGoto(rdPage + 1); });
 /* Scroll fires far faster than the page counter needs to change, so it is throttled — but
    on a timestamp, deliberately NOT on requestAnimationFrame. Reading a scroll offset needs
    no frame timing, and rAF is throttled in background tabs and can be starved during
@@ -4983,6 +5099,10 @@ $("rdNext").addEventListener("click", function(){ rdGoto(rdPage + 1); });
    scrolling fast. A trailing call guarantees the last position is always reflected. */
 $("rdScroll").addEventListener("scroll", function(){
   var now = Date.now();
+  /* Scrolling invalidates the toolbar's position, which is measured from a viewport rect.
+     Re-running the placement keeps it on the selection, or hides it once the selection has
+     scrolled out of the readable band. */
+  if(!$("mkBar").classList.contains("hidden")) markShowBar();
   if(now - rdScrollLast >= 100){ rdScrollLast = now; rdSyncPage(); return; }
   if(rdScrollTimer) return;
   rdScrollTimer = setTimeout(function(){
@@ -5033,17 +5153,12 @@ $("mkDelete").addEventListener("click", function(){
     if(holder) markRepaint(holder, pg+1);
   });
 });
-/* The highlighter in the bar explains itself when there is nothing selected, and says so
-   honestly on a publication with no text layer instead of offering a dead control. */
-$("rdMark").addEventListener("click", function(){
-  if(mkSel){ markShowBar(); return; }
-  var holder = document.querySelector('.rdpage[data-page="' + rdPage + '"]');
-  var noText = holder && holder.getAttribute("data-notext") === "1";
-  $("noticeText").textContent = noText
-    ? "Highlighting isn't available for this publication — its pages are images without selectable text."
-    : "Select text on the page to highlight it or attach a note.";
-  $("notice").classList.remove("hidden");
-});
+/* The highlighter toggle is GONE in v29, deliberately. Selecting text already raises the
+   Highlight / Note toolbar, so a mode toggle had nothing to switch: it could only explain
+   itself in a notice, which is a control whose entire function is to apologise for existing.
+   The handoff called it — a redundant control gets removed rather than shipped dead. The
+   outline button carries the Marks jump-list, which is the one that mattered. Chunk 3's
+   chrome list should drop the highlighter to match. */
 
 document.addEventListener("keydown", function(e){
   if($("reader").classList.contains("hidden")) return;
@@ -5151,7 +5266,70 @@ $("resetYes").addEventListener("click", function(){
   $("notice").classList.remove("hidden");
 });
 
-if(/[?&]selftest=1/.test(location.search)) window.__selfTestErrors = selfTest();
+/* ---- On-screen self-test panel (v29) ----
+   iOS Safari hides the console, so on a phone the reg-URL check was invisible at exactly
+   the moment it mattered. This renders the same results on screen. It is built ONLY when
+   ?selftest=1 is present — nothing is created, styled or measured in a normal run. */
+function stPanelBuild(){
+  var p = document.createElement("div");
+  p.id = "stPanel";
+  var h = document.createElement("h4"); h.textContent = "Self-test — " + APP_VERSION;
+  var c = document.createElement("button");
+  c.id = "stClose"; c.type = "button"; c.setAttribute("aria-label","Close self-test panel");
+  c.textContent = "×";
+  c.addEventListener("click", function(){ p.classList.add("hidden"); });
+  var body = document.createElement("div"); body.id = "stBody";
+  p.appendChild(c); p.appendChild(h); p.appendChild(body);
+  document.body.appendChild(p);
+}
+function stRow(state, msg){
+  var row = document.createElement("div"); row.className = "strow";
+  var t = document.createElement("span");
+  t.className = "tick " + (state === "ok" ? "ok" : state === "skip" ? "skip" : "bad");
+  t.textContent = state === "ok" ? "PASS" : state === "skip" ? "SKIP" : "FAIL";
+  var m = document.createElement("span"); m.className = "msg"; m.textContent = msg;
+  row.appendChild(t); row.appendChild(m);
+  return row;
+}
+function stPanelUpdate(){
+  var body = document.getElementById("stBody");
+  if(!body) return;
+  body.textContent = "";
+  var errs = window.__selfTestErrors || [];
+  body.appendChild(stRow(errs.length ? "bad" : "ok",
+    errs.length ? errs.length + " bank problem(s)"
+                : "Bank " + QUESTIONS.length + " questions · " + CAT_LIST.length
+                  + " categories · " + Object.keys(BOARDS).length + " boards"));
+  errs.slice(0, 12).forEach(function(e){ body.appendChild(stRow("bad", e)); });
+
+  if(window.REGLIB){
+    var m = REGLIB.MANIFEST;
+    body.appendChild(stRow("ok", "Manifest " + m.length + " entries · "
+      + m.filter(function(r){ return r.avail === "hosted"; }).length + " hosted · "
+      + m.filter(function(r){ return r.restricted; }).length + " reference-only"));
+    var cap = REGLIB.capabilities();
+    body.appendChild(stRow(cap.available ? "ok" : "skip",
+      "Storage " + (cap.available ? REGLIB.backendName()
+        : "unavailable (" + (cap.bareFile ? "opened as a file, not installed" : "no storage") + ")")));
+  }
+  var rc = window.__regCheck;
+  if(!rc){
+    body.appendChild(stRow("skip", "REG URL CHECK not run yet"));
+  } else if(rc.skipped){
+    body.appendChild(stRow("skip", "REG URL CHECK skipped (" + rc.skipped + ")"));
+  } else if(rc.failures && rc.failures.length){
+    rc.failures.forEach(function(f){ body.appendChild(stRow("bad", f)); });
+  } else if(rc.checked && rc.checked.length){
+    body.appendChild(stRow("ok", "REG URL CHECK — " + rc.checked.join(", ") + " reachable"));
+  } else {
+    body.appendChild(stRow("skip", "REG URL CHECK pending"));
+  }
+}
+if(/[?&]selftest=1/.test(location.search)){
+  window.__selfTestErrors = selfTest();
+  stPanelBuild();
+  stPanelUpdate();
+}
 
 })();
 </script>
