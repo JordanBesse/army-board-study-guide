@@ -853,7 +853,7 @@ footer p{margin:0 0 8px}
 </button>
 <header id="appbar">
   <h1>Army Board Study Guide</h1>
-  <p id="sub">Board and badge prep for Soldier of the Month, promotion, Audie Murphy, Drill Sergeant, and ESB</p>
+  <p id="sub">Soldier of the Month, Promotion Board, Audie Murphy, Drill Sergeant, and ESB preparation.</p>
   <div id="quizbar">
     <div class="qb-board" id="qbBoard"></div>
     <div class="qb-pos" id="qbPos"></div>
@@ -1759,7 +1759,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v22";
+var APP_VERSION = "v23";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -1920,19 +1920,34 @@ var BOARDS = {
      questions are b:["ds"] and never enter another board's pool, so the number is inert —
      but drawQuiz reads `cfg.w[q.c] || 1`, and a literal 0 is falsy and would silently become
      a weight of 1. Never write 0 in a weight table here. */
+  /* Re-weighted in v23. The v13 cut sat the six DS-specific categories at 1.8-2.4 against
+     DS-relevant general categories at 1.4-2.2 — too small a gap to matter once category
+     SIZE is taken into account, so a DS quiz drew only 33% DS-specific content and 24%
+     admin and career management. A Drill Sergeant candidate is examined on the Creed, the
+     DS Program, drill, PRT and cadence; they are not examined on supply accounting.
+     Measured over 10,000 draws: DS-specific 33.0% -> 72.2%, DS-relevant general 43.0% ->
+     21.8%, admin/career 23.8% -> 5.7%. Advanced 41.6% against a 40% target and situational
+     14.6% against 15%, so the tier and type balance survived the change.
+     The two 10-question lanes (the Creed and Cadences) carry 12 rather than 10 so the
+     smallest categories are not buried by the largest — all six lanes appear in a typical
+     25-question quiz, from about 1.6 to 4.8 questions each.
+     Admin categories are floored at 0.25, never 0: `cfg.w[q.c] || 1` makes a literal zero
+     falsy and silently promotes it to 1, the opposite of the intent. */
   ds:{ label:"Drill Sergeant", adv:0.40, sit:0.15, w:{
-    "Drill Sergeant Creed and Identity":2.2,"Drill Sergeant Program":2.4,
-    "Drill and Ceremony — Drill Sergeant Depth":2.4,"Physical Readiness Training":2.0,
-    "Cadences and Marching":1.8,"Drill Sergeant Competition":2.0,
-    "Drill and Ceremony":2.2,"Army Values, Creeds, and Ethos":1.8,"Customs and Courtesies":1.6,
-    "Chain of Command and NCO Support Channel":1.4,"First Aid and TCCC":1.5,
-    "Weapons and Marksmanship":1.5,"Physical Fitness and Body Composition":1.5,
-    "Guard Duty and General Orders":1.4,
-    "Leadership":1.2,"Counseling and Development":1.2,"Army Programs":1.0,
-    "Uniforms and Appearance":1.0,"Army History and Heritage":0.9,"Military Justice":0.9,
-    "Risk Management":0.9,"Land Navigation and Map Reading":0.9,"NCO Development and Promotions":0.8,
-    "CBRN and MOPP":0.7,"Evaluations and NCOER":0.5,"Operations and Training Management":0.5,
-    "Supply and Property Accountability":0.5,
+    "Drill Sergeant Creed and Identity":12,"Drill Sergeant Program":10,
+    "Drill and Ceremony — Drill Sergeant Depth":10,"Physical Readiness Training":10,
+    "Cadences and Marching":12,"Drill Sergeant Competition":10,
+    /* General ground a DS candidate genuinely faces at the board and on the trail. */
+    "Drill and Ceremony":1.0,"Army Values, Creeds, and Ethos":1.0,"Customs and Courtesies":1.0,
+    "Chain of Command and NCO Support Channel":1.0,"First Aid and TCCC":1.0,
+    "Weapons and Marksmanship":1.0,"Physical Fitness and Body Composition":1.0,
+    "Guard Duty and General Orders":1.0,
+    /* Floored: the admin and career-management ground a DS board does not test. */
+    "Leadership":0.25,"Counseling and Development":0.25,"Army Programs":0.25,
+    "Uniforms and Appearance":0.25,"Army History and Heritage":0.25,"Military Justice":0.25,
+    "Risk Management":0.25,"Land Navigation and Map Reading":0.25,"NCO Development and Promotions":0.25,
+    "CBRN and MOPP":0.25,"Evaluations and NCOER":0.25,"Operations and Training Management":0.25,
+    "Supply and Property Accountability":0.25,
     "Audie Murphy — Early Life":0.1,"Audie Murphy — World War II Service":0.1,"Audie Murphy — Awards and Decorations":0.1,"Audie Murphy — Film and Music":0.1,"Audie Murphy — Personal Life and Legacy":0.1,
     "Expert Soldier Badge — Program and Eligibility":0.1,"Expert Soldier Badge — Testing and Standards":0.1 }},
   /* The Expert Soldier Badge pool layers harder than any other board. The ESB tests the
@@ -2685,7 +2700,12 @@ function answer(chosen, btn){
      source with no mapped title renders as its number alone, which is the right
      degradation — a bare number beats a wrong title. */
   var st=$("srcText"); st.textContent="";
-  var num=document.createElement("b"); num.textContent=q.s; st.appendChild(num);
+  /* labelFor(), not the raw key: a descriptive citation like "Army heritage" is stored
+     lowercase in the bank and Title-Cased for display, and the sources panel already does
+     that. Without this the answer card said "Army heritage" while the panel said "Army
+     Heritage" for the same source. Publications are unaffected — their key is already the
+     correct code. */
+  var num=document.createElement("b"); num.textContent=labelFor(q.s); st.appendChild(num);
   var ttl=titleFor(q.s);
   if(ttl) st.appendChild(document.createTextNode(" · "+ttl));
   /* The state class drives the tint, the spine, the word colour and which of the two
@@ -2847,7 +2867,7 @@ function toMenu(){
   compactBar(false);
   $("quiz").classList.add("hidden"); $("results").classList.add("hidden"); $("flash").classList.add("hidden");
   $("home").classList.remove("hidden");
-  $("sub").textContent="Board and badge prep for Soldier of the Month, promotion, Audie Murphy, Drill Sergeant, and ESB";
+  $("sub").textContent="Soldier of the Month, Promotion Board, Audie Murphy, Drill Sergeant, and ESB preparation.";
   mount($("home"));
   scopeRefs();                 // back to the whole bank on the way out
   refreshMissedBtn(); showHistory(); updatePool(); paintReadiness(); window.scrollTo(0,0);
@@ -2883,7 +2903,7 @@ function sourceLine(src){
   wrap.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2z"></path><path d="M18 16H7a2 2 0 0 0-2 2"></path></svg>';
   var sr=document.createElement("span"); sr.className="sronly"; sr.textContent="Source: ";
   var txt=document.createElement("span");
-  var num=document.createElement("b"); num.textContent=src; txt.appendChild(num);
+  var num=document.createElement("b"); num.textContent=labelFor(src); txt.appendChild(num);
   var t=titleFor(src);
   if(t) txt.appendChild(document.createTextNode(" · "+t));
   wrap.appendChild(sr); wrap.appendChild(txt);
