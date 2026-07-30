@@ -473,7 +473,15 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
    on, and "auto" there is one stray ancestor rule away from "none". */
 .rdtext{position:absolute;inset:0;overflow:hidden;line-height:1;
   opacity:1;z-index:2;
-  -webkit-user-select:text;user-select:text}
+  -webkit-user-select:text;user-select:text;
+  /* v37, step 0. The native iOS long-press callout (Copy · Writing Tools · Search) is system
+     UI drawn outside the web view, so it can never be stacked under the app's own toolbar —
+     v36 established that. Suppressing it is the only route. This is the cheap half of that:
+     kill the callout, keep native selection. On some iOS versions it does exactly that and
+     the whole problem is solved; on others it takes selection with it and highlighting stops
+     working, which is why this ships alone and gets tested before anything is rewritten.
+     user-select stays "text" deliberately — this is not the custom-layer change. */
+  -webkit-touch-callout:none}
 .rdtext span{position:absolute;white-space:pre;transform-origin:0 0;color:transparent;cursor:text;
   -webkit-user-select:text;user-select:text}
 /* color stays transparent under selection: without it the UA repaints the selected glyphs
@@ -772,8 +780,11 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 /* The footer sets a small muted type scale for the disclaimer; the Sources control has to
    opt back out of it so it reads as the same control as Choose Categories. */
 .refintro{text-align:center;color:var(--muted);font-size:.81rem;margin:18px 0 12px;line-height:1.45}
-/* The same weight the other entry controls carry — it is a primary way in, not a footnote. */
-#refOpen{font-weight:700}
+/* v37: 700 made it the heaviest thing on the home screen. Every other title there — board
+   names, quiz lengths, the Other ways to study buttons — is 650 at the base 1rem, via
+   ".stack .btn.sec". The size has to be pinned as well as the weight: this button sits in
+   the footer, and ".btn{font:inherit}" was handing it the footer's smaller type scale. */
+#refOpen{font-weight:650;font-size:1rem}
 /* v19: the sources list is grouped and uniform. Each source is a two-part row — the
    name/number with its official title, and a one-line description beneath where one is
    confirmed — under a quiet alphabetical letter header. */
@@ -2424,7 +2435,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v36";
+var APP_VERSION = "v37";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -6077,6 +6088,11 @@ function selfTest(){
     });
     if(sc.color !== "rgba(0, 0, 0, 0)" && sc.color !== "transparent")
       errs.push("markup: text-layer glyphs are not transparent (" + sc.color + ") and would double over the page");
+    /* v37 step 0. Asserted only where the browser reports the property at all, so a engine
+       that does not implement it cannot produce a false failure. */
+    var callout = pc.webkitTouchCallout || pc.getPropertyValue("-webkit-touch-callout");
+    if(callout && callout !== "none")
+      errs.push("markup: the text layer allows the native touch callout (" + callout + "), which collides with the markup toolbar on iOS");
     probe.remove();
 
     /* 2. The highlight toggle's maths. A re-highlight has to RECOGNISE the existing mark or
