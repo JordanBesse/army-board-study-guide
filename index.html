@@ -298,11 +298,21 @@ header.compact #quizbar{display:block}
 .libempty .h{font-size:.9rem;font-weight:700;color:var(--ink)}
 .libempty p{margin:0;font-size:.82rem;line-height:1.5;max-width:30ch}
 /* Bookmark rows: the page is the thing, so it leads. */
-.bmrow{display:flex;align-items:flex-start;gap:12px;width:100%;text-align:left;
-  padding:11px 2px;border-bottom:1px solid var(--line);background:none;
-  border-left:0;border-right:0;border-top:0;font:inherit;color:var(--ink);cursor:pointer;min-height:44px}
+/* v36: the row is a container, not a button — a remove control cannot live inside one. */
+.bmitem{display:flex;align-items:stretch;width:100%;border-bottom:1px solid var(--line)}
+.bmrow{display:flex;align-items:flex-start;gap:12px;flex:1;min-width:0;text-align:left;
+  padding:11px 2px;background:none;border:0;
+  font:inherit;color:var(--ink);cursor:pointer;min-height:44px}
 .bmrow:hover{background:var(--hover-bg)}
 .bmrow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+/* No confirmation here, deliberately: a bookmark is a pointer that costs one tap to recreate,
+   unlike a downloaded file. It matches the immediacy of un-starring a favorite. */
+.bmdel{flex:0 0 44px;min-height:44px;background:none;border:0;color:var(--muted);cursor:pointer;
+  border-radius:var(--r);display:flex;align-items:center;justify-content:center}
+.bmdel svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round}
+.bmdel:hover{background:var(--hover-bg);color:var(--ink)}
+.bmdel:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .bmrow .g{flex:0 0 auto;width:18px;height:18px;color:var(--muted);margin-top:2px}
 .bmrow .g svg{width:100%;height:100%;fill:currentColor}
 .bmrow .b{flex:1;min-width:0}
@@ -552,6 +562,15 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 #mkBar button:hover,#mkPop button:hover{background:rgba(255,255,255,.12)}
 #mkBar button:focus-visible,#mkPop button:focus-visible{outline:2px solid #eef2ec;outline-offset:-2px}
 /* Note editor — a bottom sheet, the same shape as the outline sheet. */
+#libConfirm{position:fixed;inset:0;z-index:95;display:flex;align-items:flex-end;justify-content:center}
+#libConfirm.hidden{display:none}
+#libConfirmScrim{position:absolute;inset:0;background:rgba(10,14,10,.5)}
+#libConfirmPanel{position:relative;width:100%;max-width:480px;background:var(--surface);
+  border:1px solid var(--line);border-radius:16px 16px 0 0;
+  padding:18px 16px calc(18px + env(safe-area-inset-bottom));box-shadow:var(--e2)}
+@media(min-width:520px){ #libConfirm{align-items:center} #libConfirmPanel{border-radius:16px} }
+#libConfirmPanel h3{margin:0 0 6px;font-size:.98rem}
+#libConfirmBody{margin:0;font-size:.84rem;color:var(--muted);line-height:1.45}
 #mkSheet{position:fixed;inset:0;z-index:95;display:flex;align-items:flex-end;justify-content:center}
 #mkSheet.hidden{display:none}
 #mkScrim{position:absolute;inset:0;background:rgba(10,14,10,.5)}
@@ -801,6 +820,8 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 /* The footer sets a small muted type scale for the disclaimer; the Sources control has to
    opt back out of it so it reads as the same control as Choose Categories. */
 .refintro{text-align:center;color:var(--muted);font-size:.81rem;margin:18px 0 12px;line-height:1.45}
+/* The same weight the other entry controls carry — it is a primary way in, not a footnote. */
+#refOpen{font-weight:700}
 /* v19: the sources list is grouped and uniform. Each source is a two-part row — the
    name/number with its official title, and a one-line description beneath where one is
    confirmed — under a quiet alphabetical letter header. */
@@ -1787,6 +1808,20 @@ footer p{margin:0 0 8px}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"></path></svg>Remove
   </button>
 </div>
+<!-- v36: removing a downloaded publication is destructive and was happening on one tap of a
+     "···" that never said what it did. Same sheet shape as the note editor; neutral chrome,
+     because delete never borrows the graded lane. -->
+<div id="libConfirm" class="hidden" role="dialog" aria-modal="true" aria-labelledby="libConfirmTitle">
+  <div id="libConfirmScrim"></div>
+  <div id="libConfirmPanel">
+    <h3 id="libConfirmTitle">Remove this download?</h3>
+    <p id="libConfirmBody"></p>
+    <div class="mkrow">
+      <button class="btn sec" type="button" id="libConfirmNo">Cancel</button>
+      <button class="btn sec" type="button" id="libConfirmYes">Remove</button>
+    </div>
+  </div>
+</div>
 <div id="mkSheet" class="hidden" role="dialog" aria-modal="true" aria-label="Note">
   <div id="mkScrim"></div>
   <div id="mkPanel">
@@ -1820,7 +1855,7 @@ footer p{margin:0 0 8px}
        audit line stays here, because it is a statement about the whole app, not about a
        screen. -->
   <p class="refintro" id="refAudit"></p>
-  <button class="btn sec" type="button" id="refOpen" style="width:100%">Sources &amp; references</button>
+  <button class="btn sec" type="button" id="refOpen" style="width:100%">References</button>
   <p style="margin-top:16px">Study aid only. Verify all standards against the current regulation before a board. Regulations change.</p>
 </footer>
 </div>
@@ -2437,7 +2472,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v35";
+var APP_VERSION = "v36";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -3061,7 +3096,7 @@ function scopeRefs(list){
   var b = $("refOpen");
   if(b) b.textContent = quizSources
     ? "Sources for this quiz · " + quizSources.length + " citation" + (quizSources.length===1?"":"s")
-    : "Sources & references";
+    : "References";
 }
 
 /* ---------------- feedback links ---------------- */
@@ -4551,8 +4586,10 @@ function libRenderDownloads(list){
     more.textContent = "···";
     more.addEventListener("click", function(e){
       e.stopPropagation();
+      /* Cancelling a download in flight is not destructive — nothing is on the device yet —
+         so it stays immediate. Removing a stored copy asks first. */
       if(libProgress[st.id] !== undefined){ libCancel(st.id); return; }
-      REGLIB.remove(st.id).then(function(){ libRefresh(); });
+      libAskRemove(st);
     });
     row.appendChild(more);
     /* The row still opens the publication — removing is the deliberate act behind the menu. */
@@ -4594,9 +4631,40 @@ function libRenderBookmarks(list){
       body.appendChild(n); body.appendChild(sn);
       b.appendChild(g); b.appendChild(body);
       b.addEventListener("click", function(){ libOpenReg(x.st.id, x.m.page + 1); });
-      host.appendChild(b);
+      var wrap = document.createElement("div"); wrap.className = "bmitem";
+      var del = document.createElement("button");
+      del.type = "button"; del.className = "bmdel";
+      del.setAttribute("aria-label", "Remove the bookmark on page " + (x.m.page + 1) + " of " + x.st.pubNumber);
+      del.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/></svg>';
+      del.addEventListener("click", function(e){
+        e.stopPropagation();
+        REGLIB.marks.drop(x.m.id).then(function(){
+          /* The page loses its bookmark too, if it happens to be on screen in the reader. */
+          var h = document.querySelector('.rdpage[data-page="' + (x.m.page + 1) + '"]');
+          if(h && typeof markRepaint === "function") markRepaint(h, x.m.page + 1);
+          libRender();
+        }).catch(function(){});
+      });
+      wrap.appendChild(b); wrap.appendChild(del);
+      host.appendChild(wrap);
     });
   }).catch(function(){});
+}
+
+/* One confirm sheet, one pending action. Kept deliberately small: this is the only
+   destructive act in the hub, and it is worth naming before it happens. */
+var libPendingRemove = null;
+function libAskRemove(st){
+  libPendingRemove = st;
+  $("libConfirmBody").textContent =
+    "The offline copy of " + st.pubNumber + " (" + libMB(st.sizeBytes) + ") comes off this device. "
+    + "You can still read it, and download it again whenever you want.";
+  $("libConfirm").classList.remove("hidden");
+  $("libConfirmNo").focus();
+}
+function libCloseConfirm(){
+  $("libConfirm").classList.add("hidden");
+  libPendingRemove = null;
 }
 
 function libEmpty(icon, head, body){
@@ -4923,6 +4991,11 @@ function rdRenderPage(holder){
       if(ph) ph.remove();
       /* Behind the mark layer and the text layer, both of which are already in place. */
       holder.insertBefore(cv, holder.firstChild);
+      /* v36: repaint the page's marks on EVERY render, not only on the pass that first built
+         the text layer. A page released for memory and re-rendered, or entered by jumping in
+         from the Marks list, used to come back with the mark still in the store and no wash
+         on the page. markRepaint clears before it draws, so running it again is free. */
+      if(typeof markRepaint === "function") markRepaint(holder, n);
     }, function(e){ clearTimeout(timer); throw e; });
   }).catch(function(){
     var ph = holder.querySelector(".rdph");
@@ -5295,6 +5368,9 @@ function markPaintPage(holder, n, page, vp, scale){
   page.getTextContent().then(function(tc){
     if(!tc.items.length){
       holder.setAttribute("data-notext","1");
+      /* No text layer does not mean no marks: the page can still carry ones stored earlier.
+         Returning here skipped painting them entirely. */
+      markRepaint(holder, n);
       return;
     }
     var layer = document.createElement("div");
@@ -5534,6 +5610,10 @@ function markClearSelection(){
   mkSel = null;
 }
 function markCommit(type, noteText, cap){
+  /* v36: a mark with no paintable band is a mark that exists in the Marks list and nowhere on
+     the page — present but invisible, and impossible to find your way back to. Refuse it at
+     the door rather than storing something that cannot be drawn. */
+  if(!cap.rects || !cap.rects.length){ markClearSelection(); return Promise.resolve(null); }
   return REGLIB.marks.put({
     regId: rdId, page: cap.page, pageLabel: cap.pageLabel, type: type,
     anchor: { quote:cap.quote, prefix:cap.prefix, suffix:cap.suffix,
@@ -6128,6 +6208,34 @@ function selfTest(){
         errs.push("markup: the rect merge is not idempotent");
     }
 
+    /* v36: a mark has to be PAINTABLE, not merely stored. The store round-trips fine, which
+       is exactly why this went unseen: the gap was between "in the store" and "on the page". */
+    if(typeof markMergeRects === "function"){
+      /* Rects that survive the merge to nothing must never reach the store. */
+      var nothing = markMergeRects([{x:.1,y:.2,w:0,h:.02},{x:.3,y:.2,w:.05,h:0}]);
+      if(nothing.length)
+        errs.push("markup: degenerate rects produced " + nothing.length + " paintable band(s)");
+      /* A real selection must yield at least one band, or the mark would be invisible. */
+      var real = markMergeRects([{x:.10,y:.20,w:.09,h:.02},{x:.19,y:.20,w:.09,h:.02}]);
+      if(real.length < 1)
+        errs.push("markup: a normal selection yields no paintable band");
+      /* Repainting is what a page re-entry relies on, so a stored band set has to survive the
+         round trip through the merge unchanged — same count in, same count out. */
+      var stored = markMergeRects([{x:.1,y:.20,w:.5,h:.02},{x:.1,y:.24,w:.3,h:.02}]);
+      var again = markMergeRects(stored);
+      if(again.length !== stored.length)
+        errs.push("markup: repainting a stored mark changes its band count from "
+          + stored.length + " to " + again.length);
+    }
+    /* The controls v36 added, so a download cannot be deleted unnamed and a bookmark is not
+       stuck in the list once saved. */
+    ["libConfirm","libConfirmYes","libConfirmNo"].forEach(function(id){
+      if(!document.getElementById(id))
+        errs.push("library: #" + id + " is missing, so a download would be removed with no confirmation");
+    });
+    if(typeof libAskRemove !== "function")
+      errs.push("library: libAskRemove is not reachable");
+
     /* 5. The settings close button must not sit on top of the first row's control. It did:
        above 600px the grip is display:none, which lifted the content into it. */
     (function(){
@@ -6356,8 +6464,20 @@ $("printBtn").addEventListener("click", function(){ buildPrint(); window.print()
 
 /* ---------------- regulation library (v26) ---------------- */
 $("regBtn").addEventListener("click", openLibrary);
-$("refOpen").addEventListener("click", function(){ openLibrary(null, quizSources); });
+/* v36: on iOS this sometimes painted its pressed state and never opened. Same binding the
+   reader chrome has used since v29, for the same reason — iOS can swallow the click after a
+   text selection or behind the 300ms delay, while pointerdown always lands. rdTap also
+   preventDefaults the trailing click, which is what stops a double-fire. */
+rdTap($("refOpen"), function(){ openLibrary(null, quizSources); });
 $("libBack").addEventListener("click", closeLibrary);
+$("libConfirmNo").addEventListener("click", libCloseConfirm);
+$("libConfirmScrim").addEventListener("click", libCloseConfirm);
+$("libConfirmYes").addEventListener("click", function(){
+  var st = libPendingRemove;
+  libCloseConfirm();
+  if(!st) return;
+  REGLIB.remove(st.id).then(function(){ libRefresh(); }).catch(function(){ libRefresh(); });
+});
 Array.prototype.forEach.call(document.querySelectorAll("#libNav .libseg"), function(b){
   b.addEventListener("click", function(){ libSetView(b.getAttribute("data-view")); });
 });
