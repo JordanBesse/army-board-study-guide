@@ -132,6 +132,120 @@ header.compact #quizbar{display:block}
   #settingsBtn{transition:none}
   #settingsBtn:active{transform:none}
 }
+/* Regulations entry (v26, chunk 1 rev, option A). A labelled pill to the LEFT of the gear,
+   both floating bottom-right. The gear is untouched — the design note is explicit that the
+   v19 floater stays exactly where it is.
+   Wider than the gear and carrying a word, because a lone book glyph is ambiguous: a book of
+   what? The accent sits on the GLYPH only, as brand, never on the fill — an accent-filled
+   pill would put a second "primary action" on the home screen next to Start Quiz and would
+   also spend the accent's "selected" meaning on chrome, which the colour law forbids.
+   Offset is the gear's own right inset plus its 52px width plus a 10px gap, so the pair
+   stays glued together as the safe-area inset changes. */
+#regBtn{
+  position:fixed;z-index:40;
+  right:calc(max(16px, env(safe-area-inset-right)) + 62px);
+  bottom:max(16px, env(safe-area-inset-bottom));
+  height:52px;padding:0 15px;
+  display:flex;align-items:center;gap:8px;
+  border:1px solid var(--line);background:var(--surface);
+  color:var(--ink);border-radius:14px;
+  box-shadow:var(--e2);
+  font:inherit;font-size:.87rem;font-weight:650;cursor:pointer;white-space:nowrap;
+  transition:background-color var(--m-tap) ease-out,transform var(--m-tap) ease-out;
+}
+#regBtn svg{width:22px;height:22px;display:block;color:var(--accent)}
+#regBtn:hover{background:var(--surface2)}
+#regBtn:active{background:var(--surface2);transform:scale(.96)}
+#regBtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){
+  #regBtn{transition:none}
+  #regBtn:active{transform:none}
+}
+/* ---- Library list (v26, chunk 2) ---- */
+#library .libhdr{position:relative;padding:2px 0 12px;border-bottom:1px solid var(--line)}
+#libBack{
+  position:absolute;left:-6px;top:-2px;
+  width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+  background:none;border:0;color:var(--muted);font:inherit;font-size:26px;line-height:1;cursor:pointer;
+  border-radius:var(--r);
+}
+#libBack:hover{background:var(--surface2)}
+#libBack:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#library .libtitle{text-align:center;font-size:1.06rem;font-weight:700;margin:8px 0 0}
+#libCue{text-align:center;font-size:.75rem;color:var(--muted);margin-top:3px}
+.libsearch{margin-top:12px;display:flex;align-items:center;gap:8px;
+  background:var(--surface2);border:1px solid var(--line);border-radius:9px;padding:0 12px}
+.libsearch svg{width:17px;height:17px;color:var(--muted);flex:0 0 auto}
+#libSearch{
+  flex:1;min-width:0;min-height:44px;border:0;background:none;color:var(--ink);
+  font:inherit;font-size:.85rem;padding:0;
+}
+#libSearch::placeholder{color:var(--muted)}
+#libSearch:focus{outline:none}
+.libsearch:focus-within{border-color:var(--accent)}
+/* Section headers. Board Core takes the accent as a brand mark on the star, matching how the
+   glyph set uses it; the family headers stay muted so the pinned group reads as the one
+   emphasis on the screen. */
+.libsec{font-size:.69rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--accent);padding:18px 2px 6px;display:flex;align-items:center;gap:6px}
+.libsec svg{width:13px;height:13px;fill:currentColor}
+.libsec.fam{color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:8px}
+.librow{display:flex;align-items:center;gap:12px;padding:11px 2px;border-bottom:1px solid var(--line);
+  width:100%;text-align:left;background:none;border-left:0;border-right:0;border-top:0;
+  font:inherit;color:var(--ink)}
+button.librow{cursor:pointer}
+button.librow:hover{background:var(--hover-bg)}
+button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.librow .rmain{flex:1;min-width:0}
+.librow .rnum{font-size:.9rem;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.librow .tag{font-size:.63rem;font-weight:700;letter-spacing:.03em;color:var(--muted);
+  background:var(--surface2);border-radius:999px;padding:2px 8px}
+.librow .star{color:var(--accent);display:inline-flex}
+.librow .star svg{width:12px;height:12px;fill:currentColor}
+.librow .rttl{font-size:.78rem;color:var(--muted);line-height:1.3;margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.librow .refline{font-size:.75rem;color:var(--muted);margin-top:4px;white-space:normal}
+/* State controls. ALL neutral by the colour law: download state is status, not selection and
+   not grading, so nothing here may borrow --accent, --ok or --no. Every state carries a glyph
+   AND a word so it survives any colour vision. */
+.libst{flex:0 0 auto;display:flex;align-items:center;justify-content:flex-end;min-width:104px}
+.dlbtn{display:inline-flex;align-items:center;gap:6px;background:var(--surface2);
+  border:1px solid var(--line);border-radius:999px;padding:0 13px;min-height:44px;
+  color:var(--ink);font:inherit;font-size:.78rem;font-weight:650;cursor:pointer;white-space:nowrap}
+.dlbtn svg{width:16px;height:16px}
+.dlbtn:hover{background:var(--hover-bg);border-color:var(--hover-line)}
+.dlbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.dlbtn[disabled]{opacity:1;color:var(--dim-ink);border-color:var(--dim-line);cursor:default}
+.dlbtn[disabled]:hover{background:var(--surface2);border-color:var(--dim-line)}
+.doing{display:flex;flex-direction:column;align-items:flex-end;gap:5px;
+  background:none;border:0;padding:6px 2px;font:inherit;cursor:pointer;color:var(--muted)}
+.doing:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.doing .t{font-size:.72rem;color:var(--muted);font-weight:650}
+.track{width:84px;height:4px;border-radius:999px;background:var(--line);overflow:hidden}
+.track>span{display:block;height:100%;background:var(--muted);border-radius:999px;transition:width var(--m-state) linear}
+.done,.upd,.ref{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:650}
+.done{color:var(--muted)} .done svg{width:17px;height:17px}
+.upd{color:var(--ink);background:var(--surface2);border:1px solid var(--line);border-radius:999px;
+  padding:0 13px;min-height:44px;font:inherit;font-size:.78rem;font-weight:650;cursor:pointer}
+.upd svg{width:16px;height:16px}
+.upd .dot{width:7px;height:7px;border-radius:50%;background:var(--ink);margin-left:1px;flex:0 0 auto}
+.upd:hover{background:var(--hover-bg)}
+.upd:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ref{color:var(--muted)} .ref svg{width:15px;height:15px}
+/* Edge-state card — offline, bare file://, nothing-downloaded. Same shape for all three so a
+   Soldier learns one pattern; never a blank screen. */
+.libnote{display:flex;gap:11px;align-items:flex-start;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r);padding:13px 14px;box-shadow:var(--e1);margin-top:14px}
+.libnote svg{width:20px;height:20px;color:var(--muted);flex:0 0 auto;margin-top:1px}
+.libnote .h{font-size:.87rem;font-weight:700}
+.libnote p{margin:3px 0 0;font-size:.78rem;color:var(--muted);line-height:1.4}
+#libEmptyMsg{font-size:.8rem;color:var(--muted);padding:14px 2px;text-align:center}
+@media(max-width:380px){
+  .libst{min-width:92px}
+  .librow .rttl{font-size:.75rem}
+  #regBtn{font-size:.82rem;padding:0 12px}
+  #regBtn svg{width:20px;height:20px}
+}
 #themeBtn{
   border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--r);
   min-height:44px;min-width:44px;padding:0 13px;font:inherit;font-size:.8rem;cursor:pointer;
@@ -818,7 +932,7 @@ footer p{margin:0 0 8px}
 }
 @media print{
   body{background:#fff;color:#000}
-  .wrap>header,.wrap>main,.wrap>footer,#settingsBtn,#settingsPanel{display:none!important}
+  .wrap>header,.wrap>main,.wrap>footer,#settingsBtn,#regBtn,#settingsPanel{display:none!important}
   #printArea{display:block!important}
   #printArea h1{font-size:16pt;margin:0 0 2pt;text-align:left}
   #printArea .pmeta{font-size:9pt;color:#333;margin:0 0 10pt}
@@ -847,6 +961,14 @@ footer p{margin:0 0 8px}
        centres it (ink centre 11.5, 12 = box centre), so nothing is cut and the mark is
        optically centred rather than merely box-centred. The path itself is untouched. -->
   <svg viewBox="-2.5 -2 28 28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3.2"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.6 15a1.65 1.65 0 0 0-1.51-1H2a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 3.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 8 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+</button>
+<!-- Regulations entry (v26). Sibling of the app bar for the same reason the gear is: it is a
+     fixed floating control, so nesting it in the header would misrepresent the reading order.
+     Open book rather than the closed manual used on the sources line, because this control
+     means "read this", not "cited from this". -->
+<button id="regBtn" type="button" aria-label="Regulations library">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 7C9.2 5.4 5.6 5.4 3.6 6.3v11.1C5.6 16.5 9.2 16.5 12 18.1"></path><path d="M12 7c2.8-1.6 6.4-1.6 8.4-.7v11.1c-2-.9-5.6-.9-8.4.7"></path><path d="M12 7v11.1"></path></svg>
+  <span>Regulations</span>
 </button>
 <header id="appbar">
   <h1>Army Board Study Guide</h1>
@@ -1126,6 +1248,23 @@ footer p{margin:0 0 8px}
     </div>
     <button class="fghost" type="button" id="fexit">Back to Main Menu</button>
   </div>
+</main>
+
+<!-- The regulation library list (v26, chunk 2). A screen like quiz/results/flash rather than a
+     sheet, because it is a place a Soldier navigates INTO and scrolls, and it owns its own
+     back affordance. -->
+<main id="library" class="hidden">
+  <div class="libhdr">
+    <button id="libBack" type="button" aria-label="Back to main menu">&#8249;</button>
+    <h2 class="libtitle">Regulations</h2>
+    <div id="libCue"></div>
+    <label class="libsearch" for="libSearch">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4-4"></path></svg>
+      <input id="libSearch" type="search" placeholder="Search publications" autocomplete="off" spellcheck="false" aria-label="Search publications">
+    </label>
+  </div>
+  <div id="libEdge"></div>
+  <div id="libList"></div>
 </main>
 
 <footer>
@@ -1756,7 +1895,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v25";
+var APP_VERSION = "v26";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -2863,6 +3002,11 @@ function toMenu(){
   stopSpeech(); $("speakRow").classList.add("hidden");
   compactBar(false);
   $("quiz").classList.add("hidden"); $("results").classList.add("hidden"); $("flash").classList.add("hidden");
+  /* The library is a screen like the others, so leaving by any route must put it away and
+     bring the two floaters back — otherwise a Back gesture out of the library would strand
+     the home screen with no gear and no Regulations button. */
+  $("library").classList.add("hidden");
+  $("regBtn").style.display = ""; $("settingsBtn").style.display = "";
   $("home").classList.remove("hidden");
   $("sub").textContent="Soldier of the Month, Promotion Board, Audie Murphy, Drill Sergeant, and ESB preparation.";
   mount($("home"));
@@ -2870,7 +3014,8 @@ function toMenu(){
   refreshMissedBtn(); showHistory(); updatePool(); paintReadiness(); window.scrollTo(0,0);
 }
 window.addEventListener("popstate", function(){
-  var inView = !$("quiz").classList.contains("hidden") || !$("results").classList.contains("hidden") || !$("flash").classList.contains("hidden");
+  var inView = !$("quiz").classList.contains("hidden") || !$("results").classList.contains("hidden")
+            || !$("flash").classList.contains("hidden") || !$("library").classList.contains("hidden");
   if(inView) toMenu();
 });
 
@@ -3177,7 +3322,7 @@ var REGLIB = (function(){
   /* ---- Download. Atomic by construction: the blob is assembled in full and only
      written on completion, so an interrupted download cannot leave a half file in
      the store. Every failure path clears any partial record before rethrowing. ---- */
-  var inflight = {};
+  var inflight = {}, inflightCtl = {};
   function err(code,msg){ var e=new Error(msg); e.code=code; return e; }
   function quotaish(e){
     var n = (e && e.name) || "", m = String((e && e.message) || "");
@@ -3200,7 +3345,13 @@ var REGLIB = (function(){
     if(navigator.onLine === false)
       return Promise.reject(err("offline","No connection. Publications you have already downloaded still open."));
 
-    var p = fetch(r.url, {cache:"no-store"}).then(function(res){
+    /* A real abort, not a flag. Cancelling a 24 MB publication has to stop the transfer —
+       marking it cancelled and letting the request run to completion would still spend the
+       data the Soldier just declined, and the write would land after the cleanup. */
+    var ctl = (typeof AbortController === "function") ? new AbortController() : null;
+    if(ctl) inflightCtl[id] = ctl;
+
+    var p = fetch(r.url, ctl ? {cache:"no-store", signal:ctl.signal} : {cache:"no-store"}).then(function(res){
       if(!res.ok) throw err("http","Could not download "+r.pubNumber+" ("+res.status+").");
       var total = Number(res.headers.get("content-length")) || r.sizeBytes || 0;
       if(!res.body || !res.body.getReader){
@@ -3222,14 +3373,28 @@ var REGLIB = (function(){
       return backend().put(id, blob, meta).then(function(){ return meta; });
     }).catch(function(e){
       return backend().del(id).catch(function(){}).then(function(){
+        /* Abort is tested FIRST, before the has-a-code passthrough below. A DOMException
+           carries the legacy numeric `code` 20, which is truthy, so checking our own codes
+           first rethrows the raw abort and the UI ends up showing the browser's internal
+           "signal is aborted without reason" to a Soldier who simply tapped cancel. */
+        if(e && (e.name === "AbortError" || e.code === 20))
+          throw err("cancelled","Download cancelled.");
         if(e && e.code) throw e;
         throw quotaish(e) ? err("space","Not enough space on this device for "+r.pubNumber+".")
                           : err("failed","Download failed. Check your connection and try again.");
       });
     });
     inflight[id] = p;
-    p.catch(function(){}).then(function(){ delete inflight[id]; });
+    p.catch(function(){}).then(function(){ delete inflight[id]; delete inflightCtl[id]; });
     return p;
+  }
+  /* Stops an in-flight download and clears anything it had written. Safe to call when
+     nothing is running — the removal still runs, which is what makes it double as "delete
+     this publication". */
+  function cancel(id){
+    var ctl = inflightCtl[id];
+    if(ctl){ try{ ctl.abort(); }catch(e){} delete inflightCtl[id]; }
+    return backend().del(id).catch(function(){});
   }
 
   function installed(id){ return backend().get(id).then(function(r){ return !!r; }); }
@@ -3331,7 +3496,7 @@ var REGLIB = (function(){
     MANIFEST: MANIFEST, byId: function(id){ return BY_ID[id]; }, REG_BASE: REG_BASE,
     capabilities: capabilities, unavailableLine: UNAVAILABLE_LINE,
     backendName: function(){ return backend().name; },
-    download: download, installed: installed, remove: remove, openBlob: openBlob,
+    download: download, cancel: cancel, installed: installed, remove: remove, openBlob: openBlob,
     status: status, marks: marks, render: render, viewerReady: viewerReady,
     /* Test seam: lets the proof harness register a sample entry without shipping one. */
     _addTestReg: function(entry){ MANIFEST.push(entry); BY_ID[entry.id]=entry; return entry; }
@@ -3343,6 +3508,315 @@ var REGLIB = (function(){
    the only way to exercise it from outside is a named handle. Same precedent as
    `window.__selfTestErrors`, and it exposes the module only, never the quiz internals. */
 window.REGLIB = REGLIB;
+
+/* ==================== Regulation library — list screen (v26) ====================
+   Chunk 2, built to the approved spec. The list is a pure projection of the manifest:
+   nothing about a publication is written here, so adding or hosting a pub stays a data
+   change. Row state comes from REGLIB.status(), never from a second copy of the truth.  */
+var LIBICON = {
+  star:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z"/></svg>',
+  down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 4v10M8 11l4 4 4-4M5 19h14"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 12l5 5L20 6"/></svg>',
+  refresh:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 5.5A8 8 0 0 1 19 8"/><path d="M19 3.5V8h-4.5"/><path d="M20 18.5A8 8 0 0 1 5 16"/><path d="M5 20.5V16h4.5"/></svg>',
+  lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+  offline:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3l18 18M8.5 8.5A11 11 0 0 0 4 11M12 5c3 0 5.8 1.2 7.8 3.2M9 12.5A6 6 0 0 1 15 12.5M12 16h.01"/></svg>',
+  info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>',
+  book:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 7C9.2 5.4 5.6 5.4 3.6 6.3v11.1C5.6 16.5 9.2 16.5 12 18.1"/><path d="M12 7c2.8-1.6 6.4-1.6 8.4-.7v11.1c-2-.9-5.6-.9-8.4.7"/><path d="M12 7v11.1"/></svg>'
+};
+/* One manifest category is long enough to crowd a 360px row. Shortened for DISPLAY only, the
+   same pattern as the sources panel's label map — the manifest keeps the full name.
+   Deliberately just the one: a display map may shorten a name, never restate it. An earlier
+   cut also mapped "Drill" to "Drill & Ceremony", which reads fine on TC 3-21.5 and is simply
+   wrong on TR 350-16, the Drill Sergeant Program. */
+var LIBCAT_SHORT = { "Land Navigation":"Land Nav" };
+function libCat(c){ return LIBCAT_SHORT[c] || c; }
+
+function libMB(bytes){
+  if(!bytes) return "0 MB";
+  var mb = bytes/1048576;
+  return (mb < 10 ? mb.toFixed(1) : Math.round(mb)) + " MB";
+}
+/* Pub numbers sort naturally, not lexically: "AR 27-10" must precede "AR 190-11", and
+   "AR 600-8-2" must precede "AR 600-8-19". A plain string compare gets both backwards. */
+function libNat(a, b){
+  var ax = String(a).match(/(\d+|\D+)/g) || [], bx = String(b).match(/(\d+|\D+)/g) || [];
+  for(var i=0; i<Math.max(ax.length,bx.length); i++){
+    var x = ax[i], y = bx[i];
+    if(x === undefined) return -1;
+    if(y === undefined) return 1;
+    var nx = /^\d/.test(x), ny = /^\d/.test(y);
+    if(nx && ny){ var d = parseInt(x,10) - parseInt(y,10); if(d) return d; }
+    else if(x !== y) return x < y ? -1 : 1;
+  }
+  return 0;
+}
+function libFamily(pub){ return String(pub).charAt(0).toUpperCase(); }
+/* The prefix is every leading word before the number, not the first token — "DA PAM 670-1"
+   is a DA PAM, and splitting on the first space alone labels its section "D — DA". */
+function libPrefix(pub){
+  var m = /^([A-Za-z][A-Za-z ]*?)\s+\d/.exec(String(pub));
+  return m ? m[1] : String(pub).split(/\s+/)[0];
+}
+
+var libRows = [];        /* the status rows actually listed, after omissions */
+var libQuery = "";
+var libProgress = {};    /* id -> last fraction, so a re-render mid-download keeps the bar */
+
+/* Entries with no URL are omitted rather than shown, per the chunk-2 lock: there is no
+   "pending" row treatment, and a Download control that cannot download is worse than an
+   absent row. The omission is reported by the self-test so it can never go unnoticed. */
+function libListable(st){ return st.restricted || st.downloadable; }
+
+function libGroups(rows){
+  var out = [];
+  if(libQuery){
+    /* While searching, grouping is noise — a Soldier wants the match, not its family. One
+       flat result list, with the Board Core star kept inline so the signal is not lost. */
+    out.push({ label:null, rows:rows.slice().sort(function(a,b){ return libNat(a.pubNumber,b.pubNumber); }) });
+    return out;
+  }
+  var core = rows.filter(function(r){ return r.core; })
+                 .sort(function(a,b){ return libNat(a.pubNumber,b.pubNumber); });
+  if(core.length) out.push({ label:"Board core", star:true, rows:core });
+  /* The full library follows, families under letter headers. Core pubs appear here too —
+     the spec says the full library, and a Soldier hunting AR 670-1 under A must find it
+     rather than having to know it was pinned to the top. State changes repaint every row
+     carrying that id, so the duplicate can never disagree with itself. */
+  var fams = {};
+  rows.forEach(function(r){
+    var f = libFamily(r.pubNumber);
+    (fams[f] = fams[f] || []).push(r);
+  });
+  Object.keys(fams).sort().forEach(function(f){
+    var list = fams[f].sort(function(a,b){ return libNat(a.pubNumber,b.pubNumber); });
+    var pres = [];
+    list.forEach(function(r){ var p = libPrefix(r.pubNumber); if(pres.indexOf(p)===-1) pres.push(p); });
+    out.push({ label:f + " — " + pres.join(" · "), rows:list });
+  });
+  return out;
+}
+
+function libMatch(st){
+  if(!libQuery) return true;
+  var q = libQuery;
+  return (st.pubNumber + " " + st.title + " " + st.category).toLowerCase().indexOf(q) !== -1;
+}
+
+/* Paint one row's state control. Split out because a download repaints just this cell,
+   every 100ms of progress, on every row that shares the id. */
+function libPaintState(cell, st){
+  var offline = navigator.onLine === false;
+  cell.textContent = "";
+  var el;
+  if(st.restricted){
+    el = document.createElement("span"); el.className = "ref";
+    el.innerHTML = LIBICON.lock; el.appendChild(document.createTextNode("Reference"));
+    cell.appendChild(el); return;
+  }
+  if(libProgress[st.id] !== undefined){
+    el = document.createElement("button"); el.type = "button"; el.className = "doing";
+    el.setAttribute("aria-label", "Cancel download of " + st.pubNumber);
+    var t = document.createElement("span"); t.className = "t";
+    t.textContent = "Downloading " + Math.round(libProgress[st.id]*100) + "%";
+    var track = document.createElement("div"); track.className = "track";
+    var fill = document.createElement("span"); fill.style.width = Math.round(libProgress[st.id]*100) + "%";
+    track.appendChild(fill); el.appendChild(t); el.appendChild(track);
+    el.addEventListener("click", function(e){ e.stopPropagation(); libCancel(st.id); });
+    cell.appendChild(el); return;
+  }
+  if(st.downloaded && st.updateAvailable){
+    el = document.createElement("button"); el.type = "button"; el.className = "upd";
+    el.innerHTML = LIBICON.refresh;
+    el.appendChild(document.createTextNode("Update"));
+    var dot = document.createElement("span"); dot.className = "dot"; el.appendChild(dot);
+    el.disabled = offline;
+    el.addEventListener("click", function(e){ e.stopPropagation(); libDownload(st.id); });
+    cell.appendChild(el); return;
+  }
+  if(st.downloaded){
+    el = document.createElement("span"); el.className = "done";
+    el.innerHTML = LIBICON.check; el.appendChild(document.createTextNode("Downloaded"));
+    cell.appendChild(el); return;
+  }
+  el = document.createElement("button"); el.type = "button"; el.className = "dlbtn";
+  el.innerHTML = LIBICON.down;
+  el.appendChild(document.createTextNode(libMB(st.sizeBytes)));
+  el.setAttribute("aria-label", "Download " + st.pubNumber + ", " + libMB(st.sizeBytes));
+  el.disabled = offline;
+  el.addEventListener("click", function(e){ e.stopPropagation(); libDownload(st.id); });
+  cell.appendChild(el);
+}
+
+function libRepaint(id){
+  var st = null;
+  libRows.forEach(function(r){ if(r.id === id) st = r; });
+  if(!st) return;
+  Array.prototype.forEach.call(document.querySelectorAll('[data-reg="' + id + '"] .libst'),
+    function(cell){ libPaintState(cell, st); });
+}
+
+function libBuildRow(st){
+  var openable = st.downloaded && !st.restricted && REGLIB.viewerReady();
+  var row = document.createElement(openable ? "button" : "div");
+  if(openable){ row.type = "button"; }
+  row.className = "librow";
+  row.setAttribute("data-reg", st.id);
+
+  var main = document.createElement("div"); main.className = "rmain";
+  var num = document.createElement("div"); num.className = "rnum";
+  if(st.core){
+    var s = document.createElement("span"); s.className = "star";
+    s.innerHTML = LIBICON.star; s.title = "Board core"; num.appendChild(s);
+  }
+  num.appendChild(document.createTextNode(st.pubNumber));
+  var tag = document.createElement("span"); tag.className = "tag"; tag.textContent = libCat(st.category);
+  num.appendChild(tag);
+  var ttl = document.createElement("div"); ttl.className = "rttl"; ttl.textContent = st.title;
+  main.appendChild(num); main.appendChild(ttl);
+  if(st.restricted){
+    var rl = document.createElement("div"); rl.className = "refline";
+    rl.textContent = "Restricted distribution — obtain through official channels";
+    main.appendChild(rl);
+  }
+  var cell = document.createElement("div"); cell.className = "libst";
+  libPaintState(cell, st);
+  row.appendChild(main); row.appendChild(cell);
+  if(openable) row.addEventListener("click", function(){ libOpenReg(st.id); });
+  return row;
+}
+
+/* Reader hook. v26 ships the list only, so a downloaded row is deliberately NOT a button
+   while the viewer is absent (see libBuildRow) — that is the clean gate the handoff asked
+   for, rather than a tap that looks live and does nothing. v27 turns the bundle on and the
+   same rows become interactive with no change here. */
+function libOpenReg(id){
+  if(!REGLIB.viewerReady()) return;
+  if(typeof openReader === "function") openReader(id);
+}
+
+function libRender(){
+  var list = $("libList"), edge = $("libEdge");
+  list.textContent = ""; edge.textContent = "";
+
+  var cap = REGLIB.capabilities();
+  if(!cap.available){
+    /* Bare file:// — one honest card instead of a list that cannot work. */
+    edge.appendChild(libNote("info", "Library needs the installed app",
+      "Add to Home Screen — or open nco-prep.com — to download regulations and read them "
+      + "offline. This standalone file can't store them."));
+    $("libCue").textContent = "";
+    return;
+  }
+  if(navigator.onLine === false){
+    edge.appendChild(libNote("offline", "You're offline",
+      "Connect to download new publications. Anything already downloaded stays available to read."));
+  } else if(!libRows.filter(function(r){ return r.downloaded; }).length){
+    edge.appendChild(libNote("book", "Nothing downloaded yet",
+      "Tap any publication to save it for offline reading. Downloads are kept separately from "
+      + "your quiz progress."));
+  }
+
+  var shown = libRows.filter(libMatch);
+  if(!shown.length){
+    var none = document.createElement("div"); none.id = "libEmptyMsg";
+    none.textContent = "No publications match “" + libQuery + "”.";
+    list.appendChild(none);
+    return;
+  }
+  libGroups(shown).forEach(function(g){
+    if(g.label){
+      var h = document.createElement("div");
+      h.className = "libsec" + (g.star ? "" : " fam");
+      if(g.star) h.innerHTML = LIBICON.star;
+      h.appendChild(document.createTextNode(g.label));
+      list.appendChild(h);
+    }
+    g.rows.forEach(function(st){ list.appendChild(libBuildRow(st)); });
+  });
+}
+
+function libNote(icon, head, body){
+  var n = document.createElement("div"); n.className = "libnote";
+  n.innerHTML = LIBICON[icon];
+  var d = document.createElement("div");
+  var h = document.createElement("div"); h.className = "h"; h.textContent = head;
+  var p = document.createElement("p"); p.textContent = body;
+  d.appendChild(h); d.appendChild(p); n.appendChild(d);
+  return n;
+}
+
+function libCue(){
+  var n = libRows.length;
+  var dl = libRows.filter(function(r){ return r.downloaded; });
+  var bytes = dl.reduce(function(s,r){ return s + (r.sizeBytes||0); }, 0);
+  $("libCue").textContent = n + " publication" + (n===1?"":"s") + " · "
+    + dl.length + " downloaded · " + libMB(bytes) + " stored";
+}
+
+/* One refresh path: pull status, drop the unlistable, repaint. Everything that changes a
+   row (a finished download, a removal, coming back online) calls this. */
+function libRefresh(){
+  return REGLIB.status().then(function(rows){
+    libRows = rows.filter(libListable);
+    libCue(); libRender();
+  }).catch(function(){
+    libRows = []; libRender();
+  });
+}
+
+function libDownload(id){
+  if(libProgress[id] !== undefined) return;
+  libProgress[id] = 0; libRepaint(id);
+  var last = 0;
+  REGLIB.download(id, function(f){
+    /* Repaint on whole percents only. A stream fires per chunk, and repainting a DOM node
+       thousands of times for a 24 MB file is work nobody can see. */
+    var pct = Math.floor(f*100);
+    if(pct !== last){ last = pct; libProgress[id] = f; libRepaint(id); }
+  }).then(function(){
+    delete libProgress[id];
+    return libRefresh();
+  }).catch(function(e){
+    delete libProgress[id];
+    libRefresh().then(function(){
+      /* A cancel is not an error. Raising a notice for the thing the Soldier just asked for
+         would be the app arguing with them. */
+      if(e && e.code === "cancelled") return;
+      var msg = (e && e.message) || "That download did not finish.";
+      $("noticeText").textContent = msg;
+      $("notice").classList.remove("hidden");
+    });
+  });
+}
+/* Cancelling aborts the transfer and clears anything written. The row returns to Download
+   immediately so the tap feels answered, without waiting for the abort to unwind. */
+function libCancel(id){
+  delete libProgress[id];
+  libRepaint(id);
+  REGLIB.cancel(id).then(function(){ return libRefresh(); });
+}
+
+function openLibrary(){
+  if(tick){ clearInterval(tick); tick=null; }
+  stopSpeech(); $("speakRow").classList.add("hidden");
+  compactBar(false);
+  $("home").classList.add("hidden"); $("quiz").classList.add("hidden");
+  $("results").classList.add("hidden"); $("flash").classList.add("hidden");
+  $("library").classList.remove("hidden");
+  /* Both floaters hide while the library is open: the Regulations pill would point at the
+     screen you are already on, and the library owns its own back control. */
+  $("regBtn").style.display = "none"; $("settingsBtn").style.display = "none";
+  $("sub").textContent = "Regulations — download publications for offline reading.";
+  libQuery = ""; $("libSearch").value = "";
+  mount($("library"));
+  window.scrollTo(0,0);
+  libRefresh();
+}
+function closeLibrary(){
+  $("library").classList.add("hidden");
+  $("regBtn").style.display = ""; $("settingsBtn").style.display = "";
+  toMenu();
+}
 
 /* ---------------- self test (?selftest=1) ---------------- */
 function selfTest(){
@@ -3493,6 +3967,55 @@ function selfTest(){
     if(miss.length) errs.push("reg manifest: cited but not listed — "+miss.join(", "));
   })();
 
+  /* ---- Library list (v26). Asserts the SCREEN agrees with the manifest, which is the
+     failure a structural manifest check cannot see: a row could render the wrong control,
+     or a controlled publication could pick up a live Download button. Runs against a real
+     render into a detached container, so it tests the row builder rather than a copy of
+     its logic. Storage state is not consulted — every row here is in its not-downloaded
+     state, which is exactly the case the reference-only rule has to survive. ---- */
+  (function(){
+    if(!window.REGLIB || typeof libBuildRow !== "function"){
+      errs.push("library: row builder is not reachable"); return;
+    }
+    var REF = {"TR 672-9":1,"TR 350-16":1,"TC 3-25.26":1,"AR 190-11":1,"ATP 4-25.13":1};
+    var seenRef = {}, listed = 0, omitted = [];
+    REGLIB.MANIFEST.forEach(function(r){
+      var st = { id:r.id, pubNumber:r.pubNumber, title:r.title, category:r.category, core:r.core,
+                 avail:r.avail, restricted:r.restricted, downloadable:!!r.url,
+                 downloaded:false, updateAvailable:false, sizeBytes:r.sizeBytes,
+                 manifestEdition:r.edition, editionKnown:!!r.edition };
+      if(!libListable(st)){ omitted.push(r.pubNumber); return; }
+      listed++;
+      var row = libBuildRow(st), tag = "library ["+r.pubNumber+"]";
+      var isRef = !!row.querySelector(".ref"), hasDl = !!row.querySelector(".dlbtn");
+      if(REF[r.pubNumber]){
+        seenRef[r.pubNumber] = 1;
+        if(!isRef) errs.push(tag+": controlled publication does not render the Reference state");
+        if(hasDl) errs.push(tag+": controlled publication offers a Download control");
+        if(row.tagName === "BUTTON") errs.push(tag+": reference-only row is interactive");
+        if(!/Restricted distribution/.test(row.textContent))
+          errs.push(tag+": reference-only row is missing the obtain-through-official-channels line");
+      } else {
+        if(isRef) errs.push(tag+": renders the Reference state but is not controlled");
+        if(!hasDl) errs.push(tag+": downloadable publication has no Download control");
+        if(!/\bMB\b/.test(row.textContent)) errs.push(tag+": Download control shows no size");
+      }
+      /* Colour law: a status control must never borrow the selection or grading lanes. */
+      if(row.querySelector(".ok,.no,.correct,.wrong"))
+        errs.push(tag+": row uses a graded/selected class");
+      if(!row.querySelector(".tag")) errs.push(tag+": row has no category tag");
+      if(r.core && !row.querySelector(".star")) errs.push(tag+": launch-core row has no star");
+    });
+    Object.keys(REF).forEach(function(p){
+      if(!seenRef[p]) errs.push("library: controlled publication "+p+" is not listed at all");
+    });
+    if(listed < 40) errs.push("library: only "+listed+" publications would render");
+    /* An omission is legitimate but must never be silent — it is how a pub with no host
+       disappears from the shipped app. */
+    if(omitted.length)
+      console.warn("LIBRARY — omitted (no url, no reference-only status): " + omitted.join(", "));
+  })();
+
   if(errs.length){
     console.error("SELF-TEST FAILED — "+errs.length+" problem(s) across "+QUESTIONS.length+" questions");
     errs.slice(0,40).forEach(function(e){ console.error("   "+e); });
@@ -3620,6 +4143,18 @@ $("fnext").addEventListener("click", function(){ if(!flashSet.length) return; fI
 $("fprev").addEventListener("click", function(){ if(!flashSet.length) return; fIdx=(fIdx-1+flashSet.length)%flashSet.length; fShown=false; renderFlash(); window.scrollTo(0,0); });
 $("fexit").addEventListener("click", toMenu);
 $("printBtn").addEventListener("click", function(){ buildPrint(); window.print(); });
+
+/* ---------------- regulation library (v26) ---------------- */
+$("regBtn").addEventListener("click", openLibrary);
+$("libBack").addEventListener("click", closeLibrary);
+$("libSearch").addEventListener("input", function(){
+  libQuery = this.value.trim().toLowerCase();
+  libRender();
+});
+/* Coming back online has to re-enable the download controls, and going offline has to
+   disable them — otherwise a Soldier taps a live-looking button that cannot work. */
+window.addEventListener("online",  function(){ if(!$("library").classList.contains("hidden")) libRefresh(); });
+window.addEventListener("offline", function(){ if(!$("library").classList.contains("hidden")) libRefresh(); });
 
 /* ---------------- settings sheet ----------------
    Opens over the page on a scrim instead of being injected into the flow. The page
