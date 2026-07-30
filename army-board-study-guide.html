@@ -615,8 +615,18 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 /* 44px, not the 40 this shipped with since v14 — it was the one control in the app under
    the 44px floor, found by sweeping every button during the v19 pass. Geometry only; the
    sheet's structure is untouched. */
+/* Sticky, because the sheet scrolls (max-height:88vh, overflow-y:auto) and a close button
+   that scrolls away on a long settings list is a close button you have to hunt for. */
+#setHead{
+  position:sticky;top:-6px;z-index:2;display:flex;align-items:center;gap:8px;
+  /* Bled out over the sheet's 16px side padding, or a row scrolling underneath shows in the
+     gutters either side of the header. */
+  background:var(--surface);margin:0 -16px;padding:2px 16px 4px;
+}
+#setHead h2{flex:1;min-width:0}
+.setslot{flex:0 0 44px}
 #setClose{
-  position:absolute;top:10px;right:12px;width:44px;height:44px;line-height:1;
+  flex:0 0 auto;width:44px;height:44px;line-height:1;
   border:1px solid var(--line);background:var(--surface);color:var(--muted);
   border-radius:var(--r);font:inherit;font-size:1.1rem;cursor:pointer;
 }
@@ -682,6 +692,10 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .reflist li.lh + li.refrow{border-top:0}
 .reflist .p{display:block;font-size:.88rem;font-weight:700;color:var(--ink);line-height:1.35}
 .reflist .d{display:block;font-size:.78rem;color:var(--muted);line-height:1.35;margin-top:2px}
+/* Pushed to the trailing edge of the action row. On a narrow screen the row wraps and the
+   auto margin still holds it to the right on its own line, which is the intent either way. */
+#speakRow{margin-left:auto;display:flex}
+#speakRow.hidden{display:none}
 /* Read-aloud control on the quiz question. */
 #speakBtn{
   border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--r);
@@ -799,6 +813,9 @@ h2{font-size:.98rem;margin:0 0 10px;font-weight:650;text-align:center}
    that holds it on one line with room to spare, and still reads lighter than the 96px
    main rows. */
 #boardPicks .subpick .rdy{width:94px}
+/* An eyebrow standing in for a card title needs the breathing room the <h2> had; the picker's
+   own eyebrow sits tight against the heading below it, which is a different job. */
+h2.secttl{margin:0 0 10px}
 /* Eyebrow over the picker heading. */
 .eyebrow{
   text-align:center;font-size:.69rem;font-weight:800;letter-spacing:.14em;
@@ -1242,8 +1259,16 @@ footer p{margin:0 0 8px}
   <div id="setScrim"></div>
   <div id="setSheet" role="dialog" aria-modal="true" aria-labelledby="setTitle">
     <div id="setGrip" aria-hidden="true"></div>
-    <button id="setClose" type="button" aria-label="Close settings">&#10005;</button>
-    <h2 id="setTitle">Settings</h2>
+    <!-- v34: the close button was position:absolute over the sheet, and at 600px and up the
+         grip is display:none, which lifts everything 22px — enough for the X to land ON the
+         Appearance switch (measured: a 40x3px overlap). It is a header slot now, so nothing
+         it could collide with is laid out underneath it at any width. The empty leading slot
+         keeps the title optically centred. -->
+    <div id="setHead">
+      <span class="setslot" aria-hidden="true"></span>
+      <h2 id="setTitle">Settings</h2>
+      <button id="setClose" type="button" aria-label="Close settings">&#10005;</button>
+    </div>
 
     <div class="setrow">
       <div>
@@ -1406,7 +1431,11 @@ footer p{margin:0 0 8px}
   </div>
 
   <div class="card">
-    <h2>Other Ways to Study</h2>
+    <!-- v34: an eyebrow, not a title. As an <h2> it carried the same weight as the three
+         button titles under it and competed with them; the same treatment as "Choose your
+         board" makes it read as the label for the group. The heading level is kept for
+         anyone navigating by headings — only the look changes. -->
+    <h2 class="eyebrow secttl">Other ways to study</h2>
     <div class="stack">
       <button class="btn sec" type="button" id="flashBtn">Flashcard Review</button>
       <button class="btn sec" type="button" id="missedBtn">Practice Missed Questions</button>
@@ -1433,9 +1462,6 @@ footer p{margin:0 0 8px}
       <span class="counter" id="counter"><span class="clock hidden" id="clock"></span></span>
     </div>
     <p class="qtext" id="qtext"></p>
-    <div class="row hidden" id="speakRow" style="margin:0 0 10px;justify-content:flex-start">
-      <button id="speakBtn" type="button">Read aloud</button>
-    </div>
     <div class="opts" id="opts"></div>
     <div class="fb hidden" id="fb" role="status" aria-live="polite">
       <p class="verdict" id="verdict">
@@ -1451,9 +1477,15 @@ footer p{margin:0 0 8px}
         </svg><span class="sronly">Source: </span><span id="srcText"></span>
       </p>
     </div>
+    <!-- v34: Read aloud sits at the far end of the action row, opposite End Quiz — within a
+         thumb's reach one-handed, and balanced rather than stranded above the answers. The
+         id stays #speakRow because everything that shows and hides it keys off that. -->
     <div class="row" style="margin-top:14px;justify-content:flex-start">
       <button class="btn hidden" type="button" id="nextBtn">Next</button>
       <button class="btn sec sm" type="button" id="quitBtn">End Quiz</button>
+      <span class="hidden" id="speakRow">
+        <button id="speakBtn" type="button">Read aloud</button>
+      </span>
     </div>
   </div>
 </main>
@@ -2241,7 +2273,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v33";
+var APP_VERSION = "v34";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -4107,7 +4139,7 @@ function libGroups(rows){
   }
   var core = rows.filter(function(r){ return r.core; })
                  .sort(function(a,b){ return libNat(a.pubNumber,b.pubNumber); });
-  if(core.length) out.push({ label:"Board core", star:true, rows:core });
+  if(core.length) out.push({ label:"Core Regulations", star:true, rows:core });
   /* The full library follows, families under letter headers. Core pubs appear here too —
      the spec says the full library, and a Soldier hunting AR 670-1 under A must find it
      rather than having to know it was pinned to the top. State changes repaint every row
@@ -4207,7 +4239,7 @@ function libBuildRow(st){
   var num = document.createElement("div"); num.className = "rnum";
   if(st.core){
     var s = document.createElement("span"); s.className = "star";
-    s.innerHTML = LIBICON.star; s.title = "Board core"; num.appendChild(s);
+    s.innerHTML = LIBICON.star; s.title = "Core regulation"; num.appendChild(s);
   }
   num.appendChild(document.createTextNode(st.pubNumber));
   var tag = document.createElement("span"); tag.className = "tag"; tag.textContent = libCat(st.category);
@@ -4858,6 +4890,64 @@ window.addEventListener("resize", function(){
   });
 });
 
+/* A highlight has to paint as ONE wash. `getClientRects()` over the pdf text layer returns a
+   rect per SPAN — that is per word, and sometimes per glyph run — and those rects both leave
+   gaps at the word boundaries and overlap each other slightly, because each span is placed by
+   its own PDF transform. Painted straight, that read as a striped wash with a darker patch
+   everywhere two rects met: opacity stacking inside a single highlight.
+
+   So the rects are unioned into continuous per-line bands first. Bands are merged only across
+   a gap narrower than a space — NOT across the whole line — because a two-column page would
+   otherwise get one band painted straight over the gutter. Works in any consistent coordinate
+   space, which is why the same function serves the live selection and the stored marks. */
+function markMergeRects(rects){
+  var lines = [];
+  (rects || []).forEach(function(r){
+    if(!r || !(r.w > 0) || !(r.h > 0)) return;
+    var line = null;
+    for(var i=0;i<lines.length;i++){
+      var l = lines[i];
+      /* Same line when the vertical spans overlap by more than half the shorter one.
+         Comparing tops alone breaks on a superscript or a font-size change mid-sentence. */
+      var ov = Math.min(l.y+l.h, r.y+r.h) - Math.max(l.y, r.y);
+      if(ov > 0 && ov >= .5 * Math.min(l.h, r.h)){ line = l; break; }
+    }
+    if(!line){ lines.push({ y:r.y, h:r.h, items:[r] }); return; }
+    var top = Math.min(line.y, r.y), bot = Math.max(line.y+line.h, r.y+r.h);
+    line.y = top; line.h = bot - top;
+    line.items.push(r);
+  });
+  var out = [];
+  lines.forEach(function(l){
+    l.items.sort(function(a,b){ return a.x - b.x; });
+    /* A space is roughly a third of the line height; .6 is generous enough to close the
+       inter-word gaps without reaching across a column gutter. */
+    var gap = .6 * l.h, cur = null;
+    l.items.forEach(function(r){
+      if(cur && r.x <= cur.x + cur.w + gap){
+        cur.w = Math.max(cur.x + cur.w, r.x + r.w) - cur.x;
+        return;
+      }
+      /* Every band takes the LINE's height, so a superscript cannot leave a step in the wash. */
+      cur = { x:r.x, y:l.y, w:r.w, h:l.h };
+      out.push(cur);
+    });
+  });
+  /* Then square the lines off against each other. Where a band still overlaps one above it,
+     the lower band gives up the overlap — it is leading, not glyph. Without this the wash
+     carries a darker seam between every pair of lines. */
+  out.sort(function(a,b){ return a.y - b.y || a.x - b.x; });
+  for(var i=0;i<out.length;i++){
+    for(var j=0;j<i;j++){
+      var a = out[j], b = out[i];
+      if(Math.min(a.x+a.w, b.x+b.w) - Math.max(a.x, b.x) <= 0) continue;
+      var cut = (a.y + a.h) - b.y;
+      if(cut > 0 && cut < b.h){ b.y += cut; b.h -= cut; }
+    }
+  }
+  return out.filter(function(r){ return r.w > 0 && r.h > 0; });
+}
+
 /* Turn the live selection into the locked anchor record. Rects are normalized against the
    page box so a mark repaints correctly at any zoom or screen width. */
 function markCaptureSelection(){
@@ -4872,12 +4962,13 @@ function markCaptureSelection(){
 
   var n = parseInt(holder.getAttribute("data-page"), 10);
   var box = holder.getBoundingClientRect();
-  var rects = [];
+  var raw = [];
   Array.prototype.forEach.call(range.getClientRects(), function(r){
     if(r.width < 1 || r.height < 1) return;
-    rects.push({ x:(r.left-box.left)/box.width, y:(r.top-box.top)/box.height,
-                 w:r.width/box.width, h:r.height/box.height });
+    raw.push({ x:(r.left-box.left)/box.width, y:(r.top-box.top)/box.height,
+               w:r.width/box.width, h:r.height/box.height });
   });
+  var rects = markMergeRects(raw);
   if(!rects.length) return null;
 
   /* Context strings disambiguate a quote that appears more than once on a page — the
@@ -5007,7 +5098,10 @@ function markRepaint(holder, n){
     if(!list.length) return;
     var layer = document.createElement("div"); layer.className = "rdmarks";
     list.forEach(function(m){
-      (m.anchor.rects||[]).forEach(function(r){
+      /* Merged again on the way out, not only on the way in, so marks stored by v28-v33 —
+         which hold the old per-word rects — repaint as one clean wash without a migration.
+         The merge is idempotent, so a mark saved by v34 passes through unchanged. */
+      markMergeRects(m.anchor.rects).forEach(function(r){
         var d = document.createElement("div");
         d.className = "rdmark" + (m.type === "note" ? " note" : "");
         d.style.left = (r.x*100)+"%"; d.style.top = (r.y*100)+"%";
@@ -5484,7 +5578,65 @@ function selfTest(){
       errs.push("markup: the marks checkbox target is " + Math.round(tb.width) + "x" + Math.round(tb.height) + ", under 44px");
     probeRow.remove();
 
-    /* 4. The controls that make a placed mark editable at all. */
+    /* 4. One highlight, one wash. The merge is what stops a multi-word selection painting as
+       a striped, double-painted band, so its behaviour is asserted rather than assumed. */
+    if(typeof markMergeRects !== "function"){
+      errs.push("markup: markMergeRects is not reachable, so a highlight would paint per word");
+    } else {
+      /* Two words on one line, overlapping slightly at the boundary — the common case. */
+      var twoWords = markMergeRects([{x:.10,y:.20,w:.09,h:.02},{x:.185,y:.20,w:.09,h:.02}]);
+      if(twoWords.length !== 1)
+        errs.push("markup: two adjacent words paint as " + twoWords.length + " rects, not one wash");
+      else if(Math.abs(twoWords[0].w - .175) > .001)
+        errs.push("markup: the merged band is " + twoWords[0].w.toFixed(3) + " wide, not the union .175");
+      /* Three lines of a paragraph stay three bands. */
+      var threeLines = markMergeRects([
+        {x:.1,y:.20,w:.5,h:.02},{x:.1,y:.23,w:.5,h:.02},{x:.1,y:.26,w:.2,h:.02}]);
+      if(threeLines.length !== 3)
+        errs.push("markup: a 3-line selection merged to " + threeLines.length + " band(s)");
+      /* A column gutter is not bridged. */
+      var twoCols = markMergeRects([{x:.05,y:.20,w:.35,h:.02},{x:.55,y:.20,w:.35,h:.02}]);
+      if(twoCols.length !== 2)
+        errs.push("markup: a two-column line merged across the gutter");
+      /* Nothing the merge returns may overlap anything else it returns — that overlap IS the
+         double-paint, so this is the assertion the whole item exists for. */
+      var bands = markMergeRects([
+        {x:.10,y:.20,w:.09,h:.02},{x:.185,y:.20,w:.09,h:.02},
+        {x:.10,y:.23,w:.30,h:.02},{x:.28,y:.23,w:.20,h:.02}]);
+      for(var bi=0; bi<bands.length; bi++){
+        for(var bj=bi+1; bj<bands.length; bj++){
+          var ow = Math.min(bands[bi].x+bands[bi].w, bands[bj].x+bands[bj].w) - Math.max(bands[bi].x, bands[bj].x);
+          var oh = Math.min(bands[bi].y+bands[bi].h, bands[bj].y+bands[bj].h) - Math.max(bands[bi].y, bands[bj].y);
+          if(ow > 0 && oh > 0) errs.push("markup: two painted bands overlap — the wash would double-paint");
+        }
+      }
+      /* Two consecutive lines whose boxes touch — the leading overlap that survived the
+         first cut of this fix. */
+      var abut = markMergeRects([{x:.40,y:.9139,w:.17,h:.0125},{x:.39,y:.9258,w:.21,h:.0251}]);
+      var seam = 0;
+      for(var ai=0; ai<abut.length; ai++) for(var aj=ai+1; aj<abut.length; aj++){
+        var sw2 = Math.min(abut[ai].x+abut[ai].w, abut[aj].x+abut[aj].w) - Math.max(abut[ai].x, abut[aj].x);
+        var sh2 = Math.min(abut[ai].y+abut[ai].h, abut[aj].y+abut[aj].h) - Math.max(abut[ai].y, abut[aj].y);
+        if(sw2 > 0 && sh2 > 0) seam++;
+      }
+      if(seam) errs.push("markup: abutting lines leave a double-painted seam between them");
+      /* Idempotent, or repainting a v34 mark would keep re-merging it into something else. */
+      var once = markMergeRects([{x:.1,y:.2,w:.5,h:.02}]);
+      var twice = markMergeRects(once);
+      if(twice.length !== 1 || Math.abs(twice[0].w - once[0].w) > 1e-9)
+        errs.push("markup: the rect merge is not idempotent");
+    }
+
+    /* 5. The settings close button must not sit on top of the first row's control. It did:
+       above 600px the grip is display:none, which lifted the content into it. */
+    (function(){
+      var x = document.getElementById("setClose"), sw = document.getElementById("themeBtn");
+      if(!x || !sw) { errs.push("settings: the close button or the appearance switch is missing"); return; }
+      if(getComputedStyle(x).position === "absolute")
+        errs.push("settings: the close button is absolutely positioned and can overlap the rows again");
+    })();
+
+    /* 6. The controls that make a placed mark editable at all. */
     ["mkPop","mkPopNote","mkPopDel"].forEach(function(id){
       if(!document.getElementById(id))
         errs.push("markup: #" + id + " is missing, so a placed highlight cannot be removed");
