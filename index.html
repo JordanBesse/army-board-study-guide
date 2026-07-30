@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; manifest-src 'self'; worker-src 'self' blob:; connect-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; manifest-src 'self'; worker-src 'self' blob:; connect-src 'self' https://www.nco-prep.com; base-uri 'none'; form-action 'none'">
 <title>Army Board Study Guide</title>
 <link rel="manifest" href="manifest.webmanifest?v=2">
 <meta name="theme-color" content="#4f7350">
@@ -1760,7 +1760,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v24";
+var APP_VERSION = "v25";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -2978,62 +2978,104 @@ var REGLIB = (function(){
   var STORE_FILES = "files";      /* id -> {id, blob, meta} */
   var STORE_MARKS = "marks";      /* key -> {regId, loc, kind, text, color, at} */
 
-  /* ---- The manifest: the 40 cited publications. `url` is a placeholder until the
-     curated set is hosted; swapping in the real host is a data change, not a rebuild.
+  /* ---- The manifest: every publication the bank cites, in one of three states.
+
+     `avail` is the honest three-way answer to "can a Soldier get this here?", and it
+     exists because a bare boolean would have to lie about one of them:
+
+       "hosted"     the curated set on our host — has a url, downloads on demand.
+       "restricted" distribution-controlled or CUI. Listed on purpose so a studier
+                    knows their board's pub exists and where to get it, but never
+                    hosted and never downloadable. `restricted:true` drives the UI's
+                    reference-only row.
+       "pending"    publicly releasable, simply not gathered yet. NOT restricted —
+                    telling a Soldier to "obtain through official channels" about a
+                    pub that is freely available would be false, which is the whole
+                    reason this is a third state rather than a second boolean.
+
+     One base URL, and each entry carries only its slug. Moving hosts is one line.
+
      `edition` is the version stamp the freshness check compares against and is
      deliberately null until an edition is confirmed — the accuracy rule applies to
      this data as much as to a question, so an unknown edition says so rather than
-     implying the copy is current. ---- */
-  var HOST = "regs/";             /* resolved against the app origin when hosted */
-  function reg(pub, title, cat, core, edition, sizeBytes){
+     implying the copy is current. Sizes are the real Content-Length of each hosted
+     file, so a download can show a true total before the first byte arrives. ---- */
+  var REG_BASE = "https://www.nco-prep.com/regulations/";
+
+  function mk(avail, pub, title, cat, core, slug, sizeBytes){
     return { id: pub.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""),
              pubNumber: pub, title: title, category: cat, core: !!core,
-             edition: edition || null, sizeBytes: sizeBytes || null,
-             filename: pub.replace(/[^A-Za-z0-9.-]+/g,"_") + ".pdf",
-             url: HOST + pub.replace(/[^A-Za-z0-9.-]+/g,"_") + ".pdf" };
+             avail: avail, restricted: avail === "restricted",
+             edition: null, sizeBytes: sizeBytes || null,
+             filename: slug || null,
+             url: slug ? REG_BASE + slug : null };
   }
+  /* Hosted: pub, title, category, core, slug, bytes. */
+  function reg(pub, title, cat, core, slug, sizeBytes){
+    return mk("hosted", pub, title, cat, core, slug, sizeBytes);
+  }
+  /* Listed but never hosted — distribution-controlled or CUI. */
+  function refOnly(pub, title, cat, core){
+    return mk("restricted", pub, title, cat, core, null, null);
+  }
+  /* Publicly releasable, not gathered yet. */
+  function pending(pub, title, cat, core){
+    return mk("pending", pub, title, cat, core, null, null);
+  }
+
   var MANIFEST = [
-    reg("ADP 5-0","The Operations Process","Operations"),
-    reg("ADP 6-0","Mission Command","Leadership"),
-    reg("ADP 6-22","Army Leadership and the Profession","Leadership",true),
-    reg("ADP 7-0","Training","Training"),
-    reg("AR 27-10","Military Justice","Justice",true),
-    reg("AR 190-11","Physical Security of Arms, Ammunition, and Explosives","Security"),
-    reg("AR 190-56","Army Civilian Police and Security Guard Program","Security"),
-    reg("AR 350-1","Army Training and Leader Development","Training"),
-    reg("AR 600-8-2","Suspension of Favorable Personnel Actions (Flag)","Personnel"),
-    reg("AR 600-8-19","Enlisted Promotions and Reductions","Personnel",true),
-    reg("AR 600-8-22","Military Awards","Personnel"),
-    reg("AR 600-9","The Army Body Composition Program","Fitness",true),
-    reg("AR 600-20","Army Command Policy","Leadership",true),
-    reg("AR 600-25","Salutes, Honors, and Visits of Courtesy","Customs"),
-    reg("AR 600-81","Transition Assistance Program","Personnel"),
-    reg("AR 600-85","The Army Substance Abuse Program","Programs"),
-    reg("AR 608-1","Army Community Service","Programs"),
-    reg("AR 623-3","Evaluation Reporting System","Personnel"),
-    reg("AR 670-1","Wear and Appearance of Army Uniforms and Insignia","Uniforms",true),
-    reg("AR 710-2","Supply Policy Below the National Level","Supply"),
-    reg("AR 735-5","Property Accountability Policies","Supply"),
-    reg("AR 750-1","Army Materiel Maintenance Policy","Supply"),
-    reg("AR 930-4","Army Emergency Relief","Programs"),
-    reg("ATP 4-25.13","Casualty Evacuation","Medical"),
-    reg("ATP 4-42","Materiel Management, Supply, and Field Services Operations","Supply"),
-    reg("ATP 5-19","Risk Management","Operations"),
-    reg("ATP 6-22.1","The Counseling Process","Leadership"),
-    reg("DA PAM 600-24","Health Promotion, Risk Reduction, and Suicide Prevention","Programs"),
-    reg("DA PAM 670-1","Guide to the Wear and Appearance of Army Uniforms and Insignia","Uniforms"),
-    reg("FM 3-11","Chemical, Biological, Radiological, and Nuclear Operations","CBRN",true),
-    reg("FM 7-22","Holistic Health and Fitness","Fitness",true),
-    reg("TC 3-21.5","Drill and Ceremonies","Drill",true),
-    reg("TC 3-22.9","Rifle and Carbine","Weapons",true),
-    reg("TC 3-22.240","Medium Machine Gun","Weapons"),
-    reg("TC 3-22.249","Light Machine Gun (M249 Series)","Weapons"),
-    reg("TC 3-23.35","Pistol","Weapons"),
-    reg("TC 3-25.26","Map Reading and Land Navigation","Land Navigation",true),
-    reg("TC 4-02.1","First Aid","Medical",true),
-    reg("TR 350-16","Drill Sergeant Program","Drill",true),
-    reg("TR 672-9","Expert Soldier Badge program","Badges",true)
+    reg("ADP 5-0","The Operations Process","Operations",false,"adp-5-0.pdf",6998325),
+    reg("ADP 6-0","Mission Command","Leadership",false,"adp-6-0.pdf",7188054),
+    reg("ADP 6-22","Army Leadership and the Profession","Leadership",true,"adp-6-22.pdf",4508515),
+    reg("ADP 7-0","Training","Training",false,"adp-7-0.pdf",4447715),
+    reg("AR 27-10","Military Justice","Justice",true,"ar-27-10.pdf",2065704),
+    refOnly("AR 190-11","Physical Security of Arms, Ammunition, and Explosives","Security"),
+    reg("AR 190-56","Army Civilian Police and Security Guard Program","Security",false,"ar-190-56.pdf",1969122),
+    reg("AR 350-1","Army Training and Leader Development","Training",false,"ar-350-1.pdf",1048198),
+    reg("AR 600-8-2","Suspension of Favorable Personnel Actions (Flag)","Personnel",false,"ar-600-8-2.pdf",734873),
+    reg("AR 600-8-19","Enlisted Promotions and Reductions","Personnel",true,"ar-600-8-19.pdf",1404930),
+    reg("AR 600-8-22","Military Awards","Personnel",false,"ar-600-8-22.pdf",3427001),
+    reg("AR 600-9","The Army Body Composition Program","Fitness",true,"ar-600-9.pdf",2524638),
+    reg("AR 600-20","Army Command Policy","Leadership",true,"ar-600-20.pdf",3675190),
+    reg("AR 600-25","Salutes, Honors, and Visits of Courtesy","Customs",false,"ar-600-25.pdf",1853692),
+    reg("AR 600-81","Transition Assistance Program","Personnel",false,"ar-600-81.pdf",1468170),
+    reg("AR 600-85","The Army Substance Abuse Program","Programs",false,"ar-600-85.pdf",7338466),
+    reg("AR 608-1","Army Community Service","Programs",false,"ar-608-1.pdf",1111208),
+    reg("AR 623-3","Evaluation Reporting System","Personnel",false,"ar-623-3.pdf",4959121),
+    reg("AR 670-1","Wear and Appearance of Army Uniforms and Insignia","Uniforms",true,"ar-670-1.pdf",1188543),
+    reg("AR 710-2","Supply Policy Below the National Level","Supply",false,"ar-710-2.pdf",510083),
+    reg("AR 735-5","Property Accountability Policies","Supply",false,"ar-735-5.pdf",3890790),
+    reg("AR 750-1","Army Materiel Maintenance Policy","Supply",false,"ar-750-1.pdf",1175016),
+    reg("AR 930-4","Army Emergency Relief","Programs",false,"ar-930-4.pdf",542965),
+    /* Supersedes TC 4-02.1 (21 Jan 2016) by its own cover statement, so it inherits
+       the launch-core flag TC 4-02.1 carried. See the note below the manifest. */
+    reg("ATP 4-02.11","Casualty Response, Tactical Combat Casualty Care, and First Aid","Medical",true,"atp-4-02.11.pdf",12665561),
+    reg("ATP 4-02.2","Medical Evacuation","Medical",false,"atp-4-02.2.pdf",5246189),
+    refOnly("ATP 4-25.13","Casualty Evacuation","Medical"),
+    reg("ATP 4-42","Materiel Management, Supply, and Field Services Operations","Supply",false,"atp-4-42.pdf",10126271),
+    reg("ATP 5-19","Risk Management","Operations",false,"atp-5-19.pdf",5401669),
+    reg("ATP 6-22.1","The Counseling Process","Leadership",false,"atp-6-22.1.pdf",1796616),
+    pending("DA PAM 600-24","Health Promotion, Risk Reduction, and Suicide Prevention","Programs"),
+    reg("DA PAM 670-1","Guide to the Wear and Appearance of Army Uniforms and Insignia","Uniforms",false,"da-pam-670-1.pdf",24217632),
+    reg("FM 3-11","Chemical, Biological, Radiological, and Nuclear Operations","CBRN",true,"fm-3-11.pdf",5439042),
+    reg("FM 7-22","Holistic Health and Fitness","Fitness",true,"fm-7-22.pdf",4282557),
+    reg("TC 3-21.5","Drill and Ceremonies","Drill",true,"tc-3-21.5.pdf",20201959),
+    reg("TC 3-22.9","Rifle and Carbine","Weapons",true,"tc-3-22.9.pdf",14328641),
+    reg("TC 3-22.240","Medium Machine Gun","Weapons",false,"tc-3-22.240.pdf",14608883),
+    reg("TC 3-22.249","Light Machine Gun (M249 Series)","Weapons",false,"tc-3-22.249.pdf",17329155),
+    reg("TC 3-23.35","Pistol","Weapons",false,"tc-3-23.35.pdf",11800164),
+    refOnly("TC 3-25.26","Map Reading and Land Navigation","Land Navigation",true),
+    reg("TC 7-22.7","The Noncommissioned Officer Guide","Leadership",false,"tc-7-22.7.pdf",3350170),
+    refOnly("TR 350-16","Drill Sergeant Program","Drill",true),
+    refOnly("TR 672-9","Expert Soldier Badge program","Badges",true)
   ];
+  /* TC 4-02.1 (First Aid) is deliberately absent: ATP 4-02.11's own cover reads
+     "This publication supersedes TC 4-02.1, dated 21 January 2016", so listing the
+     dead pub would offer a Soldier a superseded standard. The question bank still
+     cites TC 4-02.1 on 19 questions — reconciling those citations belongs to the
+     content audit, not to a manifest build, because the answers were written against
+     the 2016 text and whether each still holds under the 2026 pub is a content
+     question. Flagged in the changelog rather than silently relabelled. */
   var BY_ID = {}; MANIFEST.forEach(function(r){ BY_ID[r.id]=r; });
 
   /* ---- Capability gate. The library needs real persistent storage and fetch. ---- */
@@ -3148,6 +3190,15 @@ var REGLIB = (function(){
   function download(id, onProgress){
     var r = BY_ID[id];
     if(!r) return Promise.reject(err("unknown-reg","That publication is not in the library."));
+    /* Not every listed pub is downloadable, and the two reasons are different, so
+       they get different codes and different sentences. This runs before anything
+       touches the network — a reg with no url must never reach fetch(). */
+    if(r.avail === "restricted")
+      return Promise.reject(err("restricted",
+        "Restricted distribution — obtain "+r.pubNumber+" through official channels."));
+    if(!r.url)
+      return Promise.reject(err("not-hosted",
+        r.pubNumber+" is not in the download library yet."));
     if(inflight[id]) return inflight[id];
     if(!capabilities().available) return Promise.reject(err("unavailable", UNAVAILABLE_LINE));
     if(navigator.onLine === false)
@@ -3204,6 +3255,10 @@ var REGLIB = (function(){
         var m = have[r.id];
         return { id:r.id, pubNumber:r.pubNumber, title:r.title, category:r.category,
                  core:r.core, manifestEdition:r.edition, editionKnown:!!r.edition,
+                 /* The list UI picks its row variant from these two: `restricted`
+                    is the reference-only row, `downloadable` is whether a download
+                    control belongs on the row at all. */
+                 avail:r.avail, restricted:r.restricted, downloadable:!!r.url,
                  downloaded:!!m, installedEdition:m ? (m.edition||null) : null,
                  sizeBytes:m ? m.sizeBytes : r.sizeBytes, at:m ? m.at : null,
                  updateAvailable: !!(m && r.edition && m.edition && m.edition !== r.edition) };
@@ -3277,7 +3332,7 @@ var REGLIB = (function(){
   }
 
   return {
-    MANIFEST: MANIFEST, byId: function(id){ return BY_ID[id]; },
+    MANIFEST: MANIFEST, byId: function(id){ return BY_ID[id]; }, REG_BASE: REG_BASE,
     capabilities: capabilities, unavailableLine: UNAVAILABLE_LINE,
     backendName: function(){ return backend().name; },
     download: download, installed: installed, remove: remove, openBlob: openBlob,
@@ -3391,13 +3446,111 @@ function selfTest(){
     if($("setAudit") && $("setAudit").textContent.indexOf(lbl)===-1)
       errs.push("audit date: settings line does not carry the rendered date '"+lbl+"'");
   })();
+  /* ---- Regulation manifest. The failure this catches is drift: the bank and the
+     manifest are edited by different passes, so a pub can be cited with nothing to
+     open, or hosted with a slug that no longer matches the file. Structure is checked
+     here; reachability is a network check and runs after, asynchronously. ---- */
+  (function(){
+    if(!window.REGLIB) { errs.push("reg manifest: REGLIB is not exposed"); return; }
+    var M = REGLIB.MANIFEST, ids = {}, hosted = 0;
+    M.forEach(function(r){
+      var tag = "reg manifest ["+r.pubNumber+"]";
+      if(ids[r.id]) errs.push(tag+": duplicate id '"+r.id+"'"); else ids[r.id]=1;
+      if(["hosted","restricted","pending"].indexOf(r.avail)===-1)
+        errs.push(tag+": unknown avail '"+r.avail+"'");
+      if(r.restricted !== (r.avail==="restricted"))
+        errs.push(tag+": restricted flag disagrees with avail '"+r.avail+"'");
+      if(r.avail==="hosted"){
+        hosted++;
+        /* Built from the base, never typed whole — so moving hosts stays one line. */
+        if(String(r.url||"").indexOf(REGLIB.REG_BASE)!==0)
+          errs.push(tag+": url is not built from REG_BASE");
+        if(!(r.sizeBytes>0)) errs.push(tag+": hosted with no size");
+      } else if(r.url){
+        errs.push(tag+": "+r.avail+" entries must not carry a url");
+      }
+    });
+    if(!hosted) errs.push("reg manifest: no hosted publications");
+
+    /* Every publication the bank cites should be findable in the library. Composite
+       citations ("ADP 6-22 / AR 608-1") are split, since each half is a real pub.
+       KNOWN_ABSENT is a deliberate, documented gap — a NEW absence fails loudly. */
+    var KNOWN_ABSENT = {
+      /* Superseded by ATP 4-02.11, which is hosted. The 19 citations are the content
+         audit's to reconcile; until then the dead pub is not offered for download. */
+      "TC 4-02.1": 1
+    };
+    var have = {}; M.forEach(function(r){ have[r.pubNumber]=1; });
+    var missing = {};
+    QUESTIONS.forEach(function(q){
+      if(!q.s) return;
+      labelFor(q.s).split(" / ").forEach(function(p){
+        /* Two citations pin an edition inline — "TR 350-16 (27 March 2023)". The pub
+           number is the identity and the parenthetical is the edition, so strip it
+           before matching or those pubs read as missing when they are right there. */
+        p = p.replace(/\s*\([^)]*\)\s*$/, "").trim();
+        if(!/^(AR|ADP|ATP|FM|TC|DA PAM|TR)\s/.test(p)) return;   /* UCMJ and prose are not pubs */
+        if(!have[p] && !KNOWN_ABSENT[p]) missing[p]=1;
+      });
+    });
+    var miss = Object.keys(missing);
+    if(miss.length) errs.push("reg manifest: cited but not listed — "+miss.join(", "));
+  })();
+
   if(errs.length){
     console.error("SELF-TEST FAILED — "+errs.length+" problem(s) across "+QUESTIONS.length+" questions");
     errs.slice(0,40).forEach(function(e){ console.error("   "+e); });
   } else {
     console.log("SELF-TEST PASSED — "+QUESTIONS.length+" questions, "+CAT_LIST.length+" categories, "+Object.keys(BOARDS).length+" boards, no problems found.");
   }
+  regReachCheck();
   return errs;
+}
+
+/* Reachability of the hosted regulation files. Separate from selfTest() because it is
+   the one check that touches the network: it cannot be synchronous, and its result
+   cannot join the returned array. It reports on its own line and sets
+   window.__regCheck when it settles.
+
+   It samples rather than sweeping all 36 — the point is to catch a moved bucket, a
+   broken base URL or a bad slug, and 200 MB of HEAD requests on every self-test run
+   would be its own bug. One fixed entry and one rotating entry, both built from
+   REG_BASE so a broken base can never pass.
+
+   The distinction that matters: a 404 is a real failure, and so is a blocked request
+   while the browser is online — that is what a missing CORS header or a CSP that does
+   not admit the host looks like from script, and it means downloads cannot work at
+   all. Only a genuinely offline browser is a skip. Treating a block as "offline"
+   would hide exactly the failure this is here to find. */
+function regReachCheck(){
+  var out = { checked:[], failures:[], skipped:false };
+  window.__regCheck = out;
+  if(!window.REGLIB){ out.skipped="no REGLIB"; return; }
+  if(location.protocol === "file:"){ out.skipped="file://"; console.log("REG URL CHECK skipped (file://)"); return; }
+  if(navigator.onLine === false){ out.skipped="offline"; console.log("REG URL CHECK skipped (offline)"); return; }
+
+  var hosted = REGLIB.MANIFEST.filter(function(r){ return r.avail==="hosted"; });
+  if(!hosted.length){ out.failures.push("no hosted entries to check"); return; }
+  var pick = [hosted[0]];
+  var other = hosted[1 + Math.floor(Math.random()*(hosted.length-1))];
+  if(other && other!==pick[0]) pick.push(other);
+
+  Promise.all(pick.map(function(r){
+    out.checked.push(r.pubNumber);
+    return fetch(r.url, {method:"HEAD", cache:"no-store"}).then(function(res){
+      if(!res.ok) out.failures.push(r.pubNumber+" -> HTTP "+res.status+" at "+r.url);
+    }).catch(function(){
+      out.failures.push(r.pubNumber+" -> request blocked or unreachable at "+r.url
+        + " (online, so this is CORS, CSP, or a dead host — not offline)");
+    });
+  })).then(function(){
+    if(out.failures.length){
+      console.error("REG URL CHECK FAILED — "+out.failures.length+" problem(s)");
+      out.failures.forEach(function(f){ console.error("   "+f); });
+    } else {
+      console.log("REG URL CHECK PASSED — "+out.checked.join(", ")+" reachable from "+REGLIB.REG_BASE);
+    }
+  });
 }
 
 /* ---------------- wiring ---------------- */
