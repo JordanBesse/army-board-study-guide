@@ -6,6 +6,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'">
 <title>Army Board Study Guide</title>
 
+
 <style>
 :root{
   --bg:#f4f6f4; --surface:#ffffff; --surface2:#eef1ee;
@@ -1755,7 +1756,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v23";
+var APP_VERSION = "v24";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -2951,6 +2952,342 @@ function buildPrint(){
     });
   });
 }
+
+/* ==================== Regulation library — foundation (v24) ====================
+   An ADDITIVE module. It owns its own storage and namespace and never touches
+   `absg_v3`, the question bank, or the self-test. The quiz app works identically
+   whether this module succeeds, fails, or is unavailable.
+
+   Architecture per the Phase 1 spec:
+   - The manifest is the only reg data that ships in the app. PDFs download on demand.
+   - Storage is one abstraction over two backends chosen at runtime: Capacitor
+     Filesystem on iOS, IndexedDB (blob) for the installed/web PWA.
+   - Annotations are OUR overlay, keyed to reg + location, and persist whether or not
+     the heavy PDF was ever downloaded. The PDF is never modified.
+   - The library is a PWA/iOS feature. Opened as a bare file:// page there is no
+     dependable persistent storage and often no fetch, so the module reports itself
+     unavailable and the UI shows one honest line instead of a broken screen.        */
+var REGLIB = (function(){
+  "use strict";
+
+  var DB_NAME = "absg_reglib", DB_VER = 1;
+  var STORE_FILES = "files";      /* id -> {id, blob, meta} */
+  var STORE_MARKS = "marks";      /* key -> {regId, loc, kind, text, color, at} */
+
+  /* ---- The manifest: the 40 cited publications. `url` is a placeholder until the
+     curated set is hosted; swapping in the real host is a data change, not a rebuild.
+     `edition` is the version stamp the freshness check compares against and is
+     deliberately null until an edition is confirmed — the accuracy rule applies to
+     this data as much as to a question, so an unknown edition says so rather than
+     implying the copy is current. ---- */
+  var HOST = "regs/";             /* resolved against the app origin when hosted */
+  function reg(pub, title, cat, core, edition, sizeBytes){
+    return { id: pub.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""),
+             pubNumber: pub, title: title, category: cat, core: !!core,
+             edition: edition || null, sizeBytes: sizeBytes || null,
+             filename: pub.replace(/[^A-Za-z0-9.-]+/g,"_") + ".pdf",
+             url: HOST + pub.replace(/[^A-Za-z0-9.-]+/g,"_") + ".pdf" };
+  }
+  var MANIFEST = [
+    reg("ADP 5-0","The Operations Process","Operations"),
+    reg("ADP 6-0","Mission Command","Leadership"),
+    reg("ADP 6-22","Army Leadership and the Profession","Leadership",true),
+    reg("ADP 7-0","Training","Training"),
+    reg("AR 27-10","Military Justice","Justice",true),
+    reg("AR 190-11","Physical Security of Arms, Ammunition, and Explosives","Security"),
+    reg("AR 190-56","Army Civilian Police and Security Guard Program","Security"),
+    reg("AR 350-1","Army Training and Leader Development","Training"),
+    reg("AR 600-8-2","Suspension of Favorable Personnel Actions (Flag)","Personnel"),
+    reg("AR 600-8-19","Enlisted Promotions and Reductions","Personnel",true),
+    reg("AR 600-8-22","Military Awards","Personnel"),
+    reg("AR 600-9","The Army Body Composition Program","Fitness",true),
+    reg("AR 600-20","Army Command Policy","Leadership",true),
+    reg("AR 600-25","Salutes, Honors, and Visits of Courtesy","Customs"),
+    reg("AR 600-81","Transition Assistance Program","Personnel"),
+    reg("AR 600-85","The Army Substance Abuse Program","Programs"),
+    reg("AR 608-1","Army Community Service","Programs"),
+    reg("AR 623-3","Evaluation Reporting System","Personnel"),
+    reg("AR 670-1","Wear and Appearance of Army Uniforms and Insignia","Uniforms",true),
+    reg("AR 710-2","Supply Policy Below the National Level","Supply"),
+    reg("AR 735-5","Property Accountability Policies","Supply"),
+    reg("AR 750-1","Army Materiel Maintenance Policy","Supply"),
+    reg("AR 930-4","Army Emergency Relief","Programs"),
+    reg("ATP 4-25.13","Casualty Evacuation","Medical"),
+    reg("ATP 4-42","Materiel Management, Supply, and Field Services Operations","Supply"),
+    reg("ATP 5-19","Risk Management","Operations"),
+    reg("ATP 6-22.1","The Counseling Process","Leadership"),
+    reg("DA PAM 600-24","Health Promotion, Risk Reduction, and Suicide Prevention","Programs"),
+    reg("DA PAM 670-1","Guide to the Wear and Appearance of Army Uniforms and Insignia","Uniforms"),
+    reg("FM 3-11","Chemical, Biological, Radiological, and Nuclear Operations","CBRN",true),
+    reg("FM 7-22","Holistic Health and Fitness","Fitness",true),
+    reg("TC 3-21.5","Drill and Ceremonies","Drill",true),
+    reg("TC 3-22.9","Rifle and Carbine","Weapons",true),
+    reg("TC 3-22.240","Medium Machine Gun","Weapons"),
+    reg("TC 3-22.249","Light Machine Gun (M249 Series)","Weapons"),
+    reg("TC 3-23.35","Pistol","Weapons"),
+    reg("TC 3-25.26","Map Reading and Land Navigation","Land Navigation",true),
+    reg("TC 4-02.1","First Aid","Medical",true),
+    reg("TR 350-16","Drill Sergeant Program","Drill",true),
+    reg("TR 672-9","Expert Soldier Badge program","Badges",true)
+  ];
+  var BY_ID = {}; MANIFEST.forEach(function(r){ BY_ID[r.id]=r; });
+
+  /* ---- Capability gate. The library needs real persistent storage and fetch. ---- */
+  function capabilities(){
+    var bareFile = (location.protocol === "file:");
+    var cap = !!(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem);
+    return {
+      bareFile: bareFile, indexedDB: !!window.indexedDB, capacitor: cap,
+      fetch: typeof fetch === "function",
+      available: !bareFile && typeof fetch === "function" && (!!window.indexedDB || cap)
+    };
+  }
+  var UNAVAILABLE_LINE =
+    "The regulation library needs the installed app or the web version — this single-file copy "
+    + "cannot store downloaded publications. Everything else works normally.";
+
+  /* ---- IndexedDB backend ---- */
+  var dbp = null;
+  function db(){
+    if(dbp) return dbp;
+    dbp = new Promise(function(res, rej){
+      if(!window.indexedDB) return rej(new Error("no indexedDB"));
+      var rq = indexedDB.open(DB_NAME, DB_VER);
+      rq.onupgradeneeded = function(){
+        var d = rq.result;
+        if(!d.objectStoreNames.contains(STORE_FILES)) d.createObjectStore(STORE_FILES, {keyPath:"id"});
+        if(!d.objectStoreNames.contains(STORE_MARKS)){
+          var m = d.createObjectStore(STORE_MARKS, {keyPath:"key", autoIncrement:true});
+          m.createIndex("byReg", "regId", {unique:false});
+        }
+      };
+      rq.onsuccess = function(){ res(rq.result); };
+      rq.onerror  = function(){ rej(rq.error || new Error("indexedDB open failed")); };
+    });
+    return dbp;
+  }
+  function tx(storeName, mode, fn){
+    return db().then(function(d){
+      return new Promise(function(res, rej){
+        var t = d.transaction(storeName, mode), s = t.objectStore(storeName), rq;
+        try { rq = fn(s); } catch(e){ return rej(e); }
+        t.oncomplete = function(){ res(rq && "result" in rq ? rq.result : undefined); };
+        t.onerror = function(){ rej(t.error); };
+        t.onabort = function(){ rej(t.error || new Error("aborted")); };
+      });
+    });
+  }
+  var idbBackend = {
+    name: "indexeddb",
+    put: function(id, blob, meta){ return tx(STORE_FILES,"readwrite",function(s){ return s.put({id:id, blob:blob, meta:meta}); }); },
+    get: function(id){ return tx(STORE_FILES,"readonly",function(s){ return s.get(id); }); },
+    del: function(id){ return tx(STORE_FILES,"readwrite",function(s){ return s.delete(id); }); },
+    all: function(){ return tx(STORE_FILES,"readonly",function(s){ return s.getAll(); }); }
+  };
+
+  /* ---- Capacitor Filesystem backend (iOS). Written now, exercised once the
+     Capacitor wrapper exists. Metadata still lives in IndexedDB so both backends
+     present the same record shape to everything above. ---- */
+  function blobToBase64(blob){
+    return new Promise(function(res,rej){
+      var fr=new FileReader();
+      fr.onload=function(){ var s=String(fr.result); res(s.slice(s.indexOf(",")+1)); };
+      fr.onerror=function(){ rej(fr.error); };
+      fr.readAsDataURL(blob);
+    });
+  }
+  function base64ToBlob(b64, type){
+    var bin=atob(b64), n=bin.length, u=new Uint8Array(n);
+    for(var i=0;i<n;i++) u[i]=bin.charCodeAt(i);
+    return new Blob([u],{type:type});
+  }
+  var capBackend = {
+    name: "capacitor",
+    _fs: function(){ return window.Capacitor.Plugins.Filesystem; },
+    _path: function(id){ return "regs/"+id+".pdf"; },
+    put: function(id, blob, meta){
+      var fs=this._fs(), p=this._path(id);
+      return blobToBase64(blob).then(function(b64){
+        return fs.writeFile({ path:p, data:b64, directory:"DATA", recursive:true });
+      }).then(function(){
+        return tx(STORE_FILES,"readwrite",function(s){ return s.put({id:id, blob:null, meta:meta, path:p}); });
+      });
+    },
+    get: function(id){
+      var fs=this._fs(), self=this;
+      return tx(STORE_FILES,"readonly",function(s){ return s.get(id); }).then(function(rec){
+        if(!rec) return undefined;
+        return fs.readFile({ path:self._path(id), directory:"DATA" }).then(function(r){
+          return { id:id, blob:base64ToBlob(r.data,"application/pdf"), meta:rec.meta };
+        });
+      });
+    },
+    del: function(id){
+      var fs=this._fs(), self=this;
+      return fs.deleteFile({ path:self._path(id), directory:"DATA" })
+        .catch(function(){})                      /* already gone is not an error */
+        .then(function(){ return tx(STORE_FILES,"readwrite",function(s){ return s.delete(id); }); });
+    },
+    all: function(){ return idbBackend.all(); }
+  };
+  function backend(){ return capabilities().capacitor ? capBackend : idbBackend; }
+
+  /* ---- Download. Atomic by construction: the blob is assembled in full and only
+     written on completion, so an interrupted download cannot leave a half file in
+     the store. Every failure path clears any partial record before rethrowing. ---- */
+  var inflight = {};
+  function err(code,msg){ var e=new Error(msg); e.code=code; return e; }
+  function quotaish(e){
+    var n = (e && e.name) || "", m = String((e && e.message) || "");
+    return n==="QuotaExceededError" || /quota|space/i.test(m);
+  }
+  function download(id, onProgress){
+    var r = BY_ID[id];
+    if(!r) return Promise.reject(err("unknown-reg","That publication is not in the library."));
+    if(inflight[id]) return inflight[id];
+    if(!capabilities().available) return Promise.reject(err("unavailable", UNAVAILABLE_LINE));
+    if(navigator.onLine === false)
+      return Promise.reject(err("offline","No connection. Publications you have already downloaded still open."));
+
+    var p = fetch(r.url, {cache:"no-store"}).then(function(res){
+      if(!res.ok) throw err("http","Could not download "+r.pubNumber+" ("+res.status+").");
+      var total = Number(res.headers.get("content-length")) || r.sizeBytes || 0;
+      if(!res.body || !res.body.getReader){
+        return res.blob().then(function(b){ if(onProgress) onProgress(1, b.size, b.size); return b; });
+      }
+      var reader = res.body.getReader(), chunks = [], got = 0;
+      return (function pump(){
+        return reader.read().then(function(step){
+          if(step.done) return new Blob(chunks, {type:"application/pdf"});
+          chunks.push(step.value); got += step.value.length;
+          if(onProgress) onProgress(total ? Math.min(1, got/total) : 0, got, total);
+          return pump();
+        });
+      })();
+    }).then(function(blob){
+      if(!blob || !blob.size) throw err("empty","That download came back empty. Try again.");
+      var meta = { pubNumber:r.pubNumber, title:r.title, edition:r.edition,
+                   sizeBytes:blob.size, at:new Date().toISOString() };
+      return backend().put(id, blob, meta).then(function(){ return meta; });
+    }).catch(function(e){
+      return backend().del(id).catch(function(){}).then(function(){
+        if(e && e.code) throw e;
+        throw quotaish(e) ? err("space","Not enough space on this device for "+r.pubNumber+".")
+                          : err("failed","Download failed. Check your connection and try again.");
+      });
+    });
+    inflight[id] = p;
+    p.catch(function(){}).then(function(){ delete inflight[id]; });
+    return p;
+  }
+
+  function installed(id){ return backend().get(id).then(function(r){ return !!r; }); }
+  function remove(id){ return backend().del(id); }
+  function openBlob(id){
+    return backend().get(id).then(function(rec){
+      if(!rec) throw err("not-downloaded","That publication has not been downloaded yet.");
+      return rec.blob;
+    });
+  }
+
+  /* ---- Version-check foundation. Surfaces a flag only; the re-download loop is
+     later. Tied to the same discipline as the audit date: an unconfirmed edition
+     reports `editionKnown:false` rather than being treated as current. ---- */
+  function status(){
+    return backend().all().then(function(recs){
+      var have = {}; (recs||[]).forEach(function(x){ have[x.id]=x.meta||{}; });
+      return MANIFEST.map(function(r){
+        var m = have[r.id];
+        return { id:r.id, pubNumber:r.pubNumber, title:r.title, category:r.category,
+                 core:r.core, manifestEdition:r.edition, editionKnown:!!r.edition,
+                 downloaded:!!m, installedEdition:m ? (m.edition||null) : null,
+                 sizeBytes:m ? m.sizeBytes : r.sizeBytes, at:m ? m.at : null,
+                 updateAvailable: !!(m && r.edition && m.edition && m.edition !== r.edition) };
+      });
+    });
+  }
+
+  /* ---- Annotation overlay. Ours, not the PDF's: highlights and notes are records
+     keyed to a reg and a location, so they survive a re-download, cost almost
+     nothing next to the document, and exist whether or not the heavy PDF was ever
+     fetched. The PDF is never modified. ---- */
+  var marks = {
+    add: function(regId, loc, kind, text, color){
+      var rec = { regId:String(regId), loc:loc==null?null:loc,
+                  kind:(kind==="note"?"note":"highlight"),
+                  text:text==null?"":String(text), color:color||null,
+                  at:new Date().toISOString() };
+      return tx(STORE_MARKS,"readwrite",function(s){ return s.add(rec); }).then(function(key){
+        rec.key = key; return rec;
+      });
+    },
+    forReg: function(regId){
+      return db().then(function(d){
+        return new Promise(function(res,rej){
+          var t = d.transaction(STORE_MARKS,"readonly");
+          var rq = t.objectStore(STORE_MARKS).index("byReg").getAll(String(regId));
+          rq.onsuccess=function(){ res(rq.result||[]); };
+          rq.onerror=function(){ rej(rq.error); };
+        });
+      });
+    },
+    remove: function(key){ return tx(STORE_MARKS,"readwrite",function(s){ return s.delete(key); }); },
+    count: function(){ return tx(STORE_MARKS,"readonly",function(s){ return s.count(); }); }
+  };
+
+  /* ---- Viewer. pdf.js ships with the hosted build — no CDN, no lazy load — and its
+     worker runs from a same-document blob URL so nothing is fetched. Where pdf.js is
+     absent (the bare downloadable file, where the library is unavailable anyway)
+     render() reports that rather than throwing something opaque. ---- */
+  function viewerReady(){ return !!(window.pdfjsLib && window.pdfjsLib.getDocument); }
+  function ensureWorker(){
+    if(!viewerReady()) return false;
+    var g = window.pdfjsLib.GlobalWorkerOptions;
+    if(g.workerSrc) return true;
+    if(window.__ABSG_PDF_WORKER_SRC__){ g.workerSrc = window.__ABSG_PDF_WORKER_SRC__; return true; }
+    return false;
+  }
+  function render(id, host, opts){
+    opts = opts || {};
+    if(!viewerReady()) return Promise.reject(err("no-viewer","The reader is not available in this copy of the app."));
+    ensureWorker();
+    return openBlob(id).then(function(blob){ return blob.arrayBuffer(); }).then(function(buf){
+      return window.pdfjsLib.getDocument({data:buf}).promise;
+    }).then(function(doc){
+      host.innerHTML = "";
+      var scale = opts.scale || 1.2, chain = Promise.resolve();
+      function page(n){ return function(){
+        return doc.getPage(n).then(function(pg){
+          var vp = pg.getViewport({scale:scale});
+          var cv = document.createElement("canvas");
+          cv.className = "regpage";
+          cv.width = Math.floor(vp.width); cv.height = Math.floor(vp.height);
+          cv.setAttribute("aria-label","Page "+n+" of "+doc.numPages);
+          host.appendChild(cv);
+          return pg.render({canvasContext:cv.getContext("2d"), viewport:vp}).promise;
+        });
+      };}
+      for(var i=1;i<=doc.numPages;i++) chain = chain.then(page(i));
+      return chain.then(function(){ return {pages:doc.numPages}; });
+    });
+  }
+
+  return {
+    MANIFEST: MANIFEST, byId: function(id){ return BY_ID[id]; },
+    capabilities: capabilities, unavailableLine: UNAVAILABLE_LINE,
+    backendName: function(){ return backend().name; },
+    download: download, installed: installed, remove: remove, openBlob: openBlob,
+    status: status, marks: marks, render: render, viewerReady: viewerReady,
+    /* Test seam: lets the proof harness register a sample entry without shipping one. */
+    _addTestReg: function(entry){ MANIFEST.push(entry); BY_ID[entry.id]=entry; return entry; }
+  };
+})();
+/* The whole app script runs inside one IIFE, so everything in it is private by default —
+   that is deliberate and stays that way. The regulation library is the exception on
+   purpose: it is a module the library UI wires into as the Art Director's chunks land, and
+   the only way to exercise it from outside is a named handle. Same precedent as
+   `window.__selfTestErrors`, and it exposes the module only, never the quiz internals. */
+window.REGLIB = REGLIB;
 
 /* ---------------- self test (?selftest=1) ---------------- */
 function selfTest(){
