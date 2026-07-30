@@ -393,6 +393,67 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 @media (prefers-reduced-motion: reduce){
   .track>span{transition:none}
 }
+/* ---- Markup overlay (v28, chunk 4) ----
+   Three layers over the page canvas, in order: the wash, the text layer that carries the
+   selection, and the note tabs. The PDF itself is never touched. */
+.rdtext{position:absolute;inset:0;overflow:hidden;line-height:1;
+  opacity:0;                       /* invisible but selectable — it exists to be selected */
+  z-index:2}
+.rdtext span{position:absolute;white-space:pre;transform-origin:0 0;color:transparent;cursor:text}
+#reader[data-markup="1"] .rdtext{opacity:0}
+.rdmarks{position:absolute;inset:0;pointer-events:none;z-index:1}
+/* The wash is --mark, deliberately outside the accent / ok / no lanes, so a highlight can
+   never read as "selected" or "graded". The under-edge is the second, non-colour signal. */
+.rdmark{position:absolute;background:var(--mark);border-radius:1px}
+.rdmark.note{box-shadow:inset 0 -2px 0 0 var(--mark-edge)}
+/* A noted passage also gets a margin tab, because colour is never the only signal. */
+.rdtab{position:absolute;left:-2px;width:4px;border-radius:2px;background:var(--mark-edge);z-index:3}
+/* Selection toolbar — a small dark popover, per the chunk. */
+#mkBar{position:fixed;z-index:90;display:flex;gap:2px;padding:4px;
+  background:#1d2a1f;border-radius:12px;box-shadow:var(--e2)}
+#mkBar.hidden{display:none}
+#mkBar button{min-height:44px;padding:0 14px;display:flex;align-items:center;gap:7px;
+  background:none;border:0;color:#eef2ec;font:inherit;font-size:.82rem;font-weight:650;
+  border-radius:9px;cursor:pointer}
+#mkBar button svg{width:17px;height:17px}
+#mkBar button:hover{background:rgba(255,255,255,.12)}
+#mkBar button:focus-visible{outline:2px solid #eef2ec;outline-offset:-2px}
+/* Note editor — a bottom sheet, the same shape as the outline sheet. */
+#mkSheet{position:fixed;inset:0;z-index:95;display:flex;align-items:flex-end;justify-content:center}
+#mkSheet.hidden{display:none}
+#mkScrim{position:absolute;inset:0;background:rgba(10,14,10,.5)}
+#mkPanel{position:relative;width:100%;max-width:480px;background:var(--surface);
+  border:1px solid var(--line);border-radius:16px 16px 0 0;
+  padding:16px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:var(--e2)}
+@media(min-width:520px){ #mkSheet{align-items:center} #mkPanel{border-radius:16px} }
+.mkeyebrow{font-size:.66rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+/* The quoted anchor, with a --mark spine so the note is visibly tied to the passage. */
+#mkQuote{margin:8px 0 12px;padding:10px 12px;background:var(--surface2);
+  border-left:3px solid var(--mark-edge);border-radius:0 var(--r) var(--r) 0;
+  font-size:.82rem;color:var(--muted);line-height:1.45;max-height:120px;overflow:auto}
+#mkText{width:100%;min-height:110px;padding:10px 12px;border:1px solid var(--line);
+  border-radius:var(--r);background:var(--surface);color:var(--ink);font:inherit;font-size:.87rem;resize:vertical}
+#mkText:focus{outline:none;border-color:var(--accent)}
+.mkrow{display:flex;gap:10px;margin-top:12px}
+.mkrow .btn{flex:1}
+#mkDelete{margin-top:10px;width:100%;background:none;border:0;color:var(--muted);
+  font:inherit;font-size:.8rem;min-height:44px;cursor:pointer;border-radius:var(--r)}
+#mkDelete:hover{background:var(--hover-bg)}
+/* Marks jump-list rows inside the outline sheet. */
+.mkitem{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;
+  background:none;border:0;border-bottom:1px solid var(--line);padding:11px 4px;
+  font:inherit;color:var(--ink);cursor:pointer;min-height:44px}
+.mkitem:hover{background:var(--hover-bg)}
+.mkitem:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.mkswatch{flex:0 0 auto;width:16px;height:16px;border-radius:4px;background:var(--mark);
+  border:1px solid var(--mark-edge);margin-top:2px}
+.mkswatch.note{display:flex;align-items:center;justify-content:center}
+.mkswatch.note svg{width:11px;height:11px;color:var(--mark-edge)}
+.mkitem .ex{flex:1;min-width:0;font-size:.81rem;line-height:1.35}
+.mkitem .ex b{display:block;font-weight:400;color:var(--ink);
+  overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.mkitem .ex i{font-style:normal;color:var(--muted);font-size:.74rem}
+.mknone{font-size:.8rem;color:var(--muted);padding:12px 4px}
 #themeBtn{
   border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--r);
   min-height:44px;min-width:44px;padding:0 13px;font:inherit;font-size:.8rem;cursor:pointer;
@@ -1443,6 +1504,27 @@ footer p{margin:0 0 8px}
     </button>
   </div>
 </div>
+<div id="mkBar" class="hidden" role="toolbar" aria-label="Markup">
+  <button id="mkHi" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 20h4l9.5-9.5a2.1 2.1 0 0 0-3-3L5 17v3z"></path><path d="M13.5 5.5l3 3"></path></svg>Highlight
+  </button>
+  <button id="mkNote" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 4h11l4 4v12H5z"></path><path d="M16 4v4h4"></path><path d="M8.5 12.5h7M8.5 16h4.5"></path></svg>Note
+  </button>
+</div>
+<div id="mkSheet" class="hidden" role="dialog" aria-modal="true" aria-label="Note">
+  <div id="mkScrim"></div>
+  <div id="mkPanel">
+    <div class="mkeyebrow">Note</div>
+    <div id="mkQuote"></div>
+    <textarea id="mkText" placeholder="What matters about this passage?" aria-label="Note text"></textarea>
+    <div class="mkrow">
+      <button class="btn sec" type="button" id="mkCancel">Cancel</button>
+      <button class="btn" type="button" id="mkSave">Save</button>
+    </div>
+    <button id="mkDelete" type="button" hidden>Delete this mark</button>
+  </div>
+</div>
 <div id="rdSheet" class="hidden" role="dialog" aria-modal="true" aria-label="Outline">
   <div id="rdSheetScrim"></div>
   <div id="rdSheetPanel">
@@ -2080,7 +2162,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v27";
+var APP_VERSION = "v28";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -3300,9 +3382,14 @@ function buildPrint(){
 var REGLIB = (function(){
   "use strict";
 
-  var DB_NAME = "absg_reglib", DB_VER = 1;
+  var DB_NAME = "absg_reglib", DB_VER = 2;
   var STORE_FILES = "files";      /* id -> {id, blob, meta} */
-  var STORE_MARKS = "marks";      /* key -> {regId, loc, kind, text, color, at} */
+  var STORE_MARKS = "marks";      /* v24 store, key -> {regId, loc, kind, text, color, at} */
+  /* v28's annotation overlay store. Its own store rather than reusing `marks` because the
+     locked record is identified by `id`, not by an auto-increment key, and because it is
+     indexed by [regId,page] so painting one page never scans the whole set. Separate from
+     the PDF blob and from `absg_v3`, as the spec requires. */
+  var STORE_ANNOTS = "annots";    /* id -> Mark */
 
   /* ---- The manifest: every publication the bank cites, in one of three states.
 
@@ -3432,9 +3519,30 @@ var REGLIB = (function(){
           var m = d.createObjectStore(STORE_MARKS, {keyPath:"key", autoIncrement:true});
           m.createIndex("byReg", "regId", {unique:false});
         }
+        if(!d.objectStoreNames.contains(STORE_ANNOTS)){
+          var a = d.createObjectStore(STORE_ANNOTS, {keyPath:"id"});
+          a.createIndex("byReg", "regId", {unique:false});
+          a.createIndex("byRegPage", ["regId","page"], {unique:false});
+        }
       };
-      rq.onsuccess = function(){ res(rq.result); };
+      rq.onsuccess = function(){
+        var d = rq.result;
+        /* If ANOTHER tab later needs a version upgrade, this connection is what would block
+           it. Closing on versionchange lets that tab proceed instead of both sitting there
+           waiting on each other. */
+        d.onversionchange = function(){ try{ d.close(); }catch(e){} dbp = null; };
+        res(d);
+      };
       rq.onerror  = function(){ rej(rq.error || new Error("indexedDB open failed")); };
+      /* An upgrade blocked by an older connection in another tab fires `blocked` and then
+         NOTHING else — no success, no error. Without this the promise never settles and the
+         library hangs on a spinner forever with no explanation. Found by bumping the store
+         version in this build and watching it hang. */
+      rq.onblocked = function(){
+        dbp = null;
+        rej(err("db-blocked",
+          "The regulation library is open in another tab. Close it and reload to finish updating."));
+      };
     });
     return dbp;
   }
@@ -3617,7 +3725,64 @@ var REGLIB = (function(){
      nothing next to the document, and exist whether or not the heavy PDF was ever
      fetched. The PDF is never modified. ---- */
   var marks = {
+    /* v28: the LOCKED annotation record. Content-addressed on purpose — `quote` plus its
+       surrounding context is what lets a mark survive a re-download or an updated edition,
+       and it is the same anchor linked notes resolve against later. `rects` are normalized
+       0-1 so a mark repaints at any zoom or device width without re-searching the text.
+       Do not change this shape without a paired linked-notes review. */
+    put: function(rec){
+      var now = new Date().toISOString();
+      var m = {
+        id: rec.id || (String(Date.now()) + "-" + Math.random().toString(36).slice(2,9)),
+        regId: String(rec.regId),
+        page: rec.page,                       /* 0-based index */
+        pageLabel: rec.pageLabel == null ? null : String(rec.pageLabel),
+        type: rec.type === "note" ? "note" : "highlight",
+        anchor: {
+          quote:  rec.anchor && rec.anchor.quote  ? String(rec.anchor.quote)  : "",
+          prefix: rec.anchor && rec.anchor.prefix ? String(rec.anchor.prefix) : "",
+          suffix: rec.anchor && rec.anchor.suffix ? String(rec.anchor.suffix) : "",
+          textPosition: (rec.anchor && rec.anchor.textPosition) || null,
+          rects: (rec.anchor && rec.anchor.rects) || []
+        },
+        color: rec.color || "mark",
+        note: rec.note == null ? null : String(rec.note),
+        created: rec.created || now,
+        updated: now
+      };
+      return tx(STORE_ANNOTS,"readwrite",function(s){ return s.put(m); }).then(function(){ return m; });
+    },
+    /* Every mark on one reg, for the Marks jump-list. */
+    listForReg: function(regId){
+      return db().then(function(d){
+        return new Promise(function(res,rej){
+          var t = d.transaction(STORE_ANNOTS,"readonly");
+          var rq = t.objectStore(STORE_ANNOTS).index("byReg").getAll(String(regId));
+          rq.onsuccess=function(){
+            var out = rq.result || [];
+            out.sort(function(a,b){ return (a.page-b.page) || (a.created<b.created?-1:1); });
+            res(out);
+          };
+          rq.onerror=function(){ rej(rq.error); };
+        });
+      });
+    },
+    /* One page's marks, so painting a page never scans the whole reg. */
+    listForPage: function(regId, page){
+      return db().then(function(d){
+        return new Promise(function(res,rej){
+          var t = d.transaction(STORE_ANNOTS,"readonly");
+          var rq = t.objectStore(STORE_ANNOTS).index("byRegPage").getAll([String(regId), page]);
+          rq.onsuccess=function(){ res(rq.result||[]); };
+          rq.onerror=function(){ rej(rq.error); };
+        });
+      });
+    },
+    drop: function(id){ return tx(STORE_ANNOTS,"readwrite",function(s){ return s.delete(String(id)); }); },
+    countAll: function(){ return tx(STORE_ANNOTS,"readonly",function(s){ return s.count(); }); },
     add: function(regId, loc, kind, text, color){
+      /* v24 shape, kept so the foundation's proof harness and any early record still work.
+         New callers use put(). */
       var rec = { regId:String(regId), loc:loc==null?null:loc,
                   kind:(kind==="note"?"note":"highlight"),
                   text:text==null?"":String(text), color:color||null,
@@ -3744,6 +3909,7 @@ function libPrefix(pub){
 }
 
 var libRows = [];        /* the status rows actually listed, after omissions */
+var libStoreError = null;
 var libQuery = "";
 var libProgress = {};    /* id -> last fraction, so a re-render mid-download keeps the bar */
 
@@ -3892,7 +4058,9 @@ function libRender(){
     $("libCue").textContent = "";
     return;
   }
-  if(navigator.onLine === false){
+  if(libStoreError){
+    edge.appendChild(libNote("info", "The library isn't available right now", libStoreError));
+  } else if(navigator.onLine === false){
     edge.appendChild(libNote("offline", "You're offline",
       "Connect to download new publications. Anything already downloaded stays available to read."));
   } else if(!libRows.filter(function(r){ return r.downloaded; }).length){
@@ -3943,9 +4111,13 @@ function libCue(){
 function libRefresh(){
   return REGLIB.status().then(function(rows){
     libRows = rows.filter(libListable);
+    libStoreError = null;
     libCue(); libRender();
-  }).catch(function(){
-    libRows = []; libRender();
+  }).catch(function(e){
+    /* An empty list with no explanation is the worst outcome — it looks like the library
+       has nothing in it. Carry the reason onto the screen instead. */
+    libRows = []; libStoreError = (e && e.message) || "The library could not be opened.";
+    libCue(); libRender();
   });
 }
 
@@ -4047,6 +4219,11 @@ function rdRenderPage(holder){
     cv.width = Math.floor(vp.width); cv.height = Math.floor(vp.height);
     cv.setAttribute("role","img");
     cv.setAttribute("aria-label","Page " + n + " of " + rdDoc.numPages);
+    /* The text layer is built in PARALLEL with the raster, not after it. Selection,
+       anchoring and mark painting need the text layer only — coupling them to the canvas
+       meant a page that rasterised slowly, or failed, silently lost its markup too. */
+    if(typeof markPaintPage === "function") markPaintPage(holder, n, page, vp, css*dpr);
+
     var task = page.render({canvasContext: cv.getContext("2d"), viewport: vp});
     /* A page that never finishes rasterising must not sit as a blank card forever. This is
        a real guard, not a theoretical one: rasterisation could not be completed in the build
@@ -4066,8 +4243,8 @@ function rdRenderPage(holder){
       if(timed) return;
       var ph = holder.querySelector(".rdph");
       if(ph) ph.remove();
-      holder.appendChild(cv);
-      if(typeof markPaintPage === "function") markPaintPage(holder, n, page, vp, css*dpr);
+      /* Behind the mark layer and the text layer, both of which are already in place. */
+      holder.insertBefore(cv, holder.firstChild);
     }, function(e){ clearTimeout(timer); throw e; });
   }).catch(function(){
     var ph = holder.querySelector(".rdph");
@@ -4176,8 +4353,7 @@ function openReader(id){
     $("rdStatus").textContent = "";
     rdBuildPages(vp.height / vp.width);
     rdPaintPill();
-    if(typeof markLoadForReg === "function") markLoadForReg(rdId);
-  }).catch(function(){
+    }).catch(function(){
     $("rdStatus").textContent = "This publication could not be opened. Try downloading it again.";
   });
 }
@@ -4245,6 +4421,254 @@ function rdOpenSheet(){
     });
   }).catch(function(){}).then(function(){ $("rdSheet").classList.remove("hidden"); });
 }
+/* ==================== Markup overlay (v28, chunk 4) ====================
+   Highlights and notes live in our own store and paint on a layer ABOVE the page. The PDF
+   bytes are never modified, so a publication can be re-downloaded or updated and the marks
+   re-place themselves from the anchor instead of being lost or corrupting the file.
+
+   The anchor is content-addressed — quote plus surrounding context plus character offsets —
+   which is what makes a mark survive re-pagination, and is the same key linked notes will
+   resolve against. Normalized rects are carried alongside so the wash can be painted
+   without re-searching the text on every repaint.                                        */
+var mkSel = null, mkEditing = null, mkTextCache = {};
+
+function markEnable(){ return true; }   /* presence of this function is what shows the toggle */
+
+/* Build the invisible, selectable text layer for a page. Everything markup does depends on
+   it: no text layer, no selection, no anchor. */
+function markPaintPage(holder, n, page, vp, scale){
+  if(holder.querySelector(".rdtext")) return;
+  page.getTextContent().then(function(tc){
+    if(!tc.items.length){
+      holder.setAttribute("data-notext","1");
+      return;
+    }
+    var layer = document.createElement("div");
+    layer.className = "rdtext";
+    /* The layer is laid out in the PDF's own pixel space and then scaled to fit the page
+       card, which is how pdf.js does it. Positioning the spans in percentages looks
+       equivalent but is not: a PERCENTAGE font-size resolves against the parent's font
+       size, not the page height, so every glyph came out around half a pixel tall, every
+       selection rectangle measured under 1px, and selection captured nothing at all. */
+    layer.style.width  = vp.width + "px";
+    layer.style.height = vp.height + "px";
+    layer.style.transformOrigin = "0 0";
+    var full = "";
+    tc.items.forEach(function(it){
+      var s = document.createElement("span");
+      var tr = pdfjsLib.Util.transform(vp.transform, it.transform);
+      var fs = Math.hypot(tr[2], tr[3]);
+      s.textContent = it.str;
+      s.style.left = tr[4] + "px";
+      s.style.top  = (tr[5] - fs) + "px";
+      s.style.fontSize = fs + "px";
+      s.style.fontFamily = it.fontName;
+      full += it.str;
+      layer.appendChild(s);
+    });
+    mkTextCache[n] = full;
+    holder.appendChild(layer);
+    markScaleLayer(holder, layer, vp.width);
+    markRepaint(holder, n);
+  }).catch(function(){});
+}
+
+/* Fit a text layer laid out in PDF pixels onto the page card's actual CSS width. */
+function markScaleLayer(holder, layer, srcWidth, tries){
+  if(!srcWidth) return;
+  layer.setAttribute("data-src-w", srcWidth);
+  var w = holder.clientWidth;
+  if(!w){
+    /* The card can have no box yet — the text layer is built in parallel with the raster,
+       so the canvas that gives the card its width may not be in the DOM. Retry rather than
+       bail: giving up silently leaves the selectable text at 1:1 PDF pixels, badly out of
+       register with the page, and nothing would ever correct it. */
+    if((tries || 0) < 10) setTimeout(function(){ markScaleLayer(holder, layer, srcWidth, (tries||0)+1); }, 60);
+    return;
+  }
+  layer.style.transform = "scale(" + (w / srcWidth) + ")";
+}
+/* A rotate or a window resize changes the card width, and a text layer that kept its old
+   scale would put the selectable text out of register with what is on screen. */
+window.addEventListener("resize", function(){
+  if($("reader").classList.contains("hidden")) return;
+  Array.prototype.forEach.call(document.querySelectorAll(".rdpage"), function(h){
+    var l = h.querySelector(".rdtext");
+    if(l) markScaleLayer(h, l, parseFloat(l.getAttribute("data-src-w")));
+  });
+});
+
+/* Turn the live selection into the locked anchor record. Rects are normalized against the
+   page box so a mark repaints correctly at any zoom or screen width. */
+function markCaptureSelection(){
+  var sel = window.getSelection();
+  if(!sel || sel.isCollapsed || !sel.rangeCount) return null;
+  var range = sel.getRangeAt(0);
+  var holder = range.startContainer.parentElement &&
+               range.startContainer.parentElement.closest(".rdpage");
+  if(!holder || !holder.contains(range.endContainer)) return null;
+  var quote = sel.toString().trim();
+  if(!quote) return null;
+
+  var n = parseInt(holder.getAttribute("data-page"), 10);
+  var box = holder.getBoundingClientRect();
+  var rects = [];
+  Array.prototype.forEach.call(range.getClientRects(), function(r){
+    if(r.width < 1 || r.height < 1) return;
+    rects.push({ x:(r.left-box.left)/box.width, y:(r.top-box.top)/box.height,
+                 w:r.width/box.width, h:r.height/box.height });
+  });
+  if(!rects.length) return null;
+
+  /* Context strings disambiguate a quote that appears more than once on a page — the
+     text-quote anchor pattern. Offsets are the fallback when context is not enough. */
+  var full = mkTextCache[n] || "", idx = full.indexOf(quote);
+  var prefix = "", suffix = "", pos = null;
+  if(idx !== -1){
+    prefix = full.slice(Math.max(0, idx-32), idx);
+    suffix = full.slice(idx+quote.length, idx+quote.length+32);
+    pos = { start: idx, end: idx + quote.length };
+  }
+  return { page:n-1, pageLabel: rdLabelFor(n), quote:quote, prefix:prefix, suffix:suffix,
+           textPosition:pos, rects:rects, holder:holder };
+}
+
+function markShowBar(){
+  var cap = markCaptureSelection();
+  if(!cap){ $("mkBar").classList.add("hidden"); mkSel = null; return; }
+  mkSel = cap;
+  var sel = window.getSelection();
+  var r = sel.getRangeAt(0).getBoundingClientRect();
+  var bar = $("mkBar");
+  bar.classList.remove("hidden");
+  var bw = bar.offsetWidth, bh = bar.offsetHeight;
+  var left = Math.min(Math.max(8, r.left + r.width/2 - bw/2), innerWidth - bw - 8);
+  /* Above the selection by preference; below it when the selection is near the top, so the
+     toolbar never covers the very text it is about to mark. */
+  var top = r.top - bh - 10;
+  if(top < 64) top = r.bottom + 10;
+  bar.style.left = Math.round(left) + "px";
+  bar.style.top  = Math.round(top) + "px";
+}
+function markHideBar(){ $("mkBar").classList.add("hidden"); }
+
+function markSave(type, noteText){
+  if(!mkSel) return Promise.resolve(null);
+  var cap = mkSel;
+  return REGLIB.marks.put({
+    regId: rdId, page: cap.page, pageLabel: cap.pageLabel, type: type,
+    anchor: { quote:cap.quote, prefix:cap.prefix, suffix:cap.suffix,
+              textPosition:cap.textPosition, rects:cap.rects },
+    color: "mark", note: noteText == null ? null : noteText
+  }).then(function(m){
+    markHideBar();
+    var s = window.getSelection(); if(s) s.removeAllRanges();
+    mkSel = null;
+    markRepaint(cap.holder, cap.page + 1);
+    return m;
+  });
+}
+
+/* Paint one page's marks from stored normalized rects. */
+function markRepaint(holder, n){
+  if(!rdId) return;
+  REGLIB.marks.listForPage(rdId, n-1).then(function(list){
+    var old = holder.querySelector(".rdmarks");
+    if(old) old.remove();
+    Array.prototype.forEach.call(holder.querySelectorAll(".rdtab"), function(t){ t.remove(); });
+    if(!list.length) return;
+    var layer = document.createElement("div"); layer.className = "rdmarks";
+    list.forEach(function(m){
+      (m.anchor.rects||[]).forEach(function(r){
+        var d = document.createElement("div");
+        d.className = "rdmark" + (m.type === "note" ? " note" : "");
+        d.style.left = (r.x*100)+"%"; d.style.top = (r.y*100)+"%";
+        d.style.width = (r.w*100)+"%"; d.style.height = (r.h*100)+"%";
+        layer.appendChild(d);
+      });
+      if(m.type === "note" && m.anchor.rects && m.anchor.rects[0]){
+        /* The margin tab: a note must be findable without relying on the wash's colour. */
+        var t = document.createElement("button");
+        t.type = "button"; t.className = "rdtab";
+        t.setAttribute("aria-label", "Open note");
+        t.style.top = (m.anchor.rects[0].y*100)+"%";
+        t.style.height = (m.anchor.rects[0].h*100)+"%";
+        t.addEventListener("click", function(e){ e.stopPropagation(); markOpenExisting(m); });
+        holder.appendChild(t);
+      }
+    });
+    holder.insertBefore(layer, holder.firstChild);
+  }).catch(function(){});
+}
+
+function markOpenSheet(quote, existing){
+  mkEditing = existing || null;
+  $("mkQuote").textContent = quote;
+  $("mkText").value = existing && existing.note ? existing.note : "";
+  $("mkDelete").hidden = !existing;
+  $("mkSheet").classList.remove("hidden");
+  $("mkText").focus();
+}
+function markOpenExisting(m){
+  markOpenSheet(m.anchor.quote, m);
+}
+function markCloseSheet(){
+  $("mkSheet").classList.add("hidden");
+  mkEditing = null;
+}
+
+/* The Marks jump-list, folded into the outline sheet so the reading surface keeps only the
+   page pill over the page. */
+function markSheetSection(body){
+  if(!rdId) return;
+  var head = document.createElement("div");
+  head.className = "mkeyebrow"; head.style.margin = "16px 0 4px";
+  body.appendChild(head);
+  var host = document.createElement("div");
+  body.appendChild(host);
+  REGLIB.marks.listForReg(rdId).then(function(list){
+    var hi = list.filter(function(m){ return m.type === "highlight"; }).length;
+    var no = list.length - hi;
+    head.textContent = "Marks — " + hi + " highlight" + (hi===1?"":"s") + " · " + no + " note" + (no===1?"":"s");
+    if(!list.length){
+      var e = document.createElement("div"); e.className = "mknone";
+      e.textContent = "Select text in the publication to highlight it or attach a note.";
+      host.appendChild(e); return;
+    }
+    list.forEach(function(m){
+      var b = document.createElement("button"); b.type = "button"; b.className = "mkitem";
+      var sw = document.createElement("span");
+      sw.className = "mkswatch" + (m.type === "note" ? " note" : "");
+      if(m.type === "note")
+        sw.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 7h12M6 12h12M6 17h7"/></svg>';
+      var ex = document.createElement("span"); ex.className = "ex";
+      var q = document.createElement("b"); q.textContent = m.anchor.quote;
+      var pg = document.createElement("i");
+      pg.textContent = (m.pageLabel ? "p. " + m.pageLabel + " · " : "") + "page " + (m.page+1)
+                     + (m.note ? " · note" : "");
+      ex.appendChild(q); ex.appendChild(pg);
+      b.appendChild(sw); b.appendChild(ex);
+      b.addEventListener("click", function(){
+        $("rdSheet").classList.add("hidden");
+        rdGoto(m.page + 1);
+      });
+      host.appendChild(b);
+    });
+  }).catch(function(){});
+}
+
+function markTeardown(){
+  mkSel = null; mkEditing = null; mkTextCache = {};
+  markHideBar(); markCloseSheet();
+}
+/* Test seam. The whole app script is one IIFE, so the markup internals are private; the
+   proof harness needs a handle to build a text layer and read back a captured anchor
+   without a canvas. Exposes the markup functions only — same precedent as window.REGLIB. */
+window.__MARKUP__ = {
+  paintPage: markPaintPage, capture: markCaptureSelection, repaint: markRepaint,
+  save: markSave, openSheet: markOpenSheet, pageText: function(n){ return mkTextCache[n]; }
+};
+
 /* An outline destination can be a named string or an explicit ref; both have to resolve to
    a page index before it can be jumped to. */
 function rdResolveDest(dest){
@@ -4613,8 +5037,68 @@ $("rdScroll").addEventListener("scroll", function(){
     rdScrollTimer = 0; rdScrollLast = Date.now(); rdSyncPage();
   }, 100);
 }, {passive:true});
+/* ---------------- markup (v28) ---------------- */
+/* Selection is what raises the toolbar, so the listener is on selectionchange rather than a
+   mode toggle: marking works the moment a Soldier selects, which is the interaction the
+   chunk specifies. The highlighter button is a shortcut to the same toolbar. */
+document.addEventListener("selectionchange", function(){
+  if($("reader").classList.contains("hidden")) return;
+  if(!$("mkSheet").classList.contains("hidden")) return;
+  markShowBar();
+});
+$("mkHi").addEventListener("click", function(){ markSave("highlight", null); });
+$("mkNote").addEventListener("click", function(){
+  if(!mkSel) return;
+  markOpenSheet(mkSel.quote, null);
+});
+$("mkCancel").addEventListener("click", markCloseSheet);
+$("mkScrim").addEventListener("click", markCloseSheet);
+$("mkSave").addEventListener("click", function(){
+  var text = $("mkText").value.trim();
+  if(mkEditing){
+    /* Editing an existing mark keeps its id and anchor — the anchor is the join key, so
+       re-saving must never mint a new one. */
+    REGLIB.marks.put({
+      id: mkEditing.id, regId: mkEditing.regId, page: mkEditing.page,
+      pageLabel: mkEditing.pageLabel, type: text ? "note" : "highlight",
+      anchor: mkEditing.anchor, color: mkEditing.color, note: text || null,
+      created: mkEditing.created
+    }).then(function(){
+      markCloseSheet();
+      var holder = document.querySelector('.rdpage[data-page="' + (mkEditing.page+1) + '"]');
+      if(holder) markRepaint(holder, mkEditing.page+1);
+    });
+    return;
+  }
+  markSave(text ? "note" : "highlight", text || null).then(markCloseSheet);
+});
+$("mkDelete").addEventListener("click", function(){
+  if(!mkEditing) return;
+  var pg = mkEditing.page;
+  REGLIB.marks.drop(mkEditing.id).then(function(){
+    markCloseSheet();
+    var holder = document.querySelector('.rdpage[data-page="' + (pg+1) + '"]');
+    if(holder) markRepaint(holder, pg+1);
+  });
+});
+/* The highlighter in the bar explains itself when there is nothing selected, and says so
+   honestly on a publication with no text layer instead of offering a dead control. */
+$("rdMark").addEventListener("click", function(){
+  if(mkSel){ markShowBar(); return; }
+  var holder = document.querySelector('.rdpage[data-page="' + rdPage + '"]');
+  var noText = holder && holder.getAttribute("data-notext") === "1";
+  $("noticeText").textContent = noText
+    ? "Highlighting isn't available for this publication — its pages are images without selectable text."
+    : "Select text on the page to highlight it or attach a note.";
+  $("notice").classList.remove("hidden");
+});
+
 document.addEventListener("keydown", function(e){
   if($("reader").classList.contains("hidden")) return;
+  if(!$("mkSheet").classList.contains("hidden")){
+    if(e.key === "Escape"){ e.preventDefault(); markCloseSheet(); }
+    return;
+  }
   if(!$("rdSheet").classList.contains("hidden")){
     if(e.key === "Escape"){ e.preventDefault(); $("rdSheet").classList.add("hidden"); }
     return;
