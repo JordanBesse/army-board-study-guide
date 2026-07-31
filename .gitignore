@@ -1,0 +1,11 @@
+# The Capacitor CLI is a build-time tool, not part of the shipped app. Xcode resolves the
+# native dependencies itself through SPM (Package.swift), so a Mac needs no npm install.
+node_modules/
+
+# Xcode user state
+ios/App/App.xcodeproj/xcuserdata/
+ios/App/App.xcodeproj/project.xcworkspace/xcuserdata/
+ios/App/App.xcworkspace/xcuserdata/
+ios/DerivedData/
+*.xcuserstate
+.DS_Store
