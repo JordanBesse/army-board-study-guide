@@ -163,7 +163,10 @@ header{
   position:relative;text-align:center;padding:24px 0 16px;
   background:var(--barband);border-bottom:1px solid var(--line);
   margin:-14px -14px 14px;padding-left:14px;padding-right:14px;
-  padding-top:calc(24px + env(safe-area-inset-top));
+  /* v50: 32px, up from 24. On the device the wordmark cleared the island but sat tight
+     under it; the extra 8px is the gap Jordan asked for. It rides on top of the inset, so on
+     a device with no island nothing moves by more than those 8px. */
+  padding-top:calc(32px + env(safe-area-inset-top));
 }
 h1{font-size:1.3rem;margin:0;letter-spacing:-.01em;font-weight:700;line-height:1.25}
 /* The wordmark-as-home control. It has to look exactly like the heading it replaced — the
@@ -644,7 +647,10 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
    is measured from the top of the app bar and both the go-to-page scroll and the page
    counter are off by the bar's height. */
 #rdScroll{position:relative;flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;
-  padding:14px 10px calc(84px + env(safe-area-inset-bottom));
+  /* v50: no bottom spacer any more. The 84px + inset existed only to keep the last page clear
+     of a FIXED bottom bar; the bar is an in-flow flex sibling now, so the scroller ends where
+     the bar begins and the space would be a permanent dead gap. */
+  padding:14px 10px 14px;
   /* v41: pinch-zoom is NO LONGER the browser's job. Two zoom systems were live at once — the
      browser's viewport zoom on a pinch, and the app's rdSetZoom on the +/- buttons, which
      rebuilds the pages. Nothing mapped one to the other, so a pinch zoomed the viewport out
@@ -667,9 +673,15 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
    it now carries the document's tools, not just page nav — a floating capsule holding seven
    controls stops reading as a light touch over the page and starts reading as a crowded
    island. Two rows on a narrow screen, one on a wide one. */
+/* v50: IN-FLOW, not fixed. On iOS WKWebView with viewport-fit=cover, a position:fixed element
+   hit-tests offset from where it PAINTS once the safe-area insets are non-zero — so every
+   control in this bar answered taps about an inch above itself. It read as "the reader is
+   frozen, only scrolling works", because scrolling is the one interaction that needs no
+   precise target. The proof was already in this stylesheet: .rdbar is an in-flow flex child
+   and always hit-tested correctly, while everything fixed did not.
+   #reader is display:flex;flex-direction:column, so this is simply its third child. */
 .rdbottom{
-  position:fixed;left:0;right:0;
-  bottom:0;z-index:3;
+  flex:0 0 auto;z-index:3;
   display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:2px 10px;
   background:var(--surface);border-top:1px solid var(--line);
   padding:3px 8px calc(3px + env(safe-area-inset-bottom));
@@ -697,13 +709,14 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 /* The reading area has to clear the bottom bar, which is taller than the old pill and can
    wrap to two rows at 360px. Measured at runtime rather than guessed, because a guess here
    hides the last line of every page behind the bar. */
-#rdScroll{padding-bottom:var(--rd-bottom, 108px)}
+/* v50: the --rd-bottom override is gone with the fixed bar it compensated for. */
 #rdStatus{padding:26px 10px;text-align:center;color:var(--muted);font-size:.82rem}
 /* Collapse once the document has opened. With padding alone it left 52px of empty space
    above page 1 for the whole reading session. */
 #rdStatus:empty{display:none}
 /* Outline sheet — reuses the settings sheet's shape so there is one overlay pattern. */
-#rdSheet{position:fixed;inset:0;z-index:80;display:flex;align-items:flex-end;justify-content:center}
+/* v50: absolute within #reader — see .rdbottom. */
+#rdSheet{position:absolute;inset:0;z-index:80;display:flex;align-items:flex-end;justify-content:center}
 #rdSheet.hidden{display:none}
 #rdSheetScrim{position:absolute;inset:0;background:rgba(10,14,10,.5)}
 #rdSheetPanel{position:relative;width:100%;max-width:480px;max-height:80vh;overflow:auto;
@@ -788,7 +801,10 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 /* The readout: a lightweight, offline stand-in for the iOS loupe. It exists because a finger
    covers the word it is selecting — without it the selection is only visible after lifting,
    which is exactly what Jordan reported. No motion; it is a readout, not an animation. */
-#mkRead{position:fixed;z-index:92;max-width:min(72vw,320px);padding:7px 12px;border-radius:10px;
+/* v50: absolute, not fixed — see the note on .rdbottom. It is already a DOM child of #reader,
+   and #reader is position:fixed;inset:0, so its containing block is exactly the viewport rect:
+   the JS that positions this from getBoundingClientRect coordinates needs no change. */
+#mkRead{position:absolute;z-index:92;max-width:min(72vw,320px);padding:7px 12px;border-radius:10px;
   background:#1d2a1f;color:#eef2ec;font-size:.82rem;font-weight:650;line-height:1.25;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:var(--e2);pointer-events:none}
 #mkRead.hidden{display:none}
@@ -807,7 +823,10 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 /* Diagnostic only, never shown without the flag. pointer-events:none so it cannot eat the very
    gesture it is reporting on. */
 #mkDebug{
-  position:fixed;left:6px;right:6px;top:calc(58px + env(safe-area-inset-top));z-index:99;
+  /* v50: absolute within #reader — it is a child of it, and a fixed element hit-tests offset
+     on iOS once the insets are non-zero. pointer-events are none here anyway, but it must not
+     be the one element that moves relative to everything else. */
+  position:absolute;left:6px;right:6px;top:calc(58px + env(safe-area-inset-top));z-index:99;
   margin:0;padding:8px 10px;max-height:44vh;overflow:hidden;pointer-events:none;
   background:rgba(12,16,12,.92);color:#d7f0d9;border-radius:8px;
   font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10px;line-height:1.35;
@@ -815,7 +834,10 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 }
 #mkDebug.hidden{display:none}
 #rdToast{
-  position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom));
+  /* v50: absolute within #reader like the rest of the reader's floating chrome. The bottom
+     offset drops the 96px that used to clear the FIXED bottom bar — the bar is an in-flow
+     sibling now, so this only needs to sit above the reader's own lower edge. */
+  position:absolute;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom));
   z-index:88;max-width:calc(100% - 32px);padding:10px 16px;border-radius:20px;
   background:#1d2a1f;color:#eef2ec;font-size:.8rem;font-weight:650;box-shadow:var(--e2);
 }
@@ -824,7 +846,8 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
   #rdToast{animation:toastIn .18s ease-out}
   @keyframes toastIn{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}
 }
-#mkBar,#mkPop{position:fixed;z-index:90;display:flex;gap:2px;padding:4px;
+/* v50: absolute within #reader, not fixed — see the note on .rdbottom. */
+#mkBar,#mkPop{position:absolute;z-index:90;display:flex;gap:2px;padding:4px;
   background:#1d2a1f;border-radius:12px;box-shadow:var(--e2)}
 #mkBar.hidden,#mkPop.hidden{display:none}
 #mkBar button,#mkPop button{min-height:44px;padding:0 14px;display:flex;align-items:center;gap:7px;
@@ -2225,8 +2248,13 @@ footer p{margin:0 0 8px}
       </button>
     </div>
   </div>
-</div>
-<div id="mkBar" class="hidden" role="toolbar" aria-label="Markup">
+  <!-- v50: both selection toolbars moved INSIDE #reader so they can be position:absolute in
+       the reader's own space rather than position:fixed in the viewport's. On iOS with
+       viewport-fit=cover a fixed element hit-tests offset from its paint once the safe-area
+       insets are non-zero, which is what put every reader control about an inch above itself.
+       #reader is position:fixed;inset:0, so absolute coordinates here are still viewport
+       coordinates and the JS that positions these needs no change. -->
+  <div id="mkBar" class="hidden" role="toolbar" aria-label="Markup">
   <button id="mkHi" type="button">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 20h4l9.5-9.5a2.1 2.1 0 0 0-3-3L5 17v3z"></path><path d="M13.5 5.5l3 3"></path></svg>Highlight
   </button>
@@ -2247,7 +2275,20 @@ footer p{margin:0 0 8px}
   <button id="mkPopDel" type="button">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"></path></svg>Remove
   </button>
-</div>
+  </div>
+  <!-- v50: the outline / marks sheet lives inside #reader too. It is opened only from the
+       reader, and its rows are the Bookmarks jump list — controls a Soldier taps. Same
+       reasoning as the toolbars: absolute in the reader's space, never fixed in the
+       viewport's. -->
+  <div id="rdSheet" class="hidden" role="dialog" aria-modal="true" aria-label="Outline">
+    <div id="rdSheetScrim"></div>
+    <div id="rdSheetPanel">
+      <h3 id="rdSheetTitle">Outline</h3>
+      <div id="rdSheetSub"></div>
+      <div id="rdSheetBody"></div>
+    </div>
+  </div>
+</div><!-- /#reader -->
 <!-- v36: removing a downloaded publication is destructive and was happening on one tap of a
      "···" that never said what it did. Same sheet shape as the note editor; neutral chrome,
      because delete never borrows the graded lane. -->
@@ -2334,14 +2375,6 @@ footer p{margin:0 0 8px}
     <div class="mkrow">
       <button class="btn sec" type="button" id="qnoteOpenNote" style="flex:1">Open the note</button>
     </div>
-  </div>
-</div>
-<div id="rdSheet" class="hidden" role="dialog" aria-modal="true" aria-label="Outline">
-  <div id="rdSheetScrim"></div>
-  <div id="rdSheetPanel">
-    <h3 id="rdSheetTitle">Outline</h3>
-    <div id="rdSheetSub"></div>
-    <div id="rdSheetBody"></div>
   </div>
 </div>
 
@@ -2973,7 +3006,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v49";
+var APP_VERSION = "v50";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -6239,11 +6272,9 @@ function rdSyncPage(){
       if(Math.abs((j+1) - rdPage) > 6) rdReleasePage(kids[j]);
   }
 }
-/* Keep the reading area clear of the bar, whatever height it wraps to. */
-function rdFitBottom(){
-  var h = $("rdPill").getBoundingClientRect().height;
-  if(h) $("rdScroll").style.setProperty("--rd-bottom", Math.round(h + 14) + "px");
-}
+/* v50: rdFitBottom() is gone. It measured the fixed bottom bar and reserved that much
+   scroller padding; now that the bar is an in-flow flex sibling, the flex column reserves the
+   space itself and measuring it would only re-introduce a gap that moves when the bar wraps. */
 /* Re-lay the document at a new zoom. Pages are rebuilt rather than scaled so the raster is
    redrawn at the new size — a CSS scale would just blur the existing bitmap — and the
    Soldier is returned to the page they were reading. */
@@ -6266,7 +6297,6 @@ function rdPaintBottom(){
   $("rdZoomIn").disabled  = !on || rdZoom >= RD_ZOOM_STEPS[RD_ZOOM_STEPS.length-1];
   rdPaintSave();
   rdPaintBookmark();
-  rdFitBottom();
 }
 /* "Save for offline" is now a secondary action, and its label has to say which of three
    states this publication is in without a word of chrome to explain it. */
@@ -8403,7 +8433,16 @@ function selfTest(){
       if(af && (af.tagName === "INPUT" || af.tagName === "TEXTAREA"))
         errs.push("reader: closing the note editor left <" + af.tagName.toLowerCase()
           + "> focused — the iOS keyboard session stays live and the reader stops taking taps");
-      ["rdBack","rdHome","rdMarkup","rdBookmark","rdOutline"].forEach(function(id){
+      /* v50: nothing inside the reader may be position:fixed. On iOS with viewport-fit=cover a
+         fixed element hit-tests offset from its paint once the insets are non-zero, which put
+         every reader control about an inch above itself — the bug that read as a freeze. This
+         is the structural guard; the loop below is the behavioural one. */
+      Array.prototype.forEach.call(rd.querySelectorAll("*"), function(el){
+        if(getComputedStyle(el).position === "fixed")
+          errs.push("reader: " + (el.id ? "#" + el.id : el.className || el.tagName)
+            + " is position:fixed inside #reader — on iOS its touch target drifts from its paint");
+      });
+      ["rdBack","rdHome","rdMarkup","rdBookmark","rdOutline","rdZoomIn","rdZoomOut","rdSave"].forEach(function(id){
         var el = $(id);
         if(!el) return;
         var b = el.getBoundingClientRect();
@@ -9153,13 +9192,12 @@ rdTap($("rdBookmark"), rdToggleBookmark);
 rdTap($("rdMarkup"), function(){ rdOpenSheet("marks"); });
 rdTap($("rdSave"), rdSaveOffline);
 /* A rotate or window resize changes the column width, and fit-to-width is defined against
-   that column — so the pages have to be re-laid, not just the bar re-measured. Debounced,
-   because a drag-resize fires this continuously and rebuilding 300 page holders per frame
-   would be its own bug. */
+   that column — so the pages have to be re-laid. Debounced, because a drag-resize fires this
+   continuously and rebuilding 300 page holders per frame would be its own bug. (v50: the bar
+   no longer needs re-measuring on resize — the flex column handles it.) */
 var rdResizeTimer = 0;
 window.addEventListener("resize", function(){
   if($("reader").classList.contains("hidden")) return;
-  rdFitBottom();
   clearTimeout(rdResizeTimer);
   rdResizeTimer = setTimeout(function(){
     if(!rdDoc || $("reader").classList.contains("hidden")) return;
@@ -9725,9 +9763,20 @@ if(/[?&]selftest=1/.test(location.search)){
   stPanelUpdate();
 }
 if("serviceWorker" in navigator){
-  window.addEventListener("load", function(){
-    navigator.serviceWorker.register("sw.js").catch(function(){ /* offline cache is optional */ });
-  });
+  if(location.protocol === "capacitor:"){
+    navigator.serviceWorker.getRegistrations().then(function(rs){
+      rs.forEach(function(r){ r.unregister(); });
+    }).catch(function(){});
+    if(window.caches && caches.keys){
+      caches.keys().then(function(ks){
+        ks.forEach(function(k){ caches.delete(k); });
+      }).catch(function(){});
+    }
+  } else {
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("sw.js").catch(function(){ /* offline cache is optional */ });
+    });
+  }
 }
 })();
 </script>
