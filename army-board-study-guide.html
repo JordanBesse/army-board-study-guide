@@ -2496,7 +2496,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v41";
+var APP_VERSION = "v42";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -6592,6 +6592,22 @@ function selfTest(){
       }
       if(typeof markFreeScroll !== "function")
         errs.push("reader: markFreeScroll is not reachable, so an aborted gesture cannot restore scrolling");
+      /* v42: nothing may leave a transform on the page container. That is what moved the
+         scroll position mid-pinch and made the commit land on a different page. */
+      var wrap = document.getElementById("rdPages");
+      if(wrap && wrap.style.transform)
+        errs.push("reader: #rdPages carries a transform (" + wrap.style.transform + "), which shifts the page under a zoom commit");
+      /* References lives inside a scroller, so it must not navigate on pointerdown — putting
+         a finger on it to scroll would open it. */
+      var ro = document.getElementById("refOpen");
+      if(ro){
+        var opened = false;
+        var lib = document.getElementById("library");
+        var wasHidden = lib.classList.contains("hidden");
+        ro.dispatchEvent(new PointerEvent("pointerdown", {bubbles:true, cancelable:true}));
+        opened = wasHidden && !lib.classList.contains("hidden");
+        if(opened) errs.push("references: the entry button navigated on pointerdown, so a scroll starting on it would open it");
+      }
       if(typeof RD_ZOOM_MIN === "number"){
         if(RD_ZOOM_MIN > 0.5)
           errs.push("reader: the zoom floor is " + RD_ZOOM_MIN + " — too little to see a whole page on a wide window");
@@ -6907,11 +6923,13 @@ $("printBtn").addEventListener("click", function(){ buildPrint(); window.print()
 
 /* ---------------- regulation library (v26) ---------------- */
 $("regBtn").addEventListener("click", openLibrary);
-/* v36: on iOS this sometimes painted its pressed state and never opened. Same binding the
-   reader chrome has used since v29, for the same reason — iOS can swallow the click after a
-   text selection or behind the 300ms delay, while pointerdown always lands. rdTap also
-   preventDefaults the trailing click, which is what stops a double-fire. */
-rdTap($("refOpen"), function(){ openLibrary(null, quizSources); });
+/* v42: back to a plain click, and the v36 reasoning was the mistake. rdTap fires on
+   pointerdown, which is right for the reader's FIXED toolbar — nothing there scrolls, so
+   there is no gesture to disambiguate. #refOpen is a button inside the SCROLLABLE home menu,
+   so firing on pointerdown meant that putting a finger on it to scroll navigated instantly.
+   A plain click is what every other home-menu button uses, and iOS already suppresses click
+   when a touch turns into a scroll — which is exactly the behaviour wanted here. */
+$("refOpen").addEventListener("click", function(){ openLibrary(null, quizSources); });
 $("libBack").addEventListener("click", closeLibrary);
 $("libConfirmNo").addEventListener("click", libCloseConfirm);
 $("libConfirmScrim").addEventListener("click", libCloseConfirm);
@@ -7051,49 +7069,62 @@ window.addEventListener("pointermove", function(e){
   if(mkPinch) pinchMove(e);
 }, true);
 
-/* ---- the pinch itself ----
-   Live preview is a CSS transform on the page container, because rebuilding every page on
-   every frame of a pinch would be unusable. The COMMIT goes through rdSetZoom, which rebuilds
-   crisply and returns the Soldier to the page they were on — so the preview is throwaway and
-   the real zoom is the same one the +/- buttons drive. */
+/* ---- the pinch: release-time and strict (v42) ----
+   v41 previewed live with a CSS transform on the page container and committed on release. On
+   Jordan's iPhone that failed two ways, both structural rather than tuning:
+
+   1. It measured whichever two pointers came first out of a map. A third finger, or a sloppy
+      two-finger start, meant measuring the WRONG PAIR — the ratio ran away and it committed
+      the clamp at 300%.
+   2. The live transform moved the scroll position, and the scroll sync updated rdPage
+      underneath it, so the commit's rdGoto landed on a different page. That is the "shifting
+      pages at a time" report.
+
+   So: exactly two pointers, named at the start and held; a third finger spoils the gesture
+   rather than corrupting it; and NO transform at all. The commit is rdSetZoom — the same call
+   the +/- buttons make, which rebuilds crisply and returns to the page it started on. The
+   buttons never shifted pages precisely because they never touch the transform.
+
+   The trade, stated plainly: zoom snaps on release instead of tracking under the fingers. On
+   a platform this build cannot test, a snap that always works beats a live preview that
+   shifts pages and jumps to 300%. */
 var mkPinch = null;
-function pinchPts(){
-  var k = Object.keys(mkPts);
-  return k.length >= 2 ? [mkPts[k[0]], mkPts[k[1]]] : null;
-}
-function pinchDist(p){ return Math.hypot(p[0].x-p[1].x, p[0].y-p[1].y); }
+function pinchDist(a, b){ return Math.hypot(a.x-b.x, a.y-b.y); }
 function pinchStart(){
   if(mkPinch || !rdDoc) return;
-  var p = pinchPts(); if(!p) return;
-  var d = pinchDist(p); if(d < 24) return;
-  var wrap = $("rdPages"), box = wrap.getBoundingClientRect();
-  mkPinch = {
-    d0: d, z0: rdZoom, scale: 1,
-    ox: ((p[0].x + p[1].x)/2) - box.left,
-    oy: ((p[0].y + p[1].y)/2) - box.top
-  };
-  wrap.style.transformOrigin = mkPinch.ox + "px " + mkPinch.oy + "px";
-  dbg("pinch start z " + rdZoom.toFixed(2));
+  var k = Object.keys(mkPts);
+  if(k.length !== 2) return;              /* strictly two, never "the first two of many" */
+  var d = pinchDist(mkPts[k[0]], mkPts[k[1]]);
+  if(d < 40){ dbg("pinch ignored — fingers " + Math.round(d) + "px apart"); return; }
+  mkPinch = { a:k[0], b:k[1], d0:d, z0:rdZoom, dEnd:d, spoiled:false };
+  dbg("pinch start d0 " + Math.round(d) + " z0 " + rdZoom.toFixed(2));
 }
 function pinchMove(){
-  if(!mkPinch) return;
-  var p = pinchPts(); if(!p) return;
-  var d = pinchDist(p); if(!d) return;
-  /* Preview is clamped to what the commit can actually honour, so the page never springs
-     back on release. */
-  var want = Math.max(RD_ZOOM_MIN, Math.min(RD_ZOOM_MAX, mkPinch.z0 * (d / mkPinch.d0)));
-  mkPinch.scale = want / mkPinch.z0;
-  $("rdPages").style.transform = "scale(" + mkPinch.scale + ")";
+  if(!mkPinch || mkPinch.spoiled) return;
+  /* A third finger anywhere means we can no longer be sure what is being measured. Spoiling
+     is the honest answer; guessing is how it committed 300%. */
+  if(Object.keys(mkPts).length > 2){
+    mkPinch.spoiled = true;
+    dbg("pinch SPOILED — " + Object.keys(mkPts).length + " pointers");
+    return;
+  }
+  var a = mkPts[mkPinch.a], b = mkPts[mkPinch.b];
+  if(!a || !b) return;
+  mkPinch.dEnd = pinchDist(a, b);
 }
 function pinchEnd(){
   if(!mkPinch) return;
-  var z = mkPinch.z0 * mkPinch.scale;
-  var wrap = $("rdPages");
+  var p = mkPinch;
   mkPinch = null;
-  wrap.style.transform = ""; wrap.style.transformOrigin = "";
-  dbg("pinch commit z " + z.toFixed(2));
   markFreeScroll("pinch end");
-  if(Math.abs(z - rdZoom) > 0.01) rdSetZoom(z);
+  if(p.spoiled){ dbg("pinch discarded (spoiled)"); return; }
+  var ratio = p.dEnd / p.d0;              /* apart > 1 = zoom IN, together < 1 = zoom out */
+  var z = Math.max(RD_ZOOM_MIN, Math.min(RD_ZOOM_MAX, p.z0 * ratio));
+  dbg("pinch d0 " + Math.round(p.d0) + " dEnd " + Math.round(p.dEnd)
+      + " ratio " + ratio.toFixed(2) + " -> z " + z.toFixed(2));
+  /* Two fingers resting is not a zoom. */
+  if(Math.abs(z - p.z0) < 0.05){ dbg("  no meaningful change — not committing"); return; }
+  rdSetZoom(z);
 }
 /* iOS Safari still fires the non-standard gesture events; without this a residual viewport
    zoom sneaks in underneath the app's own. */
