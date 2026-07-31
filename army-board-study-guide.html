@@ -383,7 +383,11 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
    counter are off by the bar's height. */
 #rdScroll{position:relative;flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;
   padding:14px 10px calc(84px + env(safe-area-inset-bottom));
-  touch-action:pan-x pan-y pinch-zoom;   /* pinch-zoom stays the browser's job */
+  /* v41: pinch-zoom is NO LONGER the browser's job. Two zoom systems were live at once — the
+     browser's viewport zoom on a pinch, and the app's rdSetZoom on the +/- buttons, which
+     rebuilds the pages. Nothing mapped one to the other, so a pinch zoomed the viewport out
+     from under the app: the whiteout and the jump back to the top. The reader owns it now. */
+  touch-action:pan-x pan-y;
   overscroll-behavior:contain}
 /* max-width:none, deliberately (v30). It was 100%, which silently clamped the explicit width
    the zoom sets — so zooming past fit-to-width rendered an identical page and the control
@@ -2492,7 +2496,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v40";
+var APP_VERSION = "v41";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -4950,7 +4954,12 @@ var rdDoc = null, rdId = null, rdPage = 1, rdLabels = null,
    rendered at its natural size the page overflows the column and a Soldier scrolls sideways
    to read a line. Zoom multiplies the fit, so 1.0 always means "as wide as the column"
    regardless of screen. Pinch stays the browser's on touch. */
-var RD_ZOOM_STEPS = [0.75, 1, 1.25, 1.5, 2, 3];
+/* v41: the floor was 0.75, so fit-to-width was almost the most you could zoom OUT — no use
+   on a wide desktop window where you want the whole page at once. 1 is still fit-to-width;
+   everything below it is new headroom. The button enable/disable keys off the ends of this
+   array, so it picks the new range up on its own. */
+var RD_ZOOM_STEPS = [0.4, 0.5, 0.6, 0.75, 1, 1.25, 1.5, 2, 3];
+var RD_ZOOM_MIN = RD_ZOOM_STEPS[0], RD_ZOOM_MAX = RD_ZOOM_STEPS[RD_ZOOM_STEPS.length-1];
 function rdZoomLabel(){ return Math.round(rdZoom * 100) + "%"; }
 
 function rdLabelFor(i){          /* i is 1-based */
@@ -5089,7 +5098,7 @@ function rdFitBottom(){
 function rdSetZoom(z){
   if(!rdDoc) return;
   var was = rdPage;
-  rdZoom = Math.max(0.75, Math.min(3, z));
+  rdZoom = Math.max(RD_ZOOM_MIN, Math.min(RD_ZOOM_MAX, z));
   rdRendering = {};
   rdBuildPages(rdAspect);
   rdPaintBottom();
@@ -5527,8 +5536,7 @@ function dbg(msg){
 var mkRange = null,        /* the live selection, as a real DOM Range */
     mkSelPage = null,      /* the .rdpage it lives on */
     mkGrab = null,         /* {node, start, end, holder} — the word the gesture began on */
-    mkPressTimer = 0,
-    mkTouchWas = "";       /* #rdScroll's touch-action, restored when the drag ends */
+    mkPressTimer = 0;
 
 /* Which character of this text node is under x? Answered by MEASURING — a one-character range
    at a time, binary-searched — rather than by asking the engine for a caret.
@@ -5771,11 +5779,33 @@ function markSelBegin(x, y){
 
 /* Panning and selecting are the same finger movement, so they are told apart by time: a drag
    scrolls, a press that stays put becomes a selection. Once it does, panning is switched off
-   for the length of the gesture, or the page would slide out from under the selection. */
-function markHoldScroll(on){
+   for the length of the gesture, or the page would slide out from under the selection.
+
+   v41: this used to save the inline value and put it back, which is exactly how scrolling got
+   stranded off. A second finger nested a second gesture, that gesture read the already-"none"
+   value as the thing to restore, and its teardown "restored" none — panning off for good.
+   There is one owner at a time now, and releasing CLEARS the inline style so it falls back to
+   the stylesheet rather than to whatever a nested gesture happened to read. */
+var mkScrollOwner = null;
+function markHoldScroll(owner, on){
   var sc = $("rdScroll");
-  if(on){ mkTouchWas = sc.style.touchAction; sc.style.touchAction = "none"; }
-  else { sc.style.touchAction = mkTouchWas; }
+  if(on){
+    if(mkScrollOwner) return;                 /* someone already owns it; do not nest */
+    mkScrollOwner = owner;
+    sc.style.touchAction = "none";
+    dbg("  scroll LOCKED by " + owner);
+  } else {
+    if(mkScrollOwner !== owner) return;       /* only the owner may release it */
+    mkScrollOwner = null;
+    sc.style.touchAction = "";
+    dbg("  scroll released by " + owner);
+  }
+}
+/* The unconditional escape hatch, used when a gesture is aborted rather than finished. */
+function markFreeScroll(why){
+  mkScrollOwner = null;
+  $("rdScroll").style.touchAction = "";
+  dbg("  scroll FORCE-released (" + (why || "abort") + ")");
 }
 
 /* Turn the live selection into the locked anchor record. Rects are normalized against the
@@ -6550,6 +6580,28 @@ function selfTest(){
         errs.push("markup: the selection toolbar has no Copy");
     })();
 
+    /* v41: the reader must own the pinch, and no gesture may be able to strand scrolling. */
+    (function(){
+      var sc = document.getElementById("rdScroll");
+      if(sc){
+        var ta = getComputedStyle(sc).touchAction;
+        if(ta.indexOf("pinch-zoom") !== -1)
+          errs.push("reader: touch-action still allows the browser's pinch-zoom (" + ta + "), which fights the app's own zoom");
+        if(sc.style.touchAction === "none")
+          errs.push("reader: scrolling is stranded off — an inline touch-action of none survived a gesture");
+      }
+      if(typeof markFreeScroll !== "function")
+        errs.push("reader: markFreeScroll is not reachable, so an aborted gesture cannot restore scrolling");
+      if(typeof RD_ZOOM_MIN === "number"){
+        if(RD_ZOOM_MIN > 0.5)
+          errs.push("reader: the zoom floor is " + RD_ZOOM_MIN + " — too little to see a whole page on a wide window");
+        if(RD_ZOOM_STEPS[0] !== RD_ZOOM_MIN || RD_ZOOM_STEPS[RD_ZOOM_STEPS.length-1] !== RD_ZOOM_MAX)
+          errs.push("reader: the zoom steps do not span the clamp, so a button would stop short of the range");
+        if(RD_ZOOM_STEPS.indexOf(1) === -1)
+          errs.push("reader: 1 (fit to width) is not a zoom step, so Reset has nothing to land on");
+      }
+    })();
+
     /* 4. One highlight, one wash. The merge is what stops a multi-word selection painting as
        a striped, double-painted band, so its behaviour is asserted rather than assumed. */
     if(typeof markMergeRects !== "function"){
@@ -6956,20 +7008,121 @@ var MK_DTAP = 300;      /* ms between two taps for a double-tap */
 var MK_DTAP_R = 24;     /* px they must land within */
 var mkLastTap = 0, mkLastTapX = 0, mkLastTapY = 0;
 
+/* ---- v41: who is touching the reader, and who owns the gesture ----
+   Neither the selection nor the grip handler counted fingers. A pinch fired each of them
+   twice, so two concurrent single-pointer gestures ran against one screen — which is how a
+   half-open gesture was left behind and scrolling ended up switched off for good. One
+   register of live pointers, one active gesture, and a second finger aborts it cleanly. */
+var mkPts = {},         /* pointerId -> {x,y} for every finger down on the reader */
+    mkNPts = 0,
+    mkActive = null;    /* {name, abort(why)} — the one gesture allowed to be running */
+
+function mkCount(){ mkNPts = Object.keys(mkPts).length; return mkNPts; }
+function mkAbortActive(why){
+  if(!mkActive) return;
+  var a = mkActive; mkActive = null;
+  dbg("  ABORT " + a.name + " (" + why + ")");
+  try { a.abort(why); } catch(e){}
+  markFreeScroll(why);
+}
+
+$("rdScroll").addEventListener("pointerdown", function(e){
+  mkPts[e.pointerId] = { x:e.clientX, y:e.clientY };
+  var n = mkCount();
+  dbg("pointers " + n + " (down " + e.pointerType + ")");
+  if(n > 1){
+    /* A pinch is starting. Whatever single-finger gesture was in flight is not what the
+       Soldier meant, so it goes — cleanly, rather than being left half-open. */
+    mkAbortActive("second finger");
+    pinchStart();
+  }
+}, true);
+
+function mkRelease(e){
+  if(mkPts[e.pointerId]) delete mkPts[e.pointerId];
+  var n = mkCount();
+  if(mkPinch && n < 2) pinchEnd();
+  if(n === 0 && !mkActive && mkScrollOwner) markFreeScroll("all fingers up");
+}
+window.addEventListener("pointerup", mkRelease, true);
+window.addEventListener("pointercancel", mkRelease, true);
+window.addEventListener("pointermove", function(e){
+  if(mkPts[e.pointerId]){ mkPts[e.pointerId].x = e.clientX; mkPts[e.pointerId].y = e.clientY; }
+  if(mkPinch) pinchMove(e);
+}, true);
+
+/* ---- the pinch itself ----
+   Live preview is a CSS transform on the page container, because rebuilding every page on
+   every frame of a pinch would be unusable. The COMMIT goes through rdSetZoom, which rebuilds
+   crisply and returns the Soldier to the page they were on — so the preview is throwaway and
+   the real zoom is the same one the +/- buttons drive. */
+var mkPinch = null;
+function pinchPts(){
+  var k = Object.keys(mkPts);
+  return k.length >= 2 ? [mkPts[k[0]], mkPts[k[1]]] : null;
+}
+function pinchDist(p){ return Math.hypot(p[0].x-p[1].x, p[0].y-p[1].y); }
+function pinchStart(){
+  if(mkPinch || !rdDoc) return;
+  var p = pinchPts(); if(!p) return;
+  var d = pinchDist(p); if(d < 24) return;
+  var wrap = $("rdPages"), box = wrap.getBoundingClientRect();
+  mkPinch = {
+    d0: d, z0: rdZoom, scale: 1,
+    ox: ((p[0].x + p[1].x)/2) - box.left,
+    oy: ((p[0].y + p[1].y)/2) - box.top
+  };
+  wrap.style.transformOrigin = mkPinch.ox + "px " + mkPinch.oy + "px";
+  dbg("pinch start z " + rdZoom.toFixed(2));
+}
+function pinchMove(){
+  if(!mkPinch) return;
+  var p = pinchPts(); if(!p) return;
+  var d = pinchDist(p); if(!d) return;
+  /* Preview is clamped to what the commit can actually honour, so the page never springs
+     back on release. */
+  var want = Math.max(RD_ZOOM_MIN, Math.min(RD_ZOOM_MAX, mkPinch.z0 * (d / mkPinch.d0)));
+  mkPinch.scale = want / mkPinch.z0;
+  $("rdPages").style.transform = "scale(" + mkPinch.scale + ")";
+}
+function pinchEnd(){
+  if(!mkPinch) return;
+  var z = mkPinch.z0 * mkPinch.scale;
+  var wrap = $("rdPages");
+  mkPinch = null;
+  wrap.style.transform = ""; wrap.style.transformOrigin = "";
+  dbg("pinch commit z " + z.toFixed(2));
+  markFreeScroll("pinch end");
+  if(Math.abs(z - rdZoom) > 0.01) rdSetZoom(z);
+}
+/* iOS Safari still fires the non-standard gesture events; without this a residual viewport
+   zoom sneaks in underneath the app's own. */
+["gesturestart","gesturechange","gestureend"].forEach(function(t){
+  $("rdScroll").addEventListener(t, function(ev){ ev.preventDefault(); }, {passive:false});
+});
+
 /* Dragging a grip adjusts one end of an existing selection. Bound on the page rather than on
    each grip, because the grips are rebuilt on every repaint and per-element listeners would
    be re-attached constantly. */
 $("rdPages").addEventListener("pointerdown", function(e){
   var grip = e.target && e.target.closest && e.target.closest(".rdgrip");
   if(!grip) return;
+  if(mkActive || mkNPts > 1){ dbg("  grip ignored — " + (mkActive ? "gesture active" : mkNPts + " pointers")); return; }
   e.preventDefault(); e.stopPropagation();
   var which = grip.getAttribute("data-edge"), id = e.pointerId;
   grip.classList.add("hot");
   markHideBar();
   markReadout(e.clientX, e.clientY, which);
   dbg("grip down " + which);
-  var sc = $("rdScroll"), was = sc.style.touchAction;
-  sc.style.touchAction = "none";
+  markHoldScroll("grip", true);
+  var stop = function(){
+    document.removeEventListener("pointermove", mv, {passive:false});
+    document.removeEventListener("pointerup", end);
+    document.removeEventListener("pointercancel", end);
+    Array.prototype.forEach.call(document.querySelectorAll(".rdgrip.hot"), function(g){ g.classList.remove("hot"); });
+    markHideReadout();
+  };
+  mkActive = { name:"grip", abort:function(){ stop(); } };
   var mv = function(ev){
     if(ev.pointerId !== id) return;
     ev.preventDefault();
@@ -6980,12 +7133,9 @@ $("rdPages").addEventListener("pointerdown", function(e){
   };
   var end = function(ev){
     if(ev.pointerId !== id) return;
-    document.removeEventListener("pointermove", mv, {passive:false});
-    document.removeEventListener("pointerup", end);
-    document.removeEventListener("pointercancel", end);
-    sc.style.touchAction = was;
-    markHideReadout();
-    Array.prototype.forEach.call(document.querySelectorAll(".rdgrip.hot"), function(g){ g.classList.remove("hot"); });
+    stop();
+    if(mkActive && mkActive.name === "grip") mkActive = null;
+    markHoldScroll("grip", false);
     markShowBar();
     dbg("grip up " + which + " — toolbar " + ($("mkBar").classList.contains("hidden") ? "HIDDEN" : "shown"));
   };
@@ -6998,6 +7148,9 @@ $("rdPages").addEventListener("pointerdown", function(e){
   if(e.button != null && e.button !== 0) return;
   var onText = e.target && e.target.closest && e.target.closest(".rdtext");
   if(!onText){ return; }        /* chrome, tabs and margins keep their own handlers */
+  /* A pinch reaches here too — one pointerdown per finger. Only the first may start, and a
+     gesture already in flight is never doubled up on. */
+  if(mkActive || mkNPts > 1){ dbg("  select ignored — " + (mkActive ? "gesture active" : mkNPts + " pointers")); return; }
   var x = e.clientX, y = e.clientY, id = e.pointerId;
   var moved = false;
   var startX = x, startY = y;
@@ -7014,7 +7167,7 @@ $("rdPages").addEventListener("pointerdown", function(e){
        word it is selecting, so without this the selection is invisible until you lift — which
        is exactly the complaint. */
     markReadout(startX, startY, "end");
-    markHoldScroll(true);
+    markHoldScroll("select", true);
     try { onText.setPointerCapture(id); dbg("  capture ok"); } catch(err){ dbg("  capture FAILED " + err.message); }
   };
 
@@ -7041,6 +7194,7 @@ $("rdPages").addEventListener("pointerdown", function(e){
     document.removeEventListener("pointerup", up);
     document.removeEventListener("pointercancel", up);
     if(mkPressTimer){ clearTimeout(mkPressTimer); mkPressTimer = 0; }
+    if(mkActive && mkActive.name === "select") mkActive = null;
     if(!mkGrab){
       /* A tap, not a press. iOS selects a word on DOUBLE tap, and Jordan's debug logs showed
          him doing exactly that against a build that only understood the long hold — a run of
@@ -7065,7 +7219,7 @@ $("rdPages").addEventListener("pointerdown", function(e){
       if(mkRange){ markClearSelection(); }
       return;
     }
-    markHoldScroll(false);
+    markHoldScroll("select", false);
     markHideReadout();
     try { onText.releasePointerCapture(id); } catch(err){}
     mkGrab = null;
@@ -7077,6 +7231,15 @@ $("rdPages").addEventListener("pointerdown", function(e){
   document.addEventListener("pointermove", move, {passive:false});
   document.addEventListener("pointerup", up);
   document.addEventListener("pointercancel", up);
+  mkActive = { name:"select", abort:function(){
+    if(mkPressTimer){ clearTimeout(mkPressTimer); mkPressTimer = 0; }
+    document.removeEventListener("pointermove", move, {passive:false});
+    document.removeEventListener("pointerup", up);
+    document.removeEventListener("pointercancel", up);
+    try { onText.releasePointerCapture(id); } catch(err){}
+    mkGrab = null;
+    markHideReadout();
+  }};
 
   if(e.pointerType === "mouse"){
     /* A mouse has no ambiguity to resolve — there is nothing to scroll with button one down —
