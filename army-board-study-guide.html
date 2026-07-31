@@ -283,8 +283,9 @@ header.compact #quizbar{display:block}
 #notesSelect:hover{background:var(--hover-bg)}
 #notesSelect:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .nrow .nselbox{flex:0 0 auto;display:none;align-items:center;justify-content:center;
-  width:44px;height:44px;margin:-7px 0 -7px -8px}
+  width:44px;min-height:44px;margin-top:8px;cursor:pointer}
 #notes.selmode .nrow .nselbox{display:flex}
+.nselbox:focus-within{outline:2px solid var(--accent);outline-offset:-2px;border-radius:var(--r)}
 /* In select mode the chevron would promise a jump the tap no longer does. */
 #notes.selmode .nrow .nchev{display:none}
 .nsel{width:18px;height:18px;margin:0;accent-color:var(--accent);cursor:pointer}
@@ -304,11 +305,14 @@ header.compact #quizbar{display:block}
 #notesAll:focus-visible,#notesCancel:focus-visible,#notesDel:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 /* One row shape for both kinds. What differs is the glyph, and whether the reg pill is
    there at all — the pill's PRESENCE is the colour-independent tell that a note is linked. */
-.nrow{display:flex;align-items:flex-start;gap:11px;width:100%;text-align:left;
-  padding:12px 2px;border-bottom:1px solid var(--line);
-  background:none;border-left:0;border-right:0;border-top:0;color:inherit;font:inherit;cursor:pointer}
-@media (hover:hover) and (pointer:fine){ .nrow:hover{background:var(--hover-bg)} }
-.nrow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+/* v47: the row is a container; .nopen inside it is the button. See the note on notesRow —
+   a checkbox nested in a <button> is invalid and does not take on iOS. */
+.nrow{display:flex;align-items:flex-start;gap:0;width:100%;
+  border-bottom:1px solid var(--line)}
+.nopen{flex:1;min-width:0;display:flex;align-items:flex-start;gap:11px;text-align:left;
+  padding:12px 2px;background:none;border:0;color:inherit;font:inherit;cursor:pointer}
+@media (hover:hover) and (pointer:fine){ .nopen:hover{background:var(--hover-bg)} }
+.nopen:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .nglyph{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;
   flex:0 0 auto;background:var(--surface2);color:var(--muted);margin-top:1px}
 .nglyph svg{width:17px;height:17px}
@@ -1773,6 +1777,18 @@ footer p{margin:0 0 8px}
       </button>
     </div>
 
+    <!-- v47: what a Soldier can reach WHILE a quiz is running. Three states, not a switch,
+         because "notes only" is a real study mode and not a half-measure: jot what you got
+         wrong without being able to look the answer up. A cycling button rather than a select,
+         so it matches the sheet's other controls and stays one 44px tap. -->
+    <div class="setrow" id="qresRow">
+      <div>
+        <p class="setlab">During a quiz</p>
+        <p class="sethelp" id="qresHelp"></p>
+      </div>
+      <button class="btn sec sm" type="button" id="qresBtn" aria-live="polite"></button>
+    </div>
+
     <!-- The group break: toggles above, everything about content and data below. -->
     <div class="setrow setsplit">
       <div><p class="setlab">Content last audited</p></div>
@@ -2895,7 +2911,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v46";
+var APP_VERSION = "v47";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -2917,7 +2933,11 @@ function rawGet(k){ try{ return localStorage.getItem(k); }catch(e){ storageOK=fa
 function rawSet(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ storageOK=false; return false; } }
 function rawDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
 
-function blankData(){ return { v:SCHEMA, theme:"light", cb:false, tts:false, stats:{}, scores:[], rprior:{} }; }
+/* v47: in-quiz resources. "both" is open-book study mode and the default; "off" is the
+   closed-book board simulation. Order is load-bearing — the settings control cycles it. */
+var QRES = ["both","notes","off"];
+var QRES_LABEL = { both:"Notes + References", notes:"Notes only", off:"Off" };
+function blankData(){ return { v:SCHEMA, theme:"light", cb:false, tts:false, stats:{}, scores:[], rprior:{}, qres:"both" }; }
 function validShape(d){
   return !!d && typeof d==="object" && d.v===SCHEMA
       && d.stats && typeof d.stats==="object" && !Array.isArray(d.stats)
@@ -2957,6 +2977,10 @@ function loadData(){
       if(typeof parsed.cb !== "boolean") parsed.cb = false;
       if(typeof parsed.tts !== "boolean") parsed.tts = false;
       if(!parsed.rprior || typeof parsed.rprior !== "object" || Array.isArray(parsed.rprior)) parsed.rprior = {};
+      /* v47: what a Soldier may reach DURING a quiz — "both" (open-book, the default),
+         "notes" (jot only, no reference browsing) or "off" (closed-book board sim). Optional
+         and defaulted here for exactly the reason above: it must never reach validShape. */
+      if(QRES.indexOf(parsed.qres) === -1) parsed.qres = "both";
       return parsed;
     }
     rawDel(KEY);
@@ -3305,6 +3329,26 @@ if(!SPEECH){
 applyTts(DATA.tts === true);
 $("ttsBtn").addEventListener("click", function(){ applyTts(!DATA.tts); });
 $("speakBtn").addEventListener("click", speakCurrent);
+
+/* v47: in-quiz resources. Cycles both -> notes -> off, applies immediately (so changing it
+   from inside a quiz takes effect on the controls behind the sheet), and persists. */
+var QRES_HELP = {
+  both:  "Notes and References are both available while you answer.",
+  notes: "You can take notes, but not browse the references.",
+  off:   "Nothing to look at — closed book, like the real board."
+};
+function applyQres(v){
+  if(QRES.indexOf(v) === -1) v = "both";
+  DATA.qres = v; save();
+  $("qresBtn").textContent = QRES_LABEL[v];
+  $("qresBtn").setAttribute("aria-label", "During a quiz: " + QRES_LABEL[v] + ". Tap to change.");
+  $("qresHelp").textContent = QRES_HELP[v];
+  applyQuizRes();
+}
+applyQres(DATA.qres);
+$("qresBtn").addEventListener("click", function(){
+  applyQres(QRES[(QRES.indexOf(DATA.qres) + 1) % QRES.length]);
+});
 
 /* ---------------- references, built from the bank's citations ---------------- */
 function distinctSources(){
@@ -3707,6 +3751,24 @@ function compactBar(on, boardLabel){
 function quizNoteShow(on){
   $("quizNote").classList.toggle("hidden", !(on && !$("quiz").classList.contains("hidden")));
 }
+/* v47: what a Soldier may reach WHILE a quiz is running. Open-book study is the default,
+   because that is what this app is for most of the time; "off" exists so a board simulation
+   can actually be closed-book. Derived from the quiz's own visibility, like quizNoteShow, so
+   no screen can leave a control stranded in the wrong state.
+
+   The Settings gear is never gated — it is the app's own controls, not a study resource, and
+   locking a Soldier out of the theme or the text-to-speech toggle mid-quiz would be silly. */
+function applyQuizRes(){
+  var inQuiz = !$("quiz").classList.contains("hidden");
+  if(!inQuiz){
+    $("regBtn").style.display = ""; $("notesBtn").style.display = "";
+    return;
+  }
+  var mode = (DATA && DATA.qres) || "both";
+  $("regBtn").style.display   = (mode === "both") ? "" : "none";
+  $("notesBtn").style.display = (mode === "off")  ? "none" : "";
+  quizNoteShow(mode !== "off");
+}
 /* Re-trigger the mount animation on an element. The class has to come off and go back on
    around a forced reflow, because these are long-lived elements that are shown and hidden
    rather than created — without the reflow the animation only ever plays once per page load. */
@@ -3726,7 +3788,7 @@ function beginQuiz(list, runMode){
   $("sub").textContent = (mode==="quiz" ? scopeLabel(selectedCats()) : BOARDS[board].label) + suffix;
   $("home").classList.add("hidden"); $("results").classList.add("hidden");
   $("flash").classList.add("hidden"); $("quiz").classList.remove("hidden");
-  quizNoteShow(true);
+  applyQuizRes();
   mount($("quiz"));
   compactBar(true, BOARDS[board].label + suffix);
   /* The Sources panel lives in the always-visible footer, so mid-quiz it should answer
@@ -4839,6 +4901,10 @@ var libView = "all",      /* all | fav | bm | dl */
     libFavs = {},         /* id -> true, mirrored from the store so a row paints synchronously */
     libFrom = "menu",     /* which screen the hub was opened from */
     libSubWas = "", libBarWas = null;
+/* v47: the same snapshot for the Notes hub. Separate variables rather than shared ones,
+   because both hubs can be reached from a quiz and one must not overwrite the other's memory
+   of where it came from. */
+var notesFrom = "menu", notesSubWas = "", notesBarWas = null;
 
 function libSetView(v){
   libView = v;
@@ -5390,7 +5456,7 @@ function closeLibrary(){
   if(libFrom === "quiz"){
     libFrom = "menu";
     $("quiz").classList.remove("hidden");
-    quizNoteShow(true);
+    applyQuizRes();
     $("sub").textContent = libSubWas;
     compactBar(true, libBarWas || "");
     showSpeakRow();
@@ -5457,7 +5523,15 @@ var NOTEICON = {
   quiz:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9.4 9a2.6 2.6 0 1 1 3.4 2.5c-.6.2-1 .8-1 1.5v.4M12 17h.01"/></svg>'
 };
 
+/* v47: the Notes hub remembers what it covered up, exactly as the References hub has since
+   v35 — and for the same reason, which v46 proved by omission. A Soldier who opens Notes
+   mid-quiz to jot something must get the quiz back; before this, Back fell through to the
+   main menu and the quiz was simply gone. */
 function openNotes(){
+  var fromQuiz = !$("quiz").classList.contains("hidden");
+  notesFrom = fromQuiz ? "quiz" : "menu";
+  notesSubWas = $("sub").textContent;
+  notesBarWas = fromQuiz ? $("qbBoard").textContent : null;
   if(tick){ clearInterval(tick); tick=null; }
   stopSpeech(); $("speakRow").classList.add("hidden");
   compactBar(false);
@@ -5495,7 +5569,31 @@ function openNotes(){
    the compact bar mid-quiz, so the only way to be here with unanswered work is the References
    hub opened FROM a quiz — and there, scoring the quiz (what End Quiz already does) is the
    behaviour that cannot lose a Soldier's work to a mis-tap on the title. */
+/* Is there a quiz that going home would throw away? True while the quiz screen is up, and
+   also while a hub is layered over it — that layer is the case v46 got wrong. */
+function quizIsLive(){
+  if(!quiz || !quiz.length) return false;
+  return !$("quiz").classList.contains("hidden") || libFrom === "quiz" || notesFrom === "quiz";
+}
+/* v47: home ASKS before it can abandon a quiz, and it asks BEFORE tearing anything down, so
+   Cancel leaves the quiz exactly as it was rather than putting it back together afterwards.
+   v46 scored the quiz silently instead; that never lost work, but it also meant a tap on the
+   title could end a quiz with no warning.
+
+   The wording is deliberately LEAVE, not END. The End Quiz button is the scored finish and
+   lands on the results screen; this is the abandon and lands on the main menu. Two controls,
+   two outcomes — so they must not use the same verb, or a Soldier reasonably expects the
+   button's behaviour from this one and loses a run finding out otherwise. */
 function goHome(){
+  if(quizIsLive()){
+    libAsk("Leave quiz?",
+      "Your progress won't be scored.",
+      "Leave", goHomeNow);
+    return;
+  }
+  goHomeNow();
+}
+function goHomeNow(){
   qnoteClose();
   markCloseSheet();
   libCloseConfirm();
@@ -5507,13 +5605,13 @@ function goHome(){
   $("notesBar").classList.add("hidden");
   $("notes").classList.remove("selmode");
   noteSelMode = false; notePicked = {};
-  var quizWasOpen = (libFrom === "quiz") || !$("quiz").classList.contains("hidden");
   $("library").classList.add("hidden");
-  libFrom = "menu"; libScope = null;
+  libFrom = "menu"; libScope = null; notesFrom = "menu";
   $("regBtn").style.display = ""; $("settingsBtn").style.display = "";
   $("notesBtn").style.display = "";
   document.querySelector("footer").style.display = "";
-  if(quizWasOpen && answers.length){ finish(); return; }
+  /* The quiz is deliberately dropped rather than scored — the confirm above said so in as
+     many words, and only runs when there is something to drop. */
   toMenu();
 }
 function closeNotes(){
@@ -5525,6 +5623,20 @@ function closeNotes(){
   $("regBtn").style.display = ""; $("settingsBtn").style.display = "";
   $("notesBtn").style.display = "";
   document.querySelector("footer").style.display = "";
+  /* Back out to wherever the hub was opened FROM. Falling through to toMenu() unconditionally
+     is precisely what lost a quiz in v46. */
+  if(notesFrom === "quiz"){
+    notesFrom = "menu";
+    $("quiz").classList.remove("hidden");
+    $("sub").textContent = notesSubWas;
+    compactBar(true, notesBarWas || "");
+    showSpeakRow();
+    /* One source of truth for the in-quiz controls — it decides the note button too. */
+    applyQuizRes();
+    mount($("quiz"));
+    window.scrollTo(0,0);
+    return;
+  }
   toMenu();
 }
 function notesPaintChips(){
@@ -5735,25 +5847,35 @@ function notesDeleteSelected(){
     });
 }
 
+/* v47: the row is a CONTAINER holding a checkbox and a separate action button — it is not
+   itself a button. v45 built it as a <button> with the checkbox nested inside, which is
+   invalid HTML (interactive content inside interactive content) and is exactly the trap v33
+   already hit and wrote down for the Marks list. It survived every check here because a
+   programmatic .click() drives the handler directly; on a real iOS tap the checkbox never
+   took, so nothing was ever selected, Delete stayed disabled, and select-mode "did nothing".
+   Same structure as .mkitem now, for the same reason. */
 function notesRow(r){
-  var row = document.createElement("button");
-  row.type = "button"; row.className = "nrow";
+  var row = document.createElement("div");
+  row.className = "nrow";
   row.setAttribute("data-kind", r.kind);
   /* The checkbox is rendered on every row and revealed by the mode's class, so entering
-     select mode is a repaint of state rather than a different row builder. */
-  var selbox = document.createElement("span"); selbox.className = "nselbox";
+     select mode is a repaint of state rather than a different row builder. A <label> carries
+     the 44px target; the 18px box just sits in the middle of it. */
+  var selbox = document.createElement("label"); selbox.className = "nselbox";
   var cb = document.createElement("input");
   cb.type = "checkbox"; cb.className = "nsel";
   cb.checked = !!notePicked[r.id];
   cb.setAttribute("aria-label", "Select " + (r.kind === "linked"
     ? ("note on " + r.pub) : (r.title || notePreview(r.body) || "note")).slice(0, 60));
-  cb.addEventListener("click", function(e){ e.stopPropagation(); });
   cb.addEventListener("change", function(){
     if(cb.checked) notePicked[r.id] = r; else delete notePicked[r.id];
     notesSyncBar();
   });
   selbox.appendChild(cb);
   row.appendChild(selbox);
+  /* Everything else lives inside one button, which is the row's tap target. */
+  var open = document.createElement("button");
+  open.type = "button"; open.className = "nopen";
   var g = document.createElement("span");
   g.className = "nglyph" + (r.kind === "linked" ? " mk" : "");
   g.innerHTML = r.kind === "linked" ? NOTEICON.link : NOTEICON.page;
@@ -5810,11 +5932,13 @@ function notesRow(r){
   }
   var chev = document.createElement("span");
   chev.className = "nchev"; chev.innerHTML = NOTEICON.chev;
-  row.appendChild(g); row.appendChild(main); row.appendChild(chev);
+  open.appendChild(g); open.appendChild(main); open.appendChild(chev);
+  row.appendChild(open);
   /* The two row types do different things on tap, and that is the point of telling them
      apart: a linked note takes you to the passage it is about, a note of your own opens. */
-  row.addEventListener("click", function(){
-    /* In select mode the whole row is the checkbox — a 44px target beats an 18px one. */
+  open.addEventListener("click", function(){
+    /* In select mode the row's body ticks the box instead — a 44px target beats an 18px one,
+       and the checkbox beside it still works on its own. */
     if(noteSelMode){
       cb.checked = !cb.checked;
       if(cb.checked) notePicked[r.id] = r; else delete notePicked[r.id];
@@ -8070,6 +8194,49 @@ function selfTest(){
         errs.push("notes: the checklist progress meta miscounts");
       box.remove();
     })();
+    /* ---- v47 ----
+       1. NO INTERACTIVE ELEMENT NESTED INSIDE ANOTHER. This is the bug that made select mode
+       look dead on iOS: the note row was a <button> with a checkbox inside it, which is
+       invalid HTML, and the checkbox never took on a real tap. v33 hit the same thing on the
+       Marks list and wrote it down; v45 did it again anyway. Asserted on a rendered row now,
+       so it cannot come back a third time. */
+    (function(){
+      if(typeof notesRow !== "function") return;
+      var box = document.createElement("div");
+      box.style.cssText = "position:absolute;left:-9999px;width:360px";
+      document.body.appendChild(box);
+      box.appendChild(notesRow({kind:"mine", id:"tn", note:{id:"tn"}, title:"t", body:"b",
+        at:new Date().toISOString()}));
+      var INTERACTIVE = "button,input,select,textarea,a[href],[role=button]";
+      Array.prototype.forEach.call(box.querySelectorAll(INTERACTIVE), function(el){
+        if(el.parentElement && el.parentElement.closest(INTERACTIVE))
+          errs.push("notes: a " + el.tagName.toLowerCase() + " is nested inside another control in a note row"
+            + " — invalid, and it does not receive taps on iOS");
+      });
+      if(!box.querySelector(".nsel")) errs.push("notes: a row renders no select checkbox");
+      if(!box.querySelector(".nopen")) errs.push("notes: a row renders no open control");
+      box.remove();
+    })();
+    /* 2. Quiz-safe navigation. */
+    if(typeof quizIsLive !== "function") errs.push("nav: quizIsLive is not reachable");
+    if(typeof goHomeNow !== "function") errs.push("nav: goHomeNow is not reachable");
+    if(typeof applyQuizRes !== "function") errs.push("nav: applyQuizRes is not reachable");
+    if(typeof applyQres !== "function") errs.push("settings: applyQres is not reachable");
+    /* The Notes hub must remember where it was opened from, or backing out of it mid-quiz
+       falls through to the main menu and the quiz is gone — the v46 defect. */
+    if(typeof notesFrom !== "string")
+      errs.push("nav: the Notes hub keeps no memory of where it was opened from — a quiz would be lost");
+    /* The setting must exist, be one of the three, and default to open-book. */
+    if(QRES.indexOf(DATA.qres) === -1)
+      errs.push("settings: in-quiz resources is '" + DATA.qres + "', not one of " + QRES.join("/"));
+    if(!document.getElementById("qresBtn")) errs.push("settings: the in-quiz resources control is missing");
+    /* It must never reach validShape — that would invalidate every existing save. */
+    (function(){
+      var probe = {v:SCHEMA, theme:"light", stats:{}, scores:[]};
+      if(!validShape(probe))
+        errs.push("settings: a v3 save without the new field no longer validates — study history would be wiped");
+    })();
+
     /* v46 structure. */
     if(!document.getElementById("homeBtn"))
       errs.push("nav: the wordmark is not a home control");
@@ -8369,6 +8536,63 @@ function notesStoreCheck(){
         return REGLIB.notes.remove(probe.id);
       });
     }).catch(function(){ notePicked = {}; });
+  }).then(function(){
+    /* v47: THE QUIZ-LOSS TRAP. Driven, not reasoned about — start a quiz, open the Notes hub
+       over it, come back, and the same quiz must still be there on the same question. This is
+       the defect v46 shipped, and a structural check would not have caught it. */
+    if(typeof beginQuiz !== "function" || typeof drawQuiz !== "function") return null;
+    /* Only from a resting home screen. This probe genuinely starts and ends a quiz, so running
+       it over a Soldier who happens to be mid-quiz with ?selftest=1 on would throw their work
+       away to prove that work is not thrown away. */
+    if($("home").classList.contains("hidden") || quizIsLive()){ out.navProbe = "skipped (not at rest)"; return null; }
+    var list = drawQuiz(board, CAT_LIST, 5);
+    if(!list || !list.length){ out.navProbe = "skipped (no pool)"; return null; }
+    /* Recorded so a skip is VISIBLE. An empty problem list from a leg that never executed is
+       the v35 trap, and this leg has two ways to bow out. */
+    out.navProbe = "ran";
+    beginQuiz(list);
+    var qBefore = idx, stemBefore = $("qtext") ? $("qtext").textContent : "";
+    openNotes();
+    var quizHiddenDuring = $("quiz").classList.contains("hidden");
+    closeNotes();
+    if(!quizHiddenDuring) out.problems.push("opening Notes from a quiz did not layer over it");
+    if($("quiz").classList.contains("hidden"))
+      out.problems.push("backing out of the Notes hub lost the quiz — it fell through to the menu");
+    if(idx !== qBefore)
+      out.problems.push("backing out of the Notes hub moved the quiz to a different question");
+    if($("qtext") && $("qtext").textContent !== stemBefore)
+      out.problems.push("backing out of the Notes hub changed the question on screen");
+    /* And References, the v35 path, still does the same. */
+    openLibrary();
+    closeLibrary();
+    if($("quiz").classList.contains("hidden"))
+      out.problems.push("backing out of References lost the quiz");
+    /* Home must ASK rather than end the quiz silently. */
+    goHome();
+    var asked = !$("libConfirm").classList.contains("hidden");
+    if(!asked) out.problems.push("the home control ends a quiz in progress without asking");
+    var still = !$("quiz").classList.contains("hidden");
+    libCloseConfirm();
+    if(!still) out.problems.push("the home control tore the quiz down before the confirm was answered");
+    /* The setting gates the in-quiz controls. */
+    var keep = DATA.qres;
+    applyQres("off");
+    if(!$("quizNote").classList.contains("hidden"))
+      out.problems.push("in-quiz resources 'off' still shows the note button");
+    if($("regBtn").style.display !== "none")
+      out.problems.push("in-quiz resources 'off' still shows the References entry");
+    applyQres("notes");
+    if($("quizNote").classList.contains("hidden"))
+      out.problems.push("in-quiz resources 'notes' hides the note button");
+    if($("regBtn").style.display !== "none")
+      out.problems.push("in-quiz resources 'notes' still shows the References entry");
+    applyQres("both");
+    if($("regBtn").style.display === "none")
+      out.problems.push("in-quiz resources 'both' hides the References entry");
+    applyQres(keep);
+    /* Put the app back where the test found it. */
+    goHomeNow();
+    return null;
   }).then(function(){
     /* The merged read: the hub must see BOTH stores, and every linked row it produces must
        carry an anchor that can actually be jumped to. */
@@ -9294,6 +9518,12 @@ function stPanelUpdate(){
   } else {
     body.appendChild(stRow("ok", "NOTES STORE CHECK — DB v" + (window.REGLIB ? REGLIB._dbVer : "?")
       + " upgrade keeps marks, favourites and bookmarks; notes round-trip; linked delete confirms"));
+    /* The quiz-safe-navigation leg reports separately, because it is the one that can bow out
+       on its own and a silent skip would read as a pass. */
+    body.appendChild(stRow(nc.navProbe === "ran" ? "ok" : "skip",
+      nc.navProbe === "ran"
+        ? "QUIZ-SAFE NAV — Notes and References layer over a quiz and give it back; home asks before leaving"
+        : "QUIZ-SAFE NAV " + (nc.navProbe || "did not report")));
   }
 
   var rc = window.__regCheck;
