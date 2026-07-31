@@ -558,6 +558,16 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 /* A noted passage also gets a margin tab, because colour is never the only signal. */
 .rdtab{position:absolute;left:-2px;width:4px;border-radius:2px;background:var(--mark-edge);z-index:3}
 /* Selection toolbar — a small dark popover, per the chunk. */
+/* Diagnostic only, never shown without the flag. pointer-events:none so it cannot eat the very
+   gesture it is reporting on. */
+#mkDebug{
+  position:fixed;left:6px;right:6px;top:calc(58px + env(safe-area-inset-top));z-index:99;
+  margin:0;padding:8px 10px;max-height:44vh;overflow:hidden;pointer-events:none;
+  background:rgba(12,16,12,.92);color:#d7f0d9;border-radius:8px;
+  font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10px;line-height:1.35;
+  white-space:pre-wrap;word-break:break-word;
+}
+#mkDebug.hidden{display:none}
 #rdToast{
   position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom));
   z-index:88;max-width:calc(100% - 32px);padding:10px 16px;border-radius:20px;
@@ -1776,6 +1786,7 @@ footer p{margin:0 0 8px}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h10"></path></svg>
     </button>
   </div>
+  <pre id="mkDebug" class="hidden" aria-hidden="true"></pre>
   <div id="rdToast" class="hidden" role="status" aria-live="polite"></div>
   <div id="rdScroll">
     <div id="rdStatus"></div>
@@ -2497,7 +2508,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v38";
+var APP_VERSION = "v39";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -5516,22 +5527,90 @@ function markMergeRects(rects){
    the prefix/suffix context, textPosition, the normalized rects, the store, linked notes —
    is computed from a DOM Range and stays exactly as it was. All this does is produce that
    Range from touch and mouse input instead of from the browser's own selection.            */
+/* ---- v39: the phone is the instrument. The build session has no iOS device, and v38 shipped
+   a gesture that measured perfectly on desktop and did nothing on the platform it was for.
+   Behind ?debug=1 the reader prints what the gesture actually did, so the answer comes back as
+   evidence rather than "still nothing". Dumb and synchronous on purpose. ---- */
+var MK_DEBUG = /[?&]debug=1/.test(location.search), mkDbgLines = [], mkDbgVia = null;
+function dbg(msg){
+  if(!MK_DEBUG) return;
+  mkDbgLines.push(msg);
+  if(mkDbgLines.length > 15) mkDbgLines.shift();
+  var el = document.getElementById("mkDebug");
+  if(el){ el.textContent = mkDbgLines.join("\n"); el.classList.remove("hidden"); }
+}
+
 var mkRange = null,        /* the live selection, as a real DOM Range */
     mkSelPage = null,      /* the .rdpage it lives on */
     mkGrab = null,         /* {node, start, end, holder} — the word the gesture began on */
     mkPressTimer = 0,
     mkTouchWas = "";       /* #rdScroll's touch-action, restored when the drag ends */
 
-/* Where in the text is this screen point? Both spellings, because the standardised name and
-   the one WebKit actually ships are still not the same. */
+/* Which character of this text node is under x? Answered by MEASURING — a one-character range
+   at a time, binary-searched — rather than by asking the engine for a caret.
+
+   This is the whole v39 fix, and the trap is worth stating plainly because it will bite again:
+   WebKit returns null from caretRangeFromPoint when the content under the point is
+   `user-select:none`. v38 set exactly that on the text layer, to stop native selection and
+   with it the iOS edit menu — and in doing so removed the hit-test its own custom selection
+   depended on. Blink still answers for unselectable content, so it worked with a mouse on
+   desktop and did nothing at all on the platform it was built for. Geometry does not care
+   whether text is selectable, so geometry is primary now. */
+function markOffsetIn(node, x){
+  var t = node.textContent || "";
+  if(!t.length) return null;
+  var r = document.createRange(), lo = 0, hi = t.length - 1, mid, b;
+  while(lo <= hi){
+    mid = (lo + hi) >> 1;
+    try { r.setStart(node, mid); r.setEnd(node, mid + 1); } catch(e){ return null; }
+    b = r.getBoundingClientRect();
+    if(!b.width && !b.height){ lo = mid + 1; continue; }   /* a collapsed glyph, step past it */
+    if(x < b.left) hi = mid - 1;
+    else if(x > b.right) lo = mid + 1;
+    /* Inside the character: which half decides whether the caret sits before or after it. */
+    else return (x - b.left) > (b.width / 2) ? mid + 1 : mid;
+  }
+  return Math.max(0, Math.min(lo, t.length));
+}
+
+/* A press can land between two words, where no span covers the point. The nearest span on the
+   same line is the honest answer — pressing in a gap should still select the word beside it,
+   not nothing. */
+function markNearestSpan(layer, x, y){
+  var best = null, bestD = Infinity;
+  Array.prototype.forEach.call(layer.children, function(sp){
+    var b = sp.getBoundingClientRect();
+    if(!b.width || !b.height) return;
+    if(y < b.top - 4 || y > b.bottom + 4) return;          /* another line is never the answer */
+    var dx = (x < b.left) ? (b.left - x) : (x > b.right ? x - b.right : 0);
+    if(dx < bestD){ bestD = dx; best = sp; }
+  });
+  return bestD <= 48 ? best : null;
+}
+
+/* Where in the text is this screen point? Geometry first; the caret API is kept only as a
+   fallback for engines where it answers and the geometric path somehow misses. */
 function markPosAt(x, y){
+  var el = document.elementFromPoint(x, y);
+  var span = null;
+  if(el && el.closest){
+    span = el.closest(".rdtext span");
+    if(!span){
+      var layer = el.closest(".rdtext");
+      if(layer) span = markNearestSpan(layer, x, y);
+    }
+  }
+  if(span && span.firstChild && span.firstChild.nodeType === 3){
+    var off = markOffsetIn(span.firstChild, x);
+    if(off != null) return { node:span.firstChild, offset:off, via:"geometry" };
+  }
   var pos = null;
   if(document.caretRangeFromPoint){
     var r = document.caretRangeFromPoint(x, y);
-    if(r) pos = { node:r.startContainer, offset:r.startOffset };
+    if(r) pos = { node:r.startContainer, offset:r.startOffset, via:"caret" };
   } else if(document.caretPositionFromPoint){
     var p = document.caretPositionFromPoint(x, y);
-    if(p) pos = { node:p.offsetNode, offset:p.offset };
+    if(p) pos = { node:p.offsetNode, offset:p.offset, via:"caret" };
   }
   if(!pos || !pos.node || pos.node.nodeType !== 3) return null;
   var host = pos.node.parentElement;
@@ -5614,7 +5693,9 @@ function markExtendTo(x, y){
 
 function markSelBegin(x, y){
   var pos = markPosAt(x, y);
-  if(!pos) return false;
+  mkDbgVia = pos ? pos.via : null;
+  if(!pos){ dbg("  hit-test: NO POSITION at " + Math.round(x) + "," + Math.round(y)); return false; }
+  dbg("  hit-test: via " + pos.via + " offset " + pos.offset);
   var w = markWordAt(pos);
   var holder = pos.node.parentElement.closest(".rdpage");
   if(!holder) return false;
@@ -5623,6 +5704,8 @@ function markSelBegin(x, y){
   mkGrab = { node:w.node, start:w.start, end:w.end, holder:holder };
   mkRange = r; mkSelPage = holder;
   markPaintSel();
+  dbg("  begin OK \"" + r.toString().slice(0,24) + "\" bands " + document.querySelectorAll(".rdselband").length
+      + " nativeSel " + (window.getSelection().toString() ? "NOT EMPTY" : "empty"));
   return true;
 }
 
@@ -6340,6 +6423,29 @@ function selfTest(){
       var sp = document.createElement("span");
       sp.textContent = "The Noncommissioned Officer Creed";
       host.appendChild(sp); document.body.appendChild(host);
+
+      /* v39: the hit-test has to work on UNSELECTABLE text, which is the exact condition that
+         killed iOS in v38 — WebKit's caret API returns null there. Measured on a probe that is
+         on-screen (elementFromPoint needs it to be) and invisible (transparent glyphs). */
+      (function(){
+        var probe = document.createElement("div");
+        probe.className = "rdtext";
+        probe.style.cssText = "position:fixed;left:0;top:0;width:300px;height:40px;z-index:2147483000";
+        var ps = document.createElement("span");
+        ps.textContent = "Noncommissioned Officer";
+        ps.style.cssText = "position:absolute;left:0;top:0;font-size:20px;color:transparent";
+        probe.appendChild(ps); document.body.appendChild(probe);
+        var b = ps.getBoundingClientRect();
+        if(b.width){
+          var pos = markPosAt(b.left + b.width * 0.35, b.top + b.height / 2);
+          if(!pos) errs.push("markup: the hit-test resolves nothing over unselectable text — iOS selection would be dead");
+          else if(pos.via !== "geometry")
+            errs.push("markup: the hit-test fell back to the caret API (" + pos.via + "); WebKit returns null there");
+          else if(typeof markOffsetIn(ps.firstChild, b.left + b.width * 0.35) !== "number")
+            errs.push("markup: the geometric offset search returned no offset");
+        }
+        probe.remove();
+      })();
       var t = sp.firstChild;
       /* Mid-word snaps out to the whole word, both directions. */
       var w = markWordAt({ node:t, offset:8 });          /* inside "Noncommissioned" */
@@ -6768,18 +6874,28 @@ $("rdPages").addEventListener("pointerdown", function(e){
   var moved = false;
   var startX = x, startY = y;
 
+  dbg("down " + e.pointerType + " " + Math.round(x) + "," + Math.round(y)
+      + " on " + (e.target.tagName || "?") + "." + (e.target.className || ""));
+
   var engage = function(){
     mkPressTimer = 0;
+    dbg("  hold FIRED" + (moved ? " (but moved — ignored)" : ""));
     if(moved) return;
     if(!markSelBegin(startX, startY)) return;
     markHoldScroll(true);
-    try { onText.setPointerCapture(id); } catch(err){}
+    try { onText.setPointerCapture(id); dbg("  capture ok"); } catch(err){ dbg("  capture FAILED " + err.message); }
   };
 
+  var moveN = 0;
   var move = function(ev){
     if(ev.pointerId !== id) return;
-    if(Math.abs(ev.clientX-startX) > MK_SLOP || Math.abs(ev.clientY-startY) > MK_SLOP) moved = true;
+    if(Math.abs(ev.clientX-startX) > MK_SLOP || Math.abs(ev.clientY-startY) > MK_SLOP){
+      if(!moved) dbg("  moved past slop — this is a scroll, not a press");
+      moved = true;
+    }
     if(!mkGrab) return;
+    if((moveN++ % 8) === 0) dbg("  extend " + Math.round(ev.clientX) + "," + Math.round(ev.clientY)
+      + " bands " + document.querySelectorAll(".rdselband").length);
     /* Owned now: this movement is extending a selection, not scrolling the page. */
     ev.preventDefault();
     markExtendTo(ev.clientX, ev.clientY);
@@ -6787,6 +6903,8 @@ $("rdPages").addEventListener("pointerdown", function(e){
 
   var up = function(ev){
     if(ev.pointerId !== id) return;
+    dbg(ev.type + (mkPressTimer ? " — hold CLEARED before it fired" : "")
+        + (mkGrab ? " (had a selection)" : ""));
     document.removeEventListener("pointermove", move, {passive:false});
     document.removeEventListener("pointerup", up);
     document.removeEventListener("pointercancel", up);
@@ -6801,6 +6919,8 @@ $("rdPages").addEventListener("pointerdown", function(e){
     try { onText.releasePointerCapture(id); } catch(err){}
     mkGrab = null;
     markShowBar();
+    dbg("  toolbar " + ($("mkBar").classList.contains("hidden") ? "HIDDEN" : "shown")
+        + " nativeSel " + (window.getSelection().toString() ? "NOT EMPTY" : "empty"));
   };
 
   document.addEventListener("pointermove", move, {passive:false});
@@ -6814,6 +6934,7 @@ $("rdPages").addEventListener("pointerdown", function(e){
     markSelBegin(x, y);
   } else {
     mkPressTimer = setTimeout(engage, MK_HOLD);
+    dbg("  hold set " + MK_HOLD + "ms");
   }
 });
 

@@ -1,5 +1,5 @@
 /* Army Board Study Guide service worker. Cache-first app shell, no network use. */
-var CACHE = "absg-8ce85655337f-if90b71";
+var CACHE = "absg-33b453d17763-if90b71";
 var SHELL = ["./", "./index.html", "./manifest.webmanifest?v=2",
              "./icon-192.png?v=2", "./icon-512.png?v=2", "./apple-touch-icon.png?v=2"];
 
