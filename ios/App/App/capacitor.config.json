@@ -1,0 +1,13 @@
+{
+	"appId": "com.ncoprep.studyguide",
+	"appName": "Army Board Study Guide",
+	"webDir": "ios-www",
+	"ios": {
+		"contentInset": "always",
+		"limitsNavigationsToAppBoundDomains": false
+	},
+	"server": {
+		"iosScheme": "capacitor"
+	},
+	"packageClassList": []
+}

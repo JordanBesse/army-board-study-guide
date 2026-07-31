@@ -1,13 +1,20 @@
 App/build
 App/Pods
 App/output
-App/App/public
 DerivedData
 xcuserdata
 
 # Cordova plugins for Capacitor
 capacitor-cordova-ios-plugins
 
-# Generated Config files
-App/App/capacitor.config.json
-App/App/config.xml
+# NOTE — three paths Capacitor's template ignores by default are deliberately NOT ignored
+# here: App/App/public, App/App/capacitor.config.json and App/App/config.xml.
+#
+# The template assumes whoever opens the project can run `npx cap sync` to regenerate them.
+# This project's whole point is that the Mac has no Node and needs zero terminal steps, so a
+# clean clone must already contain the bundled web assets and both configs — without them
+# Xcode fails the build with "Command Ld failed" and "capacitor.config.json: no such file".
+#
+# Consequence: after any web release, re-stage ios-www, run `npx cap sync ios`, and COMMIT
+# the regenerated public/ and configs. They are tracked now, so they will not update
+# themselves.
