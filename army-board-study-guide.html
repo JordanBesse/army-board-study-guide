@@ -111,6 +111,25 @@ header{
   margin:-14px -14px 14px;padding-left:14px;padding-right:14px;
 }
 h1{font-size:1.3rem;margin:0;letter-spacing:-.01em;font-weight:700;line-height:1.25}
+/* The wordmark-as-home control. It has to look exactly like the heading it replaced — the
+   affordance is the press state and the cursor, not a button box, because a permanently
+   buttonish title would read as a second action competing with Start Quiz. 44px of height is
+   met by padding rather than a min-height, so the centred title does not shift. */
+#homeBtn{
+  /* min-height, not padding alone: below 380px the title drops to 1.15rem on the narrow-screen
+     type ramp, and 10px + 10px + that line box came to 43px — one pixel under the floor, which
+     the self-test caught and a 390px measurement never would. inline-flex so the heading stays
+     centred in the app bar. */
+  display:inline-flex;align-items:center;justify-content:center;min-height:44px;
+  padding:10px 8px;margin:-10px -8px;
+  background:none;border:0;color:inherit;font:inherit;letter-spacing:inherit;
+  cursor:pointer;border-radius:var(--r);-webkit-tap-highlight-color:transparent;
+  transition:background-color var(--m-tap) ease-out,transform var(--m-tap) ease-out;
+}
+@media (hover:hover) and (pointer:fine){ #homeBtn:hover{background:var(--hover-bg)} }
+#homeBtn:active{background:var(--hover-bg);transform:scale(.98)}
+#homeBtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){ #homeBtn{transition:none} #homeBtn:active{transform:none} }
 #sub{margin:5px 0 0;color:var(--muted);font-size:.88rem;line-height:1.35}
 /* Compact quiz bar: mid-quiz the marketing h1 is dead weight, so the board name and
    position replace it and give the question back about 50px of vertical. v19 drops the
@@ -254,6 +273,35 @@ header.compact #quizbar{display:block}
 .nchip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
 .nchip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 #notesList{padding-bottom:96px}   /* clear of the FAB */
+/* ---- Select mode (v46) ----
+   Deliberately the Marks menu's interaction, not a new one: a Select affordance, a checkbox
+   per row, and a bottom bar carrying the count and a neutral Delete. Opening a note just to
+   throw it away was the only delete path the hub had. */
+#notesSelect{position:absolute;right:-6px;top:-2px;min-height:44px;padding:0 10px;
+  display:flex;align-items:center;background:none;border:0;color:var(--accent);
+  font:inherit;font-size:.8rem;font-weight:700;cursor:pointer;border-radius:var(--r)}
+#notesSelect:hover{background:var(--hover-bg)}
+#notesSelect:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.nrow .nselbox{flex:0 0 auto;display:none;align-items:center;justify-content:center;
+  width:44px;height:44px;margin:-7px 0 -7px -8px}
+#notes.selmode .nrow .nselbox{display:flex}
+/* In select mode the chevron would promise a jump the tap no longer does. */
+#notes.selmode .nrow .nchev{display:none}
+.nsel{width:18px;height:18px;margin:0;accent-color:var(--accent);cursor:pointer}
+#notesBar{position:fixed;left:0;right:0;bottom:0;z-index:42;
+  display:flex;align-items:center;gap:12px;
+  padding:10px max(16px, env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background:var(--surface);border-top:1px solid var(--line);box-shadow:var(--e2)}
+#notesBar.hidden{display:none}
+#notesCount{flex:1;font-size:.8rem;font-weight:650;color:var(--muted)}
+#notesAll,#notesCancel,#notesDel{min-height:44px;padding:0 16px;border-radius:22px;
+  border:1px solid var(--line);background:none;font:inherit;font-size:.8rem;font-weight:650;
+  color:var(--ink);cursor:pointer}
+#notesDel{display:inline-flex;align-items:center;gap:7px}
+#notesDel svg{width:15px;height:15px}
+#notesAll:hover,#notesCancel:hover,#notesDel:hover{background:var(--hover-bg)}
+#notesDel:disabled{color:var(--dim-ink);cursor:default;background:none}
+#notesAll:focus-visible,#notesCancel:focus-visible,#notesDel:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 /* One row shape for both kinds. What differs is the glyph, and whether the reg pill is
    there at all — the pill's PRESENCE is the colour-independent tell that a note is linked. */
 .nrow{display:flex;align-items:flex-start;gap:11px;width:100%;text-align:left;
@@ -274,6 +322,11 @@ header.compact #quizbar{display:block}
 .npill{flex:0 0 auto;font-size:.66rem;font-weight:700;color:var(--mark-ink);background:var(--mark-soft);
   border-radius:999px;padding:2px 8px;display:inline-flex;align-items:center;gap:4px}
 .npill svg{width:11px;height:11px}
+/* The question lane is the ACCENT lane, not --mark: --mark is the annotation lane and means
+   "fastened to a passage in a publication". A question-linked note points at the bank instead,
+   so borrowing the khaki would say the wrong thing. Accent here is a tag, not a selected
+   state, but it is the same family as the quiz surfaces it refers to. */
+.npill.qpill{color:var(--accent);background:var(--accent-soft)}
 .nsnip{font-size:.72rem;color:var(--muted);font-style:italic;white-space:nowrap;overflow:hidden;
   text-overflow:ellipsis;min-width:0}
 .nmeta{font-size:.7rem;color:var(--muted);margin-top:5px}
@@ -295,6 +348,44 @@ header.compact #quizbar{display:block}
 #notesNew:active{transform:scale(.96)}
 #notesNew:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 @media (prefers-reduced-motion: reduce){ #notesNew{transition:none} #notesNew:active{transform:none} }
+/* The in-quiz note button. One 52px button's height plus a 12px gap above the trio, right
+   edge aligned with the gear, so the two never touch and the whole column stays in the thumb
+   zone. 52px like everything else in that corner. */
+#quizNote{
+  position:fixed;z-index:41;
+  right:max(16px, env(safe-area-inset-right));
+  bottom:calc(max(16px, env(safe-area-inset-bottom)) + 64px);
+  width:52px;height:52px;padding:0;
+  display:flex;align-items:center;justify-content:center;
+  border:0;background:var(--accent);color:var(--accent-ink);
+  border-radius:16px;box-shadow:var(--e2);
+  font:inherit;cursor:pointer;
+  transition:transform var(--m-tap) ease-out;
+}
+#quizNote svg{width:25px;height:25px;display:block}
+#quizNote:active{transform:scale(.96)}
+#quizNote:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@media (prefers-reduced-motion: reduce){ #quizNote{transition:none} #quizNote:active{transform:none} }
+/* "Link to this question", in the editor. A real switch, not a checkbox, matching the one the
+   settings sheet uses — and the accent is legitimate here because it is a selected state. */
+#mkLinkRow{display:flex;align-items:center;gap:10px;min-height:44px;margin-top:8px}
+#mkLinkLabel{flex:1;font-size:.8rem;color:var(--muted);font-weight:650}
+/* The read-only question card a question-linked row opens. */
+#qnoteCard{position:fixed;inset:0;z-index:96;display:flex;align-items:flex-end;justify-content:center}
+#qnoteCard.hidden{display:none}
+#qnoteScrim{position:absolute;inset:0;background:var(--scrim)}
+#qnotePanel{position:relative;width:100%;max-width:480px;background:var(--surface);
+  border:1px solid var(--line);border-radius:16px 16px 0 0;
+  padding:16px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:var(--e2);
+  max-height:88vh;overflow-y:auto}
+@media(min-width:520px){ #qnoteCard{align-items:center} #qnotePanel{border-radius:16px} }
+#qnoteQ{font-size:.95rem;font-weight:700;line-height:1.45;margin:8px 0 12px}
+#qnoteA{font-size:.86rem;line-height:1.5;padding:10px 12px;background:var(--surface2);
+  border-left:3px solid var(--accent);border-radius:0 var(--r) var(--r) 0}
+#qnoteA b{display:block;font-size:.66rem;font-weight:800;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+#qnoteE{font-size:.82rem;color:var(--muted);line-height:1.55;margin:10px 0 0}
+#qnoteGone{font-size:.82rem;color:var(--muted);line-height:1.55}
 .nempty{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
   padding:56px 24px;color:var(--muted)}
 .nempty svg{width:54px;height:54px;color:var(--line)}
@@ -690,7 +781,12 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 #mkBar button:hover,#mkPop button:hover{background:rgba(255,255,255,.12)}
 #mkBar button:focus-visible,#mkPop button:focus-visible{outline:2px solid #eef2ec;outline-offset:-2px}
 /* Note editor — a bottom sheet, the same shape as the outline sheet. */
-#libConfirm{position:fixed;inset:0;z-index:95;display:flex;align-items:flex-end;justify-content:center}
+/* v46: z-index 97, ABOVE the note editor's 95. It used to share 95 with #mkSheet and sits
+   earlier in the document, so the editor painted over it: tapping the trash inside a note
+   opened the confirm BEHIND the sheet, the tap looked like it did nothing, and deleting one
+   note took three taps — trash, Done to get the sheet out of the way, then Delete. A confirm
+   must always be above whatever raised it. */
+#libConfirm{position:fixed;inset:0;z-index:97;display:flex;align-items:flex-end;justify-content:center}
 #libConfirm.hidden{display:none}
 #libConfirmScrim{position:absolute;inset:0;background:rgba(10,14,10,.5)}
 #libConfirmPanel{position:relative;width:100%;max-width:480px;background:var(--surface);
@@ -731,8 +827,11 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 #mkHead .mkeyebrow{flex:1}
 /* Delete is NEUTRAL. It never borrows --no: the graded lane means an answer was wrong, and a
    Soldier removing their own note has not got anything wrong. */
-#mkTrash{width:44px;height:44px;margin:-10px -8px -10px 0;display:flex;align-items:center;justify-content:center;
+#mkTrash,#qnoteClose{width:44px;height:44px;margin:-10px -8px -10px 0;display:flex;align-items:center;justify-content:center;
   background:none;border:0;color:var(--muted);cursor:pointer;border-radius:var(--r)}
+#qnoteClose svg{width:19px;height:19px}
+#qnoteClose:hover{background:var(--hover-bg);color:var(--ink)}
+#qnoteClose:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 /* An id selector setting display:flex outranks the UA's [hidden]{display:none}, so hiding the
    trash needs saying explicitly — otherwise a note that does not exist yet still offers a
    delete control. Same trap as any `hidden` attribute on a styled element. */
@@ -773,6 +872,11 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
   font-weight:650;color:var(--muted);opacity:0;transition:opacity var(--m-state) ease-out}
 #mkSaved.on{opacity:1}
 #mkSaved svg{width:15px;height:15px}
+/* "Not saved". Emphatic but NEUTRAL — --no means a graded answer was wrong, and a storage
+   failure is not a verdict on the Soldier. The word does the work, and the tick is dropped so
+   the two states cannot be confused at a glance. */
+#mkSaved.bad{color:var(--ink);font-weight:800}
+#mkSaved.bad svg{display:none}
 @media (prefers-reduced-motion: reduce){ #mkSaved{transition:none} }
 /* The jumped-to passage. A mark repainted for a note the Soldier just tapped in the hub gets
    one pulse so the eye lands on it — the page can hold several marks and "you are here" has
@@ -1605,7 +1709,11 @@ footer p{margin:0 0 8px}
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="5" y="3" width="14" height="18" rx="2.5"></rect><path d="M8 8.5h8M8 12h8M9.5 15.5h5"></path></svg>
 </button>
 <header id="appbar">
-  <h1>Army Board Study Guide</h1>
+  <!-- v46: the wordmark is the way home, on every screen that shows it — the YouTube-logo
+       pattern. Before this, the only way out of a menu was the small top-left back arrow, and
+       a note opened from the reader took two of them to escape. A <button> inside the <h1> so
+       the heading stays a heading for assistive tech and the control is a real control. -->
+  <h1><button id="homeBtn" type="button" aria-label="Home — back to the main menu">Army Board Study Guide</button></h1>
   <p id="sub">Soldier of the Month, Promotion Board, Audie Murphy, Drill Sergeant, and ESB preparation.</p>
   <div id="quizbar">
     <div class="qb-board" id="qbBoard"></div>
@@ -1944,6 +2052,7 @@ footer p{margin:0 0 8px}
 <main id="notes" class="hidden">
   <div class="nhdr">
     <button id="notesBack" type="button" aria-label="Back">&#8249;</button>
+    <button id="notesSelect" type="button">Select</button>
     <h2 class="ntitle">Notes</h2>
     <div id="notesCue"></div>
     <div id="notesChips" role="group" aria-label="Which notes">
@@ -1954,8 +2063,23 @@ footer p{margin:0 0 8px}
   </div>
   <div id="notesList"></div>
 </main>
+<div id="notesBar" class="hidden" role="group" aria-label="Delete selected notes">
+  <button id="notesCancel" type="button">Cancel</button>
+  <span id="notesCount" aria-live="polite"></span>
+  <button id="notesAll" type="button">Select all</button>
+  <button id="notesDel" type="button" disabled>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"></path></svg>Delete
+  </button>
+</div>
 <button id="notesNew" type="button" class="hidden" aria-label="New note">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"></path></svg>
+</button>
+<!-- v46: take a note mid-quiz. Sits ABOVE the trio rather than in the corner with it — the
+     corner is already three 52px buttons deep, and a fourth control there would either overlap
+     them or push the row off the thumb. Read aloud and End Quiz are inline in the action row,
+     so this clears both. Accent, because writing a note is the action this button exists for. -->
+<button id="quizNote" type="button" class="hidden" aria-label="Take a note on this question">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="5" y="3" width="14" height="18" rx="2.5"></rect><path d="M9 8.5h6M9 12h6M9 15.5h3.5"></path></svg>
 </button>
 
 <!-- The reader (v27, chunk 3). Fixed and full-viewport, outside .wrap, because a 300-page
@@ -1964,6 +2088,14 @@ footer p{margin:0 0 8px}
   <div class="rdbar">
     <button id="rdBack" type="button" aria-label="Back to the library">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7"></path></svg>
+    </button>
+    <!-- v46: the reader shows the publication's name, not the wordmark, so it has no wordmark
+         to tap. Back goes up one level (to wherever the reader was opened from); this goes
+         all the way to the main menu in one tap, which is the whole point of the change.
+         Placement in this bar is a small design call — flagged to the AD; this is a sensible
+         default, immediately beside Back so the two read as one navigation group. -->
+    <button id="rdHome" type="button" aria-label="Home — back to the main menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 11.2 12 4.5l8 6.7"></path><path d="M6.5 10.2V19h11v-8.8"></path></svg>
     </button>
     <div class="rdtitle"><div class="n" id="rdNum"></div><div class="t" id="rdTitle"></div></div>
     <!-- Favoriting is a whole-document act, so it belongs on the document's own bar as well
@@ -2077,6 +2209,18 @@ footer p{margin:0 0 8px}
       </button>
     </div>
     <div id="mkQuote"></div>
+    <!-- v46: shown only for a note started from inside a quiz. On by default — the reason a
+         Soldier reaches for a note mid-question is almost always the question. -->
+    <div id="mkLinkRow" hidden>
+      <span id="mkLinkLabel">Link to this question</span>
+      <!-- The app's own switch component, not a second one drawn for this row: it already
+           carries the 44px target, the knob and the accent-when-on state, and v14's whole
+           point was that every setting uses ONE switch. -->
+      <button class="sw" id="mkLinkQ" type="button" role="switch" aria-checked="true" aria-labelledby="mkLinkLabel mkLinkTxt">
+        <span class="swtxt" id="mkLinkTxt">On</span>
+        <span class="knobwrap"><span class="knob"></span></span>
+      </button>
+    </div>
     <textarea id="mkText" placeholder="What matters about this passage?" aria-label="Note text"></textarea>
     <div id="mkTools">
       <button class="mktool" type="button" id="mkInsChk" aria-label="Insert a checkbox line">
@@ -2091,6 +2235,26 @@ footer p{margin:0 0 8px}
     </div>
     <div class="mkrow">
       <button class="btn sec" type="button" id="mkCancel" style="flex:1">Done</button>
+    </div>
+  </div>
+</div>
+<!-- v46: what a question-linked note opens onto. Read-only on purpose — it is the question as
+     the bank holds it, shown for context, not a quiz you can answer from your own notes. -->
+<div id="qnoteCard" class="hidden" role="dialog" aria-modal="true" aria-labelledby="qnoteKind">
+  <div id="qnoteScrim"></div>
+  <div id="qnotePanel">
+    <div id="mkHead">
+      <div class="mkeyebrow" id="qnoteKind">The question this note is about</div>
+      <button id="qnoteClose" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+      </button>
+    </div>
+    <div id="qnoteQ"></div>
+    <div id="qnoteA"></div>
+    <p id="qnoteE"></p>
+    <p id="qnoteGone" hidden></p>
+    <div class="mkrow">
+      <button class="btn sec" type="button" id="qnoteOpenNote" style="flex:1">Open the note</button>
     </div>
   </div>
 </div>
@@ -2731,7 +2895,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v45";
+var APP_VERSION = "v46";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -3537,6 +3701,12 @@ function compactBar(on, boardLabel){
   if(on){ $("qbBoard").textContent=boardLabel||""; h.classList.add("compact"); }
   else { h.classList.remove("compact"); }
 }
+/* v46: the in-quiz note button follows the quiz screen exactly — it is the only screen where
+   "this question" means anything. Derived from the quiz's own visibility rather than tracked
+   separately, so no screen can strand it (the lesson from compactBar being one function). */
+function quizNoteShow(on){
+  $("quizNote").classList.toggle("hidden", !(on && !$("quiz").classList.contains("hidden")));
+}
 /* Re-trigger the mount animation on an element. The class has to come off and go back on
    around a forced reflow, because these are long-lived elements that are shown and hidden
    rather than created — without the reflow the animation only ever plays once per page load. */
@@ -3556,6 +3726,7 @@ function beginQuiz(list, runMode){
   $("sub").textContent = (mode==="quiz" ? scopeLabel(selectedCats()) : BOARDS[board].label) + suffix;
   $("home").classList.add("hidden"); $("results").classList.add("hidden");
   $("flash").classList.add("hidden"); $("quiz").classList.remove("hidden");
+  quizNoteShow(true);
   mount($("quiz"));
   compactBar(true, BOARDS[board].label + suffix);
   /* The Sources panel lives in the always-visible footer, so mid-quiz it should answer
@@ -3769,7 +3940,7 @@ function finish(){
   refreshMissedBtn();
   stopSpeech(); $("speakRow").classList.add("hidden");
   compactBar(false);
-  $("quiz").classList.add("hidden"); $("results").classList.remove("hidden");
+  $("quiz").classList.add("hidden"); quizNoteShow(false); $("results").classList.remove("hidden");
   mount($("results"));
   window.scrollTo(0,0);
 }
@@ -3822,7 +3993,7 @@ function toMenu(){
   if(tick){ clearInterval(tick); tick=null; }
   stopSpeech(); $("speakRow").classList.add("hidden");
   compactBar(false);
-  $("quiz").classList.add("hidden"); $("results").classList.add("hidden"); $("flash").classList.add("hidden");
+  $("quiz").classList.add("hidden"); quizNoteShow(false); $("results").classList.add("hidden"); $("flash").classList.add("hidden");
   /* The library is a screen like the others, so leaving by any route must put it away and
      bring the two floaters back — otherwise a Back gesture out of the library would strand
      the home screen with no gear and no Regulations button. */
@@ -3831,6 +4002,7 @@ function toMenu(){
      brings all three floaters back — the same reason the library line above exists. */
   $("notes").classList.add("hidden");
   $("notesNew").classList.add("hidden");
+  $("notesBar").classList.add("hidden");
   $("regBtn").style.display = ""; $("settingsBtn").style.display = "";
   $("notesBtn").style.display = "";
   document.querySelector("footer").style.display = "";
@@ -4348,6 +4520,14 @@ var REGLIB = (function(){
         id: rec.id || (String(Date.now()) + "-" + Math.random().toString(36).slice(2,9)),
         title: rec.title == null ? "" : String(rec.title),
         body:  rec.body  == null ? "" : String(rec.body),
+        /* v46: a note taken during a quiz can be LINKED TO THE QUESTION. Two optional fields
+           on the same record rather than a third store — a question-linked note is a note of
+           the Soldier's own that happens to remember what prompted it, not a mark on a
+           document. `qid` is the bank's stable text hash, so the link survives a rebuild
+           unless the stem itself changes; `qtext` is kept alongside it so the hub row still
+           reads if that question is ever retired and the id no longer resolves. */
+        qid:   rec.qid   == null ? null : String(rec.qid),
+        qtext: rec.qtext == null ? null : String(rec.qtext),
         createdAt: rec.createdAt || now,
         updatedAt: now
       };
@@ -5168,9 +5348,9 @@ function openLibrary(focusId, scope){
   if(tick){ clearInterval(tick); tick=null; }
   stopSpeech(); $("speakRow").classList.add("hidden");
   compactBar(false);
-  $("home").classList.add("hidden"); $("quiz").classList.add("hidden");
+  $("home").classList.add("hidden"); $("quiz").classList.add("hidden"); quizNoteShow(false);
   $("results").classList.add("hidden"); $("flash").classList.add("hidden");
-  $("notes").classList.add("hidden"); $("notesNew").classList.add("hidden");
+  $("notes").classList.add("hidden"); $("notesNew").classList.add("hidden"); $("notesBar").classList.add("hidden");
   $("library").classList.remove("hidden");
   /* Every floater hides while the library is open: the Regulations button would point at the
      screen you are already on, and the library owns its own back control. */
@@ -5210,6 +5390,7 @@ function closeLibrary(){
   if(libFrom === "quiz"){
     libFrom = "menu";
     $("quiz").classList.remove("hidden");
+    quizNoteShow(true);
     $("sub").textContent = libSubWas;
     compactBar(true, libBarWas || "");
     showSpeakRow();
@@ -5260,6 +5441,9 @@ function libPaintHeader(){
    copied between the stores: there is exactly one record per note, and this is a view over
    two of them.                                                                            */
 var noteFilter = "all";
+/* Whether this copy of the app can store a note at all — false on the bare downloadable file.
+   Held rather than re-derived so the FAB's visibility has one source of truth. */
+var notesCanWrite = true;
 var NOTEICON = {
   /* The free-standing mark: the same symmetric lined page as the floating button, so a note
      wears one identity everywhere. */
@@ -5267,14 +5451,17 @@ var NOTEICON = {
   /* The link mark, in the --mark lane: this note is fastened to a passage. */
   link:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 15l6-6M10.5 7.5l1-1a3.5 3.5 0 0 1 5 5l-1 1M13.5 16.5l-1 1a3.5 3.5 0 0 1-5-5l1-1"/></svg>',
   pill:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 15l6-6M11 7l1-1a3 3 0 0 1 4 4l-1 1M13 17l-1 1a3 3 0 0 1-4-4l1-1"/></svg>',
-  chev:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"/></svg>'
+  chev:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"/></svg>',
+  /* v46: the question lane. A question mark in a rounded square — not the reg link, because a
+     question-linked note points at the bank, not at a publication. */
+  quiz:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9.4 9a2.6 2.6 0 1 1 3.4 2.5c-.6.2-1 .8-1 1.5v.4M12 17h.01"/></svg>'
 };
 
 function openNotes(){
   if(tick){ clearInterval(tick); tick=null; }
   stopSpeech(); $("speakRow").classList.add("hidden");
   compactBar(false);
-  $("home").classList.add("hidden"); $("quiz").classList.add("hidden");
+  $("home").classList.add("hidden"); $("quiz").classList.add("hidden"); quizNoteShow(false);
   $("results").classList.add("hidden"); $("flash").classList.add("hidden");
   $("library").classList.add("hidden");
   $("notes").classList.remove("hidden");
@@ -5286,14 +5473,55 @@ function openNotes(){
   document.querySelector("footer").style.display = "none";
   $("sub").textContent = "Notes — everything you have written, on this device.";
   noteFilter = "all"; notesPaintChips();
+  /* Never arrive already in select mode — it is a transient state, not a preference. */
+  noteSelMode = false; notePicked = {};
+  $("notes").classList.remove("selmode");
+  $("notesBar").classList.add("hidden");
+  $("notesSelect").textContent = "Select";
+  $("notesSelect").hidden = false;
   mount($("notes"));
   window.scrollTo(0,0);
   try{ history.pushState({view:"notes"},""); }catch(e){}
   notesRefresh();
 }
+/* ---- One tap home, from anywhere (v46) ----
+   The complaint this answers: the only way out of a menu was the small top-left back arrow,
+   and a deep flow — reader, then a note opened from a mark — took two back-taps to escape.
+   This collapses every one of those to a single action. It tears down whatever is open in the
+   right order (overlays, then the reader, then the screen) rather than relying on each
+   surface's own back handler to chain correctly, because chaining is what was failing.
+
+   The one thing it will NOT do is silently bin a quiz in progress. The wordmark is hidden by
+   the compact bar mid-quiz, so the only way to be here with unanswered work is the References
+   hub opened FROM a quiz — and there, scoring the quiz (what End Quiz already does) is the
+   behaviour that cannot lose a Soldier's work to a mis-tap on the title. */
+function goHome(){
+  qnoteClose();
+  markCloseSheet();
+  libCloseConfirm();
+  $("rdSheet").classList.add("hidden");
+  if(!$("reader").classList.contains("hidden")) closeReader();
+  if(typeof settingsClose === "function" && !$("settingsPanel").classList.contains("hidden")) settingsClose();
+  $("notes").classList.add("hidden");
+  $("notesNew").classList.add("hidden");
+  $("notesBar").classList.add("hidden");
+  $("notes").classList.remove("selmode");
+  noteSelMode = false; notePicked = {};
+  var quizWasOpen = (libFrom === "quiz") || !$("quiz").classList.contains("hidden");
+  $("library").classList.add("hidden");
+  libFrom = "menu"; libScope = null;
+  $("regBtn").style.display = ""; $("settingsBtn").style.display = "";
+  $("notesBtn").style.display = "";
+  document.querySelector("footer").style.display = "";
+  if(quizWasOpen && answers.length){ finish(); return; }
+  toMenu();
+}
 function closeNotes(){
   $("notes").classList.add("hidden");
   $("notesNew").classList.add("hidden");
+  $("notesBar").classList.add("hidden");
+  $("notes").classList.remove("selmode");
+  noteSelMode = false; notePicked = {};
   $("regBtn").style.display = ""; $("settingsBtn").style.display = "";
   $("notesBtn").style.display = "";
   document.querySelector("footer").style.display = "";
@@ -5334,6 +5562,10 @@ function notesLoad(){
       rows.push({
         kind:"mine", id:n.id, note:n,
         title: n.title || "", body: n.body || "",
+        /* v46: a question-linked note is still one of the Soldier's own — it filters under
+           "My notes", not "Linked", which is the regulation lane. The link is a tag on the
+           row, not a different kind of note. */
+        qid: n.qid || null, qtext: n.qtext || null,
         at: n.updatedAt || n.createdAt || ""
       });
     });
@@ -5346,7 +5578,9 @@ function notesRefresh(){
     if(rows === null){
       /* Nowhere to save. The empty state says so — so the New-note button must go with it,
          or the screen contradicts itself by inviting a note it will silently drop. */
+      notesCanWrite = false;
       $("notesNew").classList.add("hidden");
+      $("notesSelect").hidden = true;
       $("notesCue").textContent = "";
       $("notesList").textContent = "";
       $("notesList").appendChild(notesEmpty(
@@ -5354,6 +5588,18 @@ function notesRefresh(){
         "Add to Home Screen — or open nco-prep.com — to keep notes on this device. "
         + "This standalone file can't store them."));
       return;
+    }
+    notesCanWrite = true;
+    /* Nothing to select when there is nothing there. */
+    $("notesSelect").hidden = !rows.length;
+    /* Leaving select mode here is done WITHOUT notesSelMode(), which would call back into this
+       function — the list is about to be rendered anyway. */
+    if(noteSelMode && !rows.length){
+      noteSelMode = false; notePicked = {};
+      $("notes").classList.remove("selmode");
+      $("notesBar").classList.add("hidden");
+      $("notesSelect").textContent = "Select";
+      $("notesNew").classList.toggle("hidden", !notesCanWrite);
     }
     notesRender(rows);
   }).catch(function(){
@@ -5438,10 +5684,76 @@ function notesRender(rows){
   shown.forEach(function(r){ host.appendChild(notesRow(r)); });
 }
 
+/* ---- Select mode (v46) ---- */
+var noteSelMode = false, notePicked = {};
+function notesSelMode(on){
+  noteSelMode = !!on;
+  notePicked = {};
+  $("notes").classList.toggle("selmode", noteSelMode);
+  $("notesBar").classList.toggle("hidden", !noteSelMode);
+  $("notesSelect").textContent = noteSelMode ? "Done" : "Select";
+  /* The FAB would sit on top of the action bar, and starting a new note is not what this mode
+     is for. */
+  $("notesNew").classList.toggle("hidden", noteSelMode || !notesCanWrite);
+  notesSyncBar();
+  notesRefresh();
+}
+function notesSyncBar(){
+  var n = Object.keys(notePicked).length;
+  $("notesCount").textContent = n ? (n + " selected") : "Select notes to delete";
+  $("notesDel").disabled = !n;
+  $("notesDel").setAttribute("aria-label", n ? ("Delete " + n + " selected") : "Delete selected notes");
+}
+/* The consequence is named for whatever is actually in the selection: a reg-linked note takes
+   its highlight with it, and a Soldier must be told that before it happens, not after. */
+function notesDeleteSelected(){
+  var ids = Object.keys(notePicked);
+  if(!ids.length) return;
+  var linked = ids.filter(function(id){ return notePicked[id].kind === "linked"; }).length;
+  var body = linked
+    ? (linked === ids.length
+        ? "They also remove their highlights from the page."
+        : linked + " of them " + (linked === 1 ? "is linked to a regulation and also removes its highlight."
+                                              : "are linked to regulations and also remove their highlights."))
+    : "They come off this device. Nothing else is affected.";
+  libAsk(ids.length === 1 ? "Delete this note?" : ("Delete " + ids.length + " notes?"),
+    body, "Delete", function(){
+      Promise.all(ids.map(function(id){
+        var r = notePicked[id];
+        return r.kind === "linked" ? REGLIB.marks.drop(id) : REGLIB.notes.remove(id);
+      })).then(function(){
+        /* A deleted reg-linked note must leave the PAGE as well as the store, if the reader is
+           behind this screen holding it. */
+        ids.forEach(function(id){
+          var r = notePicked[id];
+          if(r.kind !== "linked" || !r.mark) return;
+          var h = document.querySelector('.rdpage[data-page="' + (r.mark.page+1) + '"]');
+          if(h) markRepaint(h, r.mark.page+1);
+        });
+        notesSelMode(false);
+      }).catch(function(){ notesSelMode(false); });
+    });
+}
+
 function notesRow(r){
   var row = document.createElement("button");
   row.type = "button"; row.className = "nrow";
   row.setAttribute("data-kind", r.kind);
+  /* The checkbox is rendered on every row and revealed by the mode's class, so entering
+     select mode is a repaint of state rather than a different row builder. */
+  var selbox = document.createElement("span"); selbox.className = "nselbox";
+  var cb = document.createElement("input");
+  cb.type = "checkbox"; cb.className = "nsel";
+  cb.checked = !!notePicked[r.id];
+  cb.setAttribute("aria-label", "Select " + (r.kind === "linked"
+    ? ("note on " + r.pub) : (r.title || notePreview(r.body) || "note")).slice(0, 60));
+  cb.addEventListener("click", function(e){ e.stopPropagation(); });
+  cb.addEventListener("change", function(){
+    if(cb.checked) notePicked[r.id] = r; else delete notePicked[r.id];
+    notesSyncBar();
+  });
+  selbox.appendChild(cb);
+  row.appendChild(selbox);
   var g = document.createElement("span");
   g.className = "nglyph" + (r.kind === "linked" ? " mk" : "");
   g.innerHTML = r.kind === "linked" ? NOTEICON.link : NOTEICON.page;
@@ -5476,6 +5788,21 @@ function notesRow(r){
     p.className = r.title ? "nprev" : "ntext";
     p.textContent = notePreview(r.body) || "Empty note";
     main.appendChild(p);
+    /* A question-linked note carries a "Question" tag and the stem it came from, in the same
+       slot the reg pill uses on a linked row — same shape, different lane, and the tag's
+       presence is again what tells them apart without colour. */
+    if(r.qid){
+      var qtag = document.createElement("div"); qtag.className = "ntag";
+      var qp = document.createElement("span"); qp.className = "npill qpill";
+      qp.innerHTML = NOTEICON.quiz;
+      qp.appendChild(document.createTextNode("Question"));
+      qtag.appendChild(qp);
+      var qs = document.createElement("span"); qs.className = "nsnip";
+      var known = BY_ID[r.qid];
+      qs.textContent = (known ? known.q : (r.qtext || ""));
+      qtag.appendChild(qs);
+      main.appendChild(qtag);
+    }
     var meta = document.createElement("div"); meta.className = "nmeta";
     var prog = noteProgress(r.body), when = noteWhen(r.at);
     meta.textContent = (when ? "Edited " + when : "") + (prog ? (when ? " · " : "") + prog : "");
@@ -5487,10 +5814,54 @@ function notesRow(r){
   /* The two row types do different things on tap, and that is the point of telling them
      apart: a linked note takes you to the passage it is about, a note of your own opens. */
   row.addEventListener("click", function(){
+    /* In select mode the whole row is the checkbox — a 44px target beats an 18px one. */
+    if(noteSelMode){
+      cb.checked = !cb.checked;
+      if(cb.checked) notePicked[r.id] = r; else delete notePicked[r.id];
+      notesSyncBar();
+      return;
+    }
     if(r.kind === "linked") noteGoToPassage(r.mark);
+    /* A question-linked note shows the question first — that is what the link is FOR, and the
+       note itself is one tap further on. An ordinary note goes straight to the editor. */
+    else if(r.qid) qnoteOpen(r.note);
     else noteEditorOpenFree(r.note);
   });
   return row;
+}
+
+/* ---- The question a note was taken on (v46) ----
+   Read-only: the stem, the correct answer and the explanation, exactly as the bank holds
+   them. A question whose stem has since been reworded no longer resolves by id, so the note
+   keeps the text it was written against and the card says so rather than showing nothing. */
+var qnoteFor = null;
+function qnoteOpen(n){
+  qnoteFor = n;
+  var q = BY_ID[n.qid];
+  $("qnoteQ").textContent = q ? q.q : (n.qtext || "");
+  if(q){
+    $("qnoteA").hidden = false;
+    $("qnoteA").innerHTML = "";
+    var lbl = document.createElement("b"); lbl.textContent = "Correct answer";
+    $("qnoteA").appendChild(lbl);
+    $("qnoteA").appendChild(document.createTextNode(q.a));
+    $("qnoteE").hidden = false;
+    $("qnoteE").textContent = q.e || "";
+    $("qnoteGone").hidden = true;
+  } else {
+    $("qnoteA").hidden = true;
+    $("qnoteE").hidden = true;
+    $("qnoteGone").hidden = false;
+    $("qnoteGone").textContent = n.qtext
+      ? "This question has changed since the note was written, so the answer below it is no longer shown. The wording above is what you saw at the time."
+      : "The question this note was linked to is no longer in the bank.";
+  }
+  $("qnoteCard").classList.remove("hidden");
+  $("qnoteClose").focus();
+}
+function qnoteClose(){
+  $("qnoteCard").classList.add("hidden");
+  qnoteFor = null;
 }
 
 /* Jump to the passage. Reuses the Bookmarks path exactly — openReader(id, page) — and adds
@@ -5975,6 +6346,10 @@ var mkPendingCap = null, mkNoteEditing = null, mkSaveTimer = 0, mkSavedTimer = 0
    note" and mints a stray one. That is not hypothetical: the first version inferred it, and
    the self-test's own probe created a junk note on the way out. */
 var mkMode = null;
+/* v46: the question a mid-quiz note is offering to link to, or the one an existing note
+   already links to. Null on every other path, which is what keeps the toggle out of the way
+   of an ordinary note. */
+var mkLinkQuestion = null;
 
 function markEnable(){ return true; }   /* presence of this function is what shows the toggle */
 
@@ -6675,6 +7050,8 @@ function markEditorReset(){
   if(mkSavedTimer){ clearTimeout(mkSavedTimer); mkSavedTimer = 0; }
   $("mkSaved").classList.remove("on");
   mkEditing = null; mkNoteEditing = null; mkPendingCap = null; mkMode = null;
+  mkLinkQuestion = null;
+  $("mkLinkRow").hidden = true;
   $("mkTitle").value = "";
   $("mkText").value = "";
   $("mkCtx").hidden = true;
@@ -6718,8 +7095,8 @@ function markOpenExisting(m){
   $("mkText").focus();
 }
 /* A free-standing note. `n` null means a new one, which — like a fresh selection — is not
-   written until something is typed. */
-function noteEditorOpenFree(n){
+   written until something is typed. `q` is the question a mid-quiz note offers to link to. */
+function noteEditorOpenFree(n, q){
   markEditorReset();
   mkNoteEditing = n || null; mkMode = "free";
   $("mkKind").textContent = "Note";
@@ -6728,24 +7105,73 @@ function noteEditorOpenFree(n){
   $("mkTitle").value = n && n.title ? n.title : "";
   $("mkText").placeholder = "Write it down.";
   $("mkText").value = n && n.body ? n.body : "";
+  /* The link offer appears for a note started from a question, and for an existing note that
+     already carries a link — so the link can be seen and taken off again, not just added. */
+  var linkQ = q || (n && n.qid ? {id:n.qid, q:n.qtext} : null);
+  mkLinkQuestion = linkQ;
+  if(linkQ){
+    $("mkLinkRow").hidden = false;
+    /* Default ON for a new note taken during a quiz; for an existing note, reflect what it
+       actually holds rather than re-asserting the default over a Soldier's choice. */
+    markSetLinkToggle(n ? !!n.qid : true);
+  }
   markEditorShow();
   (n ? $("mkText") : $("mkTitle")).focus();
 }
+/* Driven through the same setSwitch every other switch in the app uses, so the knob, the word
+   and the accent state cannot drift from Settings. */
+function markSetLinkToggle(on){ setSwitch("mkLinkQ", "mkLinkTxt", !!on, on ? "On" : "Off"); }
+function markLinkOn(){ return $("mkLinkQ").getAttribute("aria-checked") === "true"; }
 function markCloseSheet(){
-  /* Flush before hiding: the debounce must never be the reason a note is lost. */
-  markEditorFlush();
+  /* Flush before hiding: the debounce must never be the reason a note is lost.
+     v46: a note left completely blank is DISCARDED rather than persisted as an empty row —
+     opening the editor and changing your mind should leave nothing behind. And the hub is
+     re-read on the way out unconditionally, not only inside the save promise: "it said Saved
+     but the note wasn't in my list" is the one report that must not be able to recur, so the
+     refresh no longer depends on which path got here or on the save having resolved. */
+  var blank = !$("mkText").value.trim() && !$("mkTitle").value.trim();
+  var stale = (mkMode === "free") ? mkNoteEditing : null;
+  var p = (blank && stale)
+    ? REGLIB.notes.remove(stale.id).catch(function(){})
+    : markEditorFlush();
   $("mkSheet").classList.add("hidden");
   markEditorReset();
+  Promise.resolve(p).then(notesRefreshIfOpen, notesRefreshIfOpen);
+}
+/* v46: a save that fails must SAY SO. Every write path used to end in a catch that returned
+   null, so a rejected transaction left the Soldier looking at a note they had typed, no
+   "Saved", and no reason — indistinguishable from a note that simply had not settled yet.
+   Storage can genuinely fail (a second tab holding an upgrade, a full device), and silence is
+   the one response that loses work without admitting it. */
+function markSaveFailed(e){
+  var el = $("mkSaved");
+  el.classList.add("on");
+  el.classList.add("bad");
+  el.lastChild.nodeValue = "Not saved";
+  if(mkSavedTimer) clearTimeout(mkSavedTimer);
+  mkSavedTimer = setTimeout(function(){
+    el.classList.remove("on"); el.classList.remove("bad");
+    el.lastChild.nodeValue = "Saved";
+    mkSavedTimer = 0;
+  }, 4000);
+  return null;
 }
 function markShowSaved(){
   var el = $("mkSaved");
+  el.classList.remove("bad");
+  el.lastChild.nodeValue = "Saved";
   el.classList.add("on");
   if(mkSavedTimer) clearTimeout(mkSavedTimer);
   mkSavedTimer = setTimeout(function(){ el.classList.remove("on"); mkSavedTimer = 0; }, 1800);
 }
+/* v46: 800ms, up from 500. The indicator settles ONCE after a Soldier stops typing rather
+   than blinking mid-sentence — at 500 a normal typing pause tripped it repeatedly, which read
+   as the app struggling rather than as reassurance. Blur and close commit immediately, so the
+   longer wait never costs a save. */
+var MK_SAVE_DEBOUNCE = 800;
 function markEditorTouched(){
   if(mkSaveTimer) clearTimeout(mkSaveTimer);
-  mkSaveTimer = setTimeout(function(){ mkSaveTimer = 0; markEditorFlush(); }, 500);
+  mkSaveTimer = setTimeout(function(){ mkSaveTimer = 0; markEditorFlush(); }, MK_SAVE_DEBOUNCE);
 }
 /* The single write path for every kind of note this editor holds. */
 function markEditorFlush(){
@@ -6757,9 +7183,14 @@ function markEditorFlush(){
   /* A free-standing note. */
   if(mkMode === "free"){
     if(!mkNoteEditing && !text.trim() && !title.trim()) return Promise.resolve(null);
+    /* The link is written only while the toggle is on, so switching it off and closing takes
+       the link off the note rather than leaving a stale one behind. */
+    var link = (mkLinkQuestion && markLinkOn()) ? mkLinkQuestion : null;
     return REGLIB.notes.put({
       id: mkNoteEditing ? mkNoteEditing.id : null,
       title: title, body: text,
+      qid: link ? link.id : null,
+      qtext: link ? link.q : null,
       createdAt: mkNoteEditing ? mkNoteEditing.createdAt : null
     }).then(function(n){
       mkNoteEditing = n;
@@ -6767,7 +7198,7 @@ function markEditorFlush(){
       markShowSaved();
       notesRefreshIfOpen();
       return n;
-    }).catch(function(){ return null; });
+    }).catch(markSaveFailed);
   }
   /* A reg-linked note that already exists. Keeping the id AND the anchor is load-bearing —
      the anchor is the join key back to the passage, so a re-save must never mint a new one.
@@ -6787,7 +7218,7 @@ function markEditorFlush(){
       if(holder) markRepaint(holder, m.page+1);
       notesRefreshIfOpen();
       return saved;
-    }).catch(function(){ return null; });
+    }).catch(markSaveFailed);
   }
   /* A fresh selection, first keystroke: this is where the record is finally created. */
   if(mkPendingCap && text.trim()){
@@ -6799,7 +7230,7 @@ function markEditorFlush(){
       markShowSaved();
       notesRefreshIfOpen();
       return saved;
-    }).catch(function(){ return null; });
+    }).catch(markSaveFailed);
   }
   return Promise.resolve(null);
 }
@@ -7590,7 +8021,14 @@ function selfTest(){
        reported clean. Computed min-height answers the same question with the screen closed. */
     [["#notesChips .nchip", "a filter chip"], ["#notesBack", "the back control"],
      ["#notesNew", "the new-note button"], ["#mkTrash", "the editor's delete control"],
-     [".mktool", "an editor insert control"], ["#mkGo", "Go to passage"]].forEach(function(pair){
+     [".mktool", "an editor insert control"], ["#mkGo", "Go to passage"],
+     /* v46 controls. The link switch was 27px tall on its first cut, because it was drawn
+        fresh instead of reusing the app's own 44px switch component. */
+     ["#mkLinkQ", "the link-to-question switch"], ["#quizNote", "the in-quiz note button"],
+     ["#notesSelect", "the Select control"], ["#notesDel", "the select-mode Delete"],
+     ["#notesAll", "Select all"], ["#notesCancel", "the select-mode Cancel"],
+     ["#homeBtn", "the wordmark home control"], ["#rdHome", "the reader's home control"],
+     ["#qnoteClose", "the question card's close control"]].forEach(function(pair){
       Array.prototype.forEach.call(document.querySelectorAll(pair[0]), function(el){
         var cs = getComputedStyle(el);
         var h = Math.max(parseFloat(cs.minHeight) || 0, parseFloat(cs.height) || 0);
@@ -7630,6 +8068,53 @@ function selfTest(){
       if(mine.querySelector(".nglyph.mk")) errs.push("notes: a free-standing row borrows the --mark lane");
       if(typeof noteProgress === "function" && noteProgress("[x] a\n[ ] b") !== "1 of 2 done")
         errs.push("notes: the checklist progress meta miscounts");
+      box.remove();
+    })();
+    /* v46 structure. */
+    if(!document.getElementById("homeBtn"))
+      errs.push("nav: the wordmark is not a home control");
+    if(!document.getElementById("rdHome"))
+      errs.push("nav: the reader has no home control, so it takes two backs to leave");
+    if(typeof goHome !== "function") errs.push("nav: goHome is not reachable");
+    ["quizNote","mkLinkQ","mkLinkRow","qnoteCard","qnoteQ","notesSelect","notesBar","notesDel","notesAll"]
+      .forEach(function(id){
+        if(!document.getElementById(id)) errs.push("notes: #" + id + " is missing");
+      });
+    /* The confirm must sit ABOVE the editor. It did not, and deleting one note took three
+       taps because the first one opened a dialog behind the sheet. */
+    (function(){
+      var c = document.getElementById("libConfirm"), s = document.getElementById("mkSheet");
+      if(!c || !s) return;
+      var cz = parseInt(getComputedStyle(c).zIndex, 10), sz = parseInt(getComputedStyle(s).zIndex, 10);
+      if(!(cz > sz))
+        errs.push("notes: the delete confirm (z " + cz + ") is not above the note editor (z " + sz
+          + ") — it would open behind the sheet");
+    })();
+    /* The debounce is a feel decision that was tuned on device; a silent revert to a shorter
+       one brings back the flicker. */
+    if(typeof MK_SAVE_DEBOUNCE === "number" && MK_SAVE_DEBOUNCE < 700)
+      errs.push("notes: the autosave debounce is " + MK_SAVE_DEBOUNCE + "ms — under 700 the Saved indicator flickers per keystroke");
+    /* A question-linked row must render its Question tag, and must NOT borrow the reg lane. */
+    (function(){
+      if(typeof notesRow !== "function") return;
+      var box = document.createElement("div");
+      box.style.cssText = "position:absolute;left:-9999px;width:360px";
+      document.body.appendChild(box);
+      var qrow = notesRow({kind:"mine", id:"tq", note:{id:"tq"}, title:"", body:"note",
+        qid:"nope-not-in-bank", qtext:"What is the Army's birthday?", at:new Date().toISOString()});
+      box.appendChild(qrow);
+      var pill = qrow.querySelector(".npill");
+      if(!pill) errs.push("notes: a question-linked row renders no Question tag");
+      else {
+        if(pill.textContent.indexOf("Question") === -1)
+          errs.push("notes: the question tag does not say Question");
+        if(!pill.classList.contains("qpill"))
+          errs.push("notes: the question tag is not in its own lane");
+      }
+      /* An unresolvable qid must fall back to the text stored with the note, not render blank. */
+      var snip = qrow.querySelector(".nsnip");
+      if(!snip || snip.textContent.indexOf("birthday") === -1)
+        errs.push("notes: a question-linked row whose question left the bank renders nothing");
       box.remove();
     })();
     /* 5. The linked editor's passage-context card. It only ever appears on a path that
@@ -7813,6 +8298,77 @@ function notesStoreCheck(){
           out.problems.push("the editor wrote a note from a dropped target — mkMode is not gating the flush");
       });
     });
+  }).then(function(){
+    /* v46: a QUESTION-LINKED note round-trips — created with a qid, surfaced by the merged
+       read carrying that qid, and gone after a delete. */
+    var made = null, sample = QUESTIONS[0];
+    return REGLIB.notes.put({title:"", body:"selftest question note", qid:sample.id, qtext:sample.q})
+      .then(function(n){
+        made = n;
+        if(!n.qid) out.problems.push("a question-linked note saved without its question id");
+        if(!n.qtext) out.problems.push("a question-linked note saved without the question text");
+        return notesLoad();
+      }).then(function(rows){
+        var hit = (rows||[]).filter(function(r){ return made && r.id === made.id; })[0];
+        if(!hit) out.problems.push("a question-linked note did not reach the hub");
+        else {
+          if(hit.kind !== "mine")
+            out.problems.push("a question-linked note filters as '" + hit.kind + "' — it belongs under My notes");
+          if(hit.qid !== sample.id) out.problems.push("the hub lost a note's question link");
+          if(!BY_ID[hit.qid]) out.problems.push("a question-linked note's qid does not resolve in the bank");
+        }
+        return REGLIB.notes.remove(made.id);
+      }).then(function(){
+        return REGLIB.notes.list();
+      }).then(function(list){
+        if(list.filter(function(n){ return made && n.id === made.id; }).length)
+          out.problems.push("a deleted question-linked note survived");
+      });
+  }).then(function(){
+    /* v46: an empty note is DISCARDED on close, not persisted as a blank row — and the hub
+       re-reads on the way out, which is the fix for "it said Saved but it wasn't in my list".
+       Both are driven through the real editor rather than asserted about it. */
+    return REGLIB.notes.list().then(function(before){
+      noteEditorOpenFree(null);
+      $("mkText").value = "   ";        /* whitespace only: still empty */
+      markCloseSheet();
+      return REGLIB.notes.list().then(function(after){
+        if(after.length !== before.length)
+          out.problems.push("closing an empty note persisted a blank row");
+        /* Now a real one, and the rendered list must reflect it with no reload. */
+        noteEditorOpenFree(null);
+        $("mkText").value = "selftest refresh probe";
+        return markEditorFlush().then(function(n){
+          markCloseSheet();
+          return new Promise(function(res){ setTimeout(res, 60); }).then(function(){
+            return notesRefresh();
+          }).then(function(){
+            var shown = document.querySelectorAll("#notesList .nrow").length;
+            var stale = !$("notes").classList.contains("hidden") && shown === 0;
+            if(stale) out.problems.push("the hub rendered nothing after a note was added");
+            return n ? REGLIB.notes.remove(n.id) : null;
+          });
+        });
+      });
+    });
+  }).then(function(){
+    /* v46: select-and-delete removes from the STORE, and asks once first. */
+    var probe = null;
+    return REGLIB.notes.put({title:"selftest select", body:"x"}).then(function(n){
+      probe = n;
+      notePicked = {}; notePicked[n.id] = {kind:"mine", id:n.id, note:n};
+      notesDeleteSelected();
+      var asked = !document.getElementById("libConfirm").classList.contains("hidden");
+      if(!asked) out.problems.push("a select-delete does not ask first");
+      var run = libPendingFn;
+      libCloseConfirm();
+      return REGLIB.notes.list().then(function(mid){
+        if(!mid.filter(function(x){ return x.id === probe.id; }).length)
+          out.problems.push("a select-delete removed the note BEFORE the confirm was answered");
+        notePicked = {};
+        return REGLIB.notes.remove(probe.id);
+      });
+    }).catch(function(){ notePicked = {}; });
   }).then(function(){
     /* The merged read: the hub must see BOTH stores, and every linked row it produces must
        carry an anchor that can actually be jumped to. */
@@ -8081,14 +8637,45 @@ $("regBtn").addEventListener("click", openLibrary);
    INSIDE a scroller, where iOS swallows the click that follows a scroll; these three are fixed
    chrome that never moves under the finger, so a click is right and a pointerdown would fire
    while a Soldier was only resting a thumb. */
+$("homeBtn").addEventListener("click", goHome);
 $("notesBtn").addEventListener("click", openNotes);
 $("notesBack").addEventListener("click", closeNotes);
 $("notesNew").addEventListener("click", function(){ noteEditorOpenFree(null); });
+/* v46: a note taken mid-quiz, offered the current question to link to. */
+$("quizNote").addEventListener("click", function(){
+  var q = quiz && quiz[idx];
+  noteEditorOpenFree(null, q ? {id:q.id, q:q.q} : null);
+});
+$("mkLinkQ").addEventListener("click", function(){
+  markSetLinkToggle(!markLinkOn());
+  markEditorTouched();
+});
+$("qnoteClose").addEventListener("click", qnoteClose);
+$("qnoteScrim").addEventListener("click", qnoteClose);
+$("qnoteOpenNote").addEventListener("click", function(){
+  var n = qnoteFor;
+  qnoteClose();
+  if(n) noteEditorOpenFree(n);
+});
 Array.prototype.forEach.call(document.querySelectorAll("#notesChips .nchip"), function(b){
   b.addEventListener("click", function(){
     noteFilter = b.getAttribute("data-filter");
     notesPaintChips();
+    /* Changing the filter clears the selection: a Soldier cannot see what is still ticked on
+       a list they are no longer looking at, and deleting it would be a surprise. */
+    if(noteSelMode){ notePicked = {}; notesSyncBar(); }
     notesRefresh();
+  });
+});
+$("notesSelect").addEventListener("click", function(){ notesSelMode(!noteSelMode); });
+$("notesCancel").addEventListener("click", function(){ notesSelMode(false); });
+$("notesDel").addEventListener("click", notesDeleteSelected);
+$("notesAll").addEventListener("click", function(){
+  var rows = document.querySelectorAll("#notesList .nrow");
+  var everything = Object.keys(notePicked).length === rows.length;
+  Array.prototype.forEach.call(rows, function(row){
+    var cb = row.querySelector(".nsel");
+    if(cb && cb.checked === everything) cb.click();
   });
 });
 /* v43: neither binding this button has had is right on its own, and the reason is worth
@@ -8163,6 +8750,9 @@ function rdTap(el, fn){
   });
 }
 rdTap($("rdBack"), closeReader);
+/* Fixed chrome that cannot move under the finger, so pointerdown via rdTap is right here —
+   the v43 rule. Back is up one level, Home is all the way out. */
+rdTap($("rdHome"), goHome);
 rdTap($("rdFav"), rdToggleFav);
 rdTap($("rdOutline"), rdOpenSheet);
 $("rdSheetScrim").addEventListener("click", function(){ $("rdSheet").classList.add("hidden"); });
@@ -8509,6 +9099,10 @@ $("mkCancel").addEventListener("click", markCloseSheet);
 $("mkScrim").addEventListener("click", markCloseSheet);
 $("mkText").addEventListener("input", markEditorTouched);
 $("mkTitle").addEventListener("input", markEditorTouched);
+/* Blur commits immediately. With an 800ms debounce, tapping straight from the body into
+   another control would otherwise sit on an uncommitted note for most of a second. */
+$("mkText").addEventListener("blur", function(){ markEditorFlush(); });
+$("mkTitle").addEventListener("blur", function(){ markEditorFlush(); });
 $("mkTrash").addEventListener("click", markEditorDelete);
 $("mkInsChk").addEventListener("click", function(){ markInsertLine("[ ] "); });
 $("mkInsBul").addEventListener("click", function(){ markInsertLine("• "); });
