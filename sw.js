@@ -1,5 +1,5 @@
 /* Army Board Study Guide service worker. Cache-first app shell, no network use. */
-var CACHE = "absg-b4fbd3585174-if90b71";
+var CACHE = "absg-8ce85655337f-if90b71";
 var SHELL = ["./", "./index.html", "./manifest.webmanifest?v=2",
              "./icon-192.png?v=2", "./icon-512.png?v=2", "./apple-touch-icon.png?v=2"];
 
@@ -19,7 +19,9 @@ self.addEventListener("fetch", function(e){
     caches.match(e.request, {ignoreSearch:true}).then(function(hit){
       return hit || fetch(e.request).then(function(res){
         var copy = res.clone();
-        caches.open(CACHE).then(function(c){ c.put(e.request, copy); });
+        /* Only cache what actually came back OK. A 404 cached here is served cache-first */
+        /* for the life of the generation, so a file that appears later stays missing. */
+        if(res.ok) caches.open(CACHE).then(function(c){ c.put(e.request, copy); });
         return res;
       }).catch(function(){ return caches.match("./index.html"); });
     })

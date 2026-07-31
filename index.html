@@ -521,7 +521,15 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
    on, and "auto" there is one stray ancestor rule away from "none". */
 .rdtext{position:absolute;inset:0;overflow:hidden;line-height:1;
   opacity:1;z-index:2;
-  -webkit-user-select:text;user-select:text;
+  /* v38: native selection is OFF. v37 tried suppressing only the callout and keeping native
+     selection; on Jordan's iPhone the native text-selection edit menu still came up on a
+     normal long-press, because that menu belongs to the selection itself and appears once
+     iOS commits one. CSS cannot suppress it while native selection is in use, and it is
+     system UI so it can never be stacked under our toolbar (v36). The only web-side route
+     left is to stop using native selection — so the app owns the gesture now.
+     Kept on desktop too, deliberately: two selection models, one per platform, is how the
+     two drift apart and only one of them stays tested. */
+  -webkit-user-select:none;user-select:none;
   /* v37, step 0. The native iOS long-press callout (Copy · Writing Tools · Search) is system
      UI drawn outside the web view, so it can never be stacked under the app's own toolbar —
      v36 established that. Suppressing it is the only route. This is the cheap half of that:
@@ -531,7 +539,13 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
      user-select stays "text" deliberately — this is not the custom-layer change. */
   -webkit-touch-callout:none}
 .rdtext span{position:absolute;white-space:pre;transform-origin:0 0;color:transparent;cursor:text;
-  -webkit-user-select:text;user-select:text}
+  -webkit-user-select:none;user-select:none}
+/* Our own selection band. Native ::selection no longer paints anything, so this layer is what
+   a Soldier actually sees while choosing text. Same --sel-wash the native highlight used in
+   v33-v37, so nothing changed visually — only who draws it. pointer-events:none, or the band
+   would swallow the drag that is creating it. */
+.rdsel{position:absolute;inset:0;pointer-events:none;z-index:3}
+.rdselband{position:absolute;background:var(--sel-wash);border-radius:1px}
 /* color stays transparent under selection: without it the UA repaints the selected glyphs
    in its own colour and they double over the rasterised page. */
 .rdtext ::selection{background:var(--sel-wash);color:transparent}
@@ -2483,7 +2497,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v37";
+var APP_VERSION = "v38";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -5497,16 +5511,149 @@ function markMergeRects(rects){
   return out.filter(function(r){ return r.w > 0 && r.h > 0; });
 }
 
+/* ==================== v38: the app's own text selection ====================
+   A new INPUT to the existing anchor, not a new anchor. Everything downstream — the quote,
+   the prefix/suffix context, textPosition, the normalized rects, the store, linked notes —
+   is computed from a DOM Range and stays exactly as it was. All this does is produce that
+   Range from touch and mouse input instead of from the browser's own selection.            */
+var mkRange = null,        /* the live selection, as a real DOM Range */
+    mkSelPage = null,      /* the .rdpage it lives on */
+    mkGrab = null,         /* {node, start, end, holder} — the word the gesture began on */
+    mkPressTimer = 0,
+    mkTouchWas = "";       /* #rdScroll's touch-action, restored when the drag ends */
+
+/* Where in the text is this screen point? Both spellings, because the standardised name and
+   the one WebKit actually ships are still not the same. */
+function markPosAt(x, y){
+  var pos = null;
+  if(document.caretRangeFromPoint){
+    var r = document.caretRangeFromPoint(x, y);
+    if(r) pos = { node:r.startContainer, offset:r.startOffset };
+  } else if(document.caretPositionFromPoint){
+    var p = document.caretPositionFromPoint(x, y);
+    if(p) pos = { node:p.offsetNode, offset:p.offset };
+  }
+  if(!pos || !pos.node || pos.node.nodeType !== 3) return null;
+  var host = pos.node.parentElement;
+  if(!host || !host.closest || !host.closest(".rdtext")) return null;
+  return pos;
+}
+
+/* Word granularity, because that is what a long-press means everywhere else on the platform.
+   Selecting a single character on a first press would feel broken even though it is precise. */
+function markWordAt(pos){
+  var t = pos.node.textContent || "", i = Math.min(pos.offset, t.length);
+  var word = function(c){ return !!c && !/\s/.test(c); };
+  var a = i, b = i;
+  while(a > 0 && word(t.charAt(a-1))) a--;
+  while(b < t.length && word(t.charAt(b))) b++;
+  /* Pressing on the space between two words still has to select something. */
+  if(a === b){
+    b = Math.min(t.length, i + 1);
+    if(a === b) a = Math.max(0, i - 1);
+  }
+  return { node:pos.node, start:a, end:b };
+}
+
+/* Paint what is selected. Runs through the same band merge a stored mark uses, so the live
+   selection and the highlight it becomes are the same shape — no jump when it commits. */
+function markPaintSel(){
+  Array.prototype.forEach.call(document.querySelectorAll(".rdsel"), function(l){ l.remove(); });
+  if(!mkRange || !mkSelPage) return;
+  var box = mkSelPage.getBoundingClientRect();
+  if(!box.width || !box.height) return;
+  var raw = [];
+  Array.prototype.forEach.call(mkRange.getClientRects(), function(r){
+    if(r.width < 1 || r.height < 1) return;
+    raw.push({ x:(r.left-box.left)/box.width, y:(r.top-box.top)/box.height,
+               w:r.width/box.width, h:r.height/box.height });
+  });
+  var bands = markMergeRects(raw);
+  if(!bands.length) return;
+  var layer = document.createElement("div"); layer.className = "rdsel";
+  bands.forEach(function(b){
+    var d = document.createElement("div"); d.className = "rdselband";
+    d.style.left = (b.x*100)+"%"; d.style.top = (b.y*100)+"%";
+    d.style.width = (b.w*100)+"%"; d.style.height = (b.h*100)+"%";
+    layer.appendChild(d);
+  });
+  mkSelPage.appendChild(layer);
+}
+
+function markSelClear(){
+  mkRange = null; mkSelPage = null; mkGrab = null;
+  markPaintSel();
+}
+
+/* Extend the range from the word it started on out to the point under the finger, in either
+   direction. Snapping the far end to a word boundary too is what stops the selection
+   shivering a character at a time while a thumb moves. */
+function markExtendTo(x, y){
+  if(!mkGrab) return;
+  var pos = markPosAt(x, y);
+  if(!pos) return;
+  var far = markWordAt(pos);
+  var r = document.createRange();
+  try {
+    r.setStart(mkGrab.node, mkGrab.start);
+    r.setEnd(mkGrab.node, mkGrab.end);
+    var probe = document.createRange();
+    probe.setStart(far.node, far.start);
+    /* Which side of the anchor is the finger on? compareBoundaryPoints answers it without
+       assuming the two nodes are in the same span. */
+    if(r.compareBoundaryPoints(Range.START_TO_START, probe) > 0) r.setStart(far.node, far.start);
+    else r.setEnd(far.node, far.end);
+  } catch(e){ return; }
+  var holder = r.startContainer.parentElement && r.startContainer.parentElement.closest(".rdpage");
+  /* A selection that ran off this page is clamped by ignoring the move, rather than storing an
+     anchor whose rects belong to a page it is not on. */
+  if(!holder || holder !== mkGrab.holder || !holder.contains(r.endContainer)) return;
+  mkRange = r; mkSelPage = holder;
+  markPaintSel();
+}
+
+function markSelBegin(x, y){
+  var pos = markPosAt(x, y);
+  if(!pos) return false;
+  var w = markWordAt(pos);
+  var holder = pos.node.parentElement.closest(".rdpage");
+  if(!holder) return false;
+  var r = document.createRange();
+  try { r.setStart(w.node, w.start); r.setEnd(w.node, w.end); } catch(e){ return false; }
+  mkGrab = { node:w.node, start:w.start, end:w.end, holder:holder };
+  mkRange = r; mkSelPage = holder;
+  markPaintSel();
+  return true;
+}
+
+/* Panning and selecting are the same finger movement, so they are told apart by time: a drag
+   scrolls, a press that stays put becomes a selection. Once it does, panning is switched off
+   for the length of the gesture, or the page would slide out from under the selection. */
+function markHoldScroll(on){
+  var sc = $("rdScroll");
+  if(on){ mkTouchWas = sc.style.touchAction; sc.style.touchAction = "none"; }
+  else { sc.style.touchAction = mkTouchWas; }
+}
+
 /* Turn the live selection into the locked anchor record. Rects are normalized against the
    page box so a mark repaints correctly at any zoom or screen width. */
-function markCaptureSelection(){
+/* The one range the rest of the markup system reads. The custom selection owns it; the
+   browser's own selection is still consulted as a fallback so a hardware keyboard, an
+   assistive tool, or a desktop double-click that produces a native range is not locked out. */
+function markActiveRange(){
+  if(mkRange && !mkRange.collapsed) return mkRange;
   var sel = window.getSelection();
   if(!sel || sel.isCollapsed || !sel.rangeCount) return null;
-  var range = sel.getRangeAt(0);
+  return sel.getRangeAt(0);
+}
+
+function markCaptureSelection(){
+  var range = markActiveRange();
+  if(!range) return null;
   var holder = range.startContainer.parentElement &&
                range.startContainer.parentElement.closest(".rdpage");
   if(!holder || !holder.contains(range.endContainer)) return null;
-  var quote = sel.toString().trim();
+  var quote = range.toString().trim();
   if(!quote) return null;
 
   var n = parseInt(holder.getAttribute("data-page"), 10);
@@ -5537,8 +5684,9 @@ function markShowBar(){
   var cap = markCaptureSelection();
   if(!cap){ $("mkBar").classList.add("hidden"); mkSel = null; return; }
   mkSel = cap;
-  var sel = window.getSelection();
-  var r = sel.getRangeAt(0).getBoundingClientRect();
+  var active = markActiveRange();
+  if(!active){ $("mkBar").classList.add("hidden"); return; }
+  var r = active.getBoundingClientRect();
   var bar = $("mkBar");
   /* The reading area, measured — not a magic number. The toolbar must never stray over the
      app bar: at z-index 90 it sits above the reader's chrome, so a toolbar parked there
@@ -5618,6 +5766,7 @@ function markSave(type, noteText){
 function markClearSelection(){
   markHideBar();
   var s = window.getSelection(); if(s) s.removeAllRanges();
+  markSelClear();
   mkSel = null;
 }
 function markCommit(type, noteText, cap){
@@ -5833,6 +5982,8 @@ function markSheetSection(body){
 }
 
 function markTeardown(){
+  if(mkPressTimer){ clearTimeout(mkPressTimer); mkPressTimer = 0; }
+  markSelClear();
   mkSel = null; mkEditing = null; mkTextCache = {}; mkPageMarks = {};
   markHideBar(); markHidePop(); markCloseSheet();
 }
@@ -6130,17 +6281,18 @@ function selfTest(){
       errs.push("markup: the text layer is at opacity 0 — a selection would be invisible");
     if(pc.pointerEvents === "none")
       errs.push("markup: the text layer does not take pointer events, so it cannot be dragged across");
-    [["layer",pc],["span",sc]].forEach(function(p){
-      if(p[1].userSelect === "none" || p[1].webkitUserSelect === "none")
-        errs.push("markup: the text " + p[0] + " is not selectable (user-select:none)");
-    });
     if(sc.color !== "rgba(0, 0, 0, 0)" && sc.color !== "transparent")
       errs.push("markup: text-layer glyphs are not transparent (" + sc.color + ") and would double over the page");
-    /* v37 step 0. Asserted only where the browser reports the property at all, so a engine
-       that does not implement it cannot produce a false failure. */
     var callout = pc.webkitTouchCallout || pc.getPropertyValue("-webkit-touch-callout");
     if(callout && callout !== "none")
       errs.push("markup: the text layer allows the native touch callout (" + callout + "), which collides with the markup toolbar on iOS");
+    /* v38: native selection must stay OFF. If it comes back the iOS edit menu comes back with
+       it, which is the whole defect this build exists to remove. */
+    [["layer",pc],["span",sc]].forEach(function(p){
+      var us = p[1].webkitUserSelect || p[1].userSelect;
+      if(us !== "none")
+        errs.push("markup: native selection is enabled on the text " + p[0] + " (" + us + "), so the iOS edit menu would return");
+    });
     probe.remove();
 
     /* 2. The highlight toggle's maths. A re-highlight has to RECOGNISE the existing mark or
@@ -6174,6 +6326,36 @@ function selfTest(){
     if(tb.width && (tb.width < 44 || tb.height < 44))
       errs.push("markup: the marks checkbox target is " + Math.round(tb.width) + "x" + Math.round(tb.height) + ", under 44px");
     probeRow.remove();
+
+    /* v38: the custom selection has to produce a real word range from a point in the text.
+       Exercised on a synthetic text layer, so it runs with no PDF and no canvas. */
+    (function(){
+      if(typeof markWordAt !== "function"){
+        errs.push("markup: markWordAt is not reachable, so a long-press cannot select a word");
+        return;
+      }
+      var host = document.createElement("div");
+      host.className = "rdtext";
+      host.style.position = "absolute"; host.style.left = "-9999px";
+      var sp = document.createElement("span");
+      sp.textContent = "The Noncommissioned Officer Creed";
+      host.appendChild(sp); document.body.appendChild(host);
+      var t = sp.firstChild;
+      /* Mid-word snaps out to the whole word, both directions. */
+      var w = markWordAt({ node:t, offset:8 });          /* inside "Noncommissioned" */
+      if(t.textContent.slice(w.start, w.end) !== "Noncommissioned")
+        errs.push("markup: a word press selected \"" + t.textContent.slice(w.start, w.end) + "\" instead of the whole word");
+      /* On a space it still has to select something rather than nothing. */
+      var sp2 = markWordAt({ node:t, offset:3 });
+      if(sp2.start === sp2.end)
+        errs.push("markup: pressing between words selects an empty range");
+      /* And the range that produces has to survive the merge as a paintable band. */
+      var rr = document.createRange();
+      rr.setStart(t, w.start); rr.setEnd(t, w.end);
+      if(rr.toString() !== "Noncommissioned")
+        errs.push("markup: the word range does not read back as its own text");
+      host.remove();
+    })();
 
     /* 4. One highlight, one wash. The merge is what stops a multi-word selection painting as
        a striped, double-painted band, so its behaviour is asserted rather than assumed. */
@@ -6572,6 +6754,69 @@ $("rdScroll").addEventListener("scroll", function(){
     rdScrollTimer = 0; rdScrollLast = Date.now(); rdSyncPage();
   }, 100);
 }, {passive:true});
+/* ---------------- markup: the selection gesture (v38) ----------------
+   One model for mouse and touch, on pointer events. Building two — native on desktop, custom
+   on touch — would leave the platform this has to work on as the only untested one.        */
+var MK_HOLD = 420;      /* ms a touch must stay put before it means "select", not "scroll" */
+var MK_SLOP = 10;       /* px of movement allowed during that hold */
+
+$("rdPages").addEventListener("pointerdown", function(e){
+  if(e.button != null && e.button !== 0) return;
+  var onText = e.target && e.target.closest && e.target.closest(".rdtext");
+  if(!onText){ return; }        /* chrome, tabs and margins keep their own handlers */
+  var x = e.clientX, y = e.clientY, id = e.pointerId;
+  var moved = false;
+  var startX = x, startY = y;
+
+  var engage = function(){
+    mkPressTimer = 0;
+    if(moved) return;
+    if(!markSelBegin(startX, startY)) return;
+    markHoldScroll(true);
+    try { onText.setPointerCapture(id); } catch(err){}
+  };
+
+  var move = function(ev){
+    if(ev.pointerId !== id) return;
+    if(Math.abs(ev.clientX-startX) > MK_SLOP || Math.abs(ev.clientY-startY) > MK_SLOP) moved = true;
+    if(!mkGrab) return;
+    /* Owned now: this movement is extending a selection, not scrolling the page. */
+    ev.preventDefault();
+    markExtendTo(ev.clientX, ev.clientY);
+  };
+
+  var up = function(ev){
+    if(ev.pointerId !== id) return;
+    document.removeEventListener("pointermove", move, {passive:false});
+    document.removeEventListener("pointerup", up);
+    document.removeEventListener("pointercancel", up);
+    if(mkPressTimer){ clearTimeout(mkPressTimer); mkPressTimer = 0; }
+    if(!mkGrab){
+      /* Nothing was selected — a plain tap. Clear whatever was, so tapping the page dismisses
+         a selection the way it does everywhere else. */
+      if(mkRange){ markClearSelection(); }
+      return;
+    }
+    markHoldScroll(false);
+    try { onText.releasePointerCapture(id); } catch(err){}
+    mkGrab = null;
+    markShowBar();
+  };
+
+  document.addEventListener("pointermove", move, {passive:false});
+  document.addEventListener("pointerup", up);
+  document.addEventListener("pointercancel", up);
+
+  if(e.pointerType === "mouse"){
+    /* A mouse has no ambiguity to resolve — there is nothing to scroll with button one down —
+       so it selects immediately and drags to extend. */
+    e.preventDefault();
+    markSelBegin(x, y);
+  } else {
+    mkPressTimer = setTimeout(engage, MK_HOLD);
+  }
+});
+
 /* ---------------- markup (v28) ---------------- */
 /* Selection is what raises the toolbar, so the listener is on selectionchange rather than a
    mode toggle: marking works the moment a Soldier selects, which is the interaction the
