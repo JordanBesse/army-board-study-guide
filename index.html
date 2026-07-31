@@ -2544,7 +2544,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v42";
+var APP_VERSION = "v43";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -6645,6 +6645,16 @@ function selfTest(){
       var wrap = document.getElementById("rdPages");
       if(wrap && wrap.style.transform)
         errs.push("reader: #rdPages carries a transform (" + wrap.style.transform + "), which shifts the page under a zoom commit");
+      /* v43: the pinch's start gate must not reject a zoom-in, which begins with the fingers
+         close together. 40px was rejecting the commonest gesture on the device. */
+      if(typeof pinchStart === "function"){
+        var src = String(pinchStart);
+        var m = src.match(/d\s*<\s*(\d+)/);
+        if(m && Number(m[1]) > 12)
+          errs.push("reader: the pinch start gate rejects fingers under " + m[1] + "px, which is how a zoom-in begins");
+        if(/spoiled/.test(String(pinchMove)))
+          errs.push("reader: a stray third finger still spoils a pinch");
+      }
       /* References lives inside a scroller, so it must not navigate on pointerdown — putting
          a finger on it to scroll would open it. */
       var ro = document.getElementById("refOpen");
@@ -6971,13 +6981,41 @@ $("printBtn").addEventListener("click", function(){ buildPrint(); window.print()
 
 /* ---------------- regulation library (v26) ---------------- */
 $("regBtn").addEventListener("click", openLibrary);
-/* v42: back to a plain click, and the v36 reasoning was the mistake. rdTap fires on
-   pointerdown, which is right for the reader's FIXED toolbar — nothing there scrolls, so
-   there is no gesture to disambiguate. #refOpen is a button inside the SCROLLABLE home menu,
-   so firing on pointerdown meant that putting a finger on it to scroll navigated instantly.
-   A plain click is what every other home-menu button uses, and iOS already suppresses click
-   when a touch turns into a scroll — which is exactly the behaviour wanted here. */
-$("refOpen").addEventListener("click", function(){ openLibrary(null, quizSources); });
+/* v43: neither binding this button has had is right on its own, and the reason is worth
+   keeping. pointerdown (v36) fires the instant a finger lands, so starting a scroll on a
+   button inside a scroller navigates. A plain click (v42) is the opposite failure: iOS
+   suppresses the synthetic click that follows a scroll, so the button paints its pressed
+   state and does nothing — "typically after scrolling and then pressing".
+
+   So: a real pointerup, gated on the finger not having moved. pointerup always fires, even
+   straight after a scroll, and the movement check is what tells a tap from a drag. The
+   keyboard path stays, because pointer events never reach it. */
+(function(){
+  var el = $("refOpen"), id = null, sx = 0, sy = 0, TAP = 10;
+  var go = function(){ openLibrary(null, quizSources); };
+  var drop = function(){ id = null; el.blur(); };
+  el.addEventListener("pointerdown", function(e){
+    id = e.pointerId; sx = e.clientX; sy = e.clientY;
+  });
+  el.addEventListener("pointermove", function(e){
+    if(id === null || e.pointerId !== id) return;
+    if(Math.abs(e.clientX - sx) > TAP || Math.abs(e.clientY - sy) > TAP) drop();
+  });
+  el.addEventListener("pointerup", function(e){
+    if(id === null || e.pointerId !== id) return;
+    var still = Math.abs(e.clientX - sx) <= TAP && Math.abs(e.clientY - sy) <= TAP;
+    drop();
+    if(!still) return;
+    e.preventDefault();
+    go();
+  });
+  el.addEventListener("pointercancel", drop);
+  /* The click that may or may not follow is never the trigger — it would double-fire. */
+  el.addEventListener("click", function(e){ e.preventDefault(); });
+  el.addEventListener("keydown", function(e){
+    if(e.key === "Enter" || e.key === " "){ e.preventDefault(); go(); }
+  });
+})();
 $("libBack").addEventListener("click", closeLibrary);
 $("libConfirmNo").addEventListener("click", libCloseConfirm);
 $("libConfirmScrim").addEventListener("click", libCloseConfirm);
@@ -7105,9 +7143,12 @@ $("rdScroll").addEventListener("pointerdown", function(e){
 }, true);
 
 function mkRelease(e){
+  var wasLocked = mkPinch && (String(e.pointerId) === mkPinch.a || String(e.pointerId) === mkPinch.b);
   if(mkPts[e.pointerId]) delete mkPts[e.pointerId];
   var n = mkCount();
-  if(mkPinch && n < 2) pinchEnd();
+  /* One of the two fingers that started the pinch has gone, so the pinch is over — whether or
+     not some other finger happens to still be on the glass. */
+  if(mkPinch && (wasLocked || n < 2)) pinchEnd();
   if(n === 0 && !mkActive && mkScrollOwner) markFreeScroll("all fingers up");
 }
 window.addEventListener("pointerup", mkRelease, true);
@@ -7143,29 +7184,30 @@ function pinchStart(){
   var k = Object.keys(mkPts);
   if(k.length !== 2) return;              /* strictly two, never "the first two of many" */
   var d = pinchDist(mkPts[k[0]], mkPts[k[1]]);
-  if(d < 40){ dbg("pinch ignored — fingers " + Math.round(d) + "px apart"); return; }
-  mkPinch = { a:k[0], b:k[1], d0:d, z0:rdZoom, dEnd:d, spoiled:false };
+  /* v43: this floor was 40px and it was throwing away the commonest gesture. A zoom-IN starts
+     with the fingers together and spreads them, so a small d0 is not a bad pinch — it is the
+     start of a good one. The floor now exists only to keep the ratio out of a divide-by-zero. */
+  if(d < 8){ dbg("pinch ignored — fingers " + Math.round(d) + "px apart"); return; }
+  mkPinch = { a:k[0], b:k[1], d0:d, z0:rdZoom, dEnd:d };
   dbg("pinch start d0 " + Math.round(d) + " z0 " + rdZoom.toFixed(2));
 }
 function pinchMove(){
-  if(!mkPinch || mkPinch.spoiled) return;
-  /* A third finger anywhere means we can no longer be sure what is being measured. Spoiling
-     is the honest answer; guessing is how it committed 300%. */
-  if(Object.keys(mkPts).length > 2){
-    mkPinch.spoiled = true;
-    dbg("pinch SPOILED — " + Object.keys(mkPts).length + " pointers");
-    return;
-  }
+  if(!mkPinch) return;
+  /* v43: a third finger no longer spoils anything. v42 was right that measuring the wrong
+     pair is what produced the 300% commit, but wrong about the remedy — on a real phone a
+     stray touch (a palm, the other thumb) lands constantly, and discarding the gesture threw
+     away perfectly good pinches. The pair is LOCKED at the start instead, so extra pointers
+     are simply not part of this measurement and can be ignored entirely. */
   var a = mkPts[mkPinch.a], b = mkPts[mkPinch.b];
   if(!a || !b) return;
-  mkPinch.dEnd = pinchDist(a, b);
+  var d = pinchDist(a, b);
+  if(d > 0) mkPinch.dEnd = d;
 }
 function pinchEnd(){
   if(!mkPinch) return;
   var p = mkPinch;
   mkPinch = null;
   markFreeScroll("pinch end");
-  if(p.spoiled){ dbg("pinch discarded (spoiled)"); return; }
   var ratio = p.dEnd / p.d0;              /* apart > 1 = zoom IN, together < 1 = zoom out */
   var z = Math.max(RD_ZOOM_MIN, Math.min(RD_ZOOM_MAX, p.z0 * ratio));
   dbg("pinch d0 " + Math.round(p.d0) + " dEnd " + Math.round(p.dEnd)
