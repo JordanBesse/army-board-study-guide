@@ -2911,7 +2911,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v47";
+var APP_VERSION = "v48";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -3760,13 +3760,27 @@ function quizNoteShow(on){
    locking a Soldier out of the theme or the text-to-speech toggle mid-quiz would be silly. */
 function applyQuizRes(){
   var inQuiz = !$("quiz").classList.contains("hidden");
+  /* Outside a quiz every route is open, whatever the setting says. The restriction is about
+     what a Soldier can consult WHILE answering, never about what the app will show them. */
   if(!inQuiz){
     $("regBtn").style.display = ""; $("notesBtn").style.display = "";
+    $("refOpen").style.display = "";
     return;
   }
   var mode = (DATA && DATA.qres) || "both";
-  $("regBtn").style.display   = (mode === "both") ? "" : "none";
-  $("notesBtn").style.display = (mode === "off")  ? "none" : "";
+  /* v48: "Notes only" means ADD-ONLY. v47 hid References but left the Notes HUB reachable, so
+     a Soldier could still open the collection and read every saved note mid-question — which
+     is the cheat sheet the setting exists to prevent. Only the green FAB survives, and it
+     opens a blank editor rather than the hub.
+
+     The footer's References button is gated with it. That is a SECOND route into the same
+     library and it was open in every mode, including "off" — so the closed-book board
+     simulation was never closed-book. Found by enumerating the routes rather than trusting
+     that the floating button was the only one. */
+  var consult = (mode === "both");
+  $("regBtn").style.display   = consult ? "" : "none";
+  $("notesBtn").style.display = consult ? "" : "none";
+  $("refOpen").style.display  = consult ? "" : "none";
   quizNoteShow(mode !== "off");
 }
 /* Re-trigger the mount animation on an element. The class has to come off and go back on
@@ -4002,7 +4016,7 @@ function finish(){
   refreshMissedBtn();
   stopSpeech(); $("speakRow").classList.add("hidden");
   compactBar(false);
-  $("quiz").classList.add("hidden"); quizNoteShow(false); $("results").classList.remove("hidden");
+  $("quiz").classList.add("hidden"); quizNoteShow(false); applyQuizRes(); $("results").classList.remove("hidden");
   mount($("results"));
   window.scrollTo(0,0);
 }
@@ -4055,7 +4069,7 @@ function toMenu(){
   if(tick){ clearInterval(tick); tick=null; }
   stopSpeech(); $("speakRow").classList.add("hidden");
   compactBar(false);
-  $("quiz").classList.add("hidden"); quizNoteShow(false); $("results").classList.add("hidden"); $("flash").classList.add("hidden");
+  $("quiz").classList.add("hidden"); quizNoteShow(false); applyQuizRes(); $("results").classList.add("hidden"); $("flash").classList.add("hidden");
   /* The library is a screen like the others, so leaving by any route must put it away and
      bring the two floaters back — otherwise a Back gesture out of the library would strand
      the home screen with no gear and no Regulations button. */
@@ -4068,6 +4082,9 @@ function toMenu(){
   $("regBtn").style.display = ""; $("settingsBtn").style.display = "";
   $("notesBtn").style.display = "";
   document.querySelector("footer").style.display = "";
+  /* Restores the footer's References button too — the in-quiz gate may have hidden it, and
+     outside a quiz every route is open regardless of the setting. */
+  applyQuizRes();
   $("home").classList.remove("hidden");
   $("sub").textContent="Soldier of the Month, Promotion Board, Audie Murphy, Drill Sergeant, and ESB preparation.";
   mount($("home"));
@@ -8574,24 +8591,44 @@ function notesStoreCheck(){
     var still = !$("quiz").classList.contains("hidden");
     libCloseConfirm();
     if(!still) out.problems.push("the home control tore the quiz down before the confirm was answered");
-    /* The setting gates the in-quiz controls. */
+    /* The setting gates the in-quiz controls. EVERY route is checked, not just the floating
+       buttons: v47 gated the References floater and left the footer's References button wide
+       open in all three states, so "off" was never actually closed-book. */
     var keep = DATA.qres;
+    function route(id){
+      var el = $(id);
+      if(!el) return "missing";
+      return getComputedStyle(el).display === "none" ? "closed" : "open";
+    }
     applyQres("off");
     if(!$("quizNote").classList.contains("hidden"))
-      out.problems.push("in-quiz resources 'off' still shows the note button");
-    if($("regBtn").style.display !== "none")
-      out.problems.push("in-quiz resources 'off' still shows the References entry");
+      out.problems.push("in-quiz 'off' still shows the note button");
+    ["regBtn","notesBtn","refOpen"].forEach(function(id){
+      if(route(id) !== "closed") out.problems.push("in-quiz 'off' leaves #" + id + " reachable");
+    });
     applyQres("notes");
     if($("quizNote").classList.contains("hidden"))
-      out.problems.push("in-quiz resources 'notes' hides the note button");
-    if($("regBtn").style.display !== "none")
-      out.problems.push("in-quiz resources 'notes' still shows the References entry");
+      out.problems.push("in-quiz 'notes' hides the note button — it is add-only, not none");
+    /* The hub is the saved-notes COLLECTION. Add-only must not reach it, or the setting is a
+       cheat sheet with extra steps. */
+    ["regBtn","notesBtn","refOpen"].forEach(function(id){
+      if(route(id) !== "closed")
+        out.problems.push("in-quiz 'notes' leaves #" + id + " reachable — that is consulting, not adding");
+    });
     applyQres("both");
-    if($("regBtn").style.display === "none")
-      out.problems.push("in-quiz resources 'both' hides the References entry");
-    applyQres(keep);
-    /* Put the app back where the test found it. */
+    ["regBtn","notesBtn","refOpen"].forEach(function(id){
+      if(route(id) !== "open") out.problems.push("in-quiz 'both' closes #" + id);
+    });
+    /* Put the app back where the test found it — then prove the restriction is about the QUIZ
+       and not about the app: with the strictest setting still selected, every route must be
+       open again on the home screen. */
     goHomeNow();
+    applyQres("off");
+    ["regBtn","notesBtn","refOpen"].forEach(function(id){
+      if(route(id) !== "open")
+        out.problems.push("outside a quiz, 'off' still closes #" + id + " — the setting must only restrict a quiz");
+    });
+    applyQres(keep);
     return null;
   }).then(function(){
     /* The merged read: the hub must see BOTH stores, and every linked row it produces must
