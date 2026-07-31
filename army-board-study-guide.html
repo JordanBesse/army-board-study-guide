@@ -498,6 +498,34 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
    would swallow the drag that is creating it. */
 .rdsel{position:absolute;inset:0;pointer-events:none;z-index:3}
 .rdselband{position:absolute;background:var(--sel-wash);border-radius:1px}
+/* The AD's grips: a thin accent bar the height of the line, capped with a round knob. The
+   START knob sits ABOVE the line and the END knob BELOW, so which end is which is carried by
+   shape and position rather than by hue — colour is never the only signal. The page is cream
+   in both themes, so these use the page-local accent either way. */
+.rdgrips{position:absolute;inset:0;pointer-events:none;z-index:4}
+.rdgrip{position:absolute;pointer-events:auto;touch-action:none;cursor:grab}
+.rdgrip .bar{position:absolute;left:50%;width:2.5px;margin-left:-1.25px;top:0;bottom:0;
+  background:var(--accent);border-radius:2px}
+.rdgrip .knob{position:absolute;left:50%;width:14px;height:14px;margin-left:-7px;
+  background:var(--accent);border-radius:50%}
+.rdgrip.start .knob{top:-9px}
+.rdgrip.end .knob{bottom:-9px}
+/* The invisible 44px target, centred on the knob and extending well past the visible grip. */
+.rdgrip::after{content:"";position:absolute;left:50%;width:44px;height:44px;margin-left:-22px;border-radius:50%}
+.rdgrip.start::after{top:-31px}
+.rdgrip.end::after{bottom:-31px}
+/* Grabbed: the knob grows and takes a soft halo. Size and halo carry the state, not motion. */
+.rdgrip.hot .knob{width:19px;height:19px;margin-left:-9.5px;
+  box-shadow:0 0 0 7px var(--sel-wash)}
+.rdgrip.start.hot .knob{top:-11px}
+.rdgrip.end.hot .knob{bottom:-11px}
+/* The readout: a lightweight, offline stand-in for the iOS loupe. It exists because a finger
+   covers the word it is selecting — without it the selection is only visible after lifting,
+   which is exactly what Jordan reported. No motion; it is a readout, not an animation. */
+#mkRead{position:fixed;z-index:92;max-width:min(72vw,320px);padding:7px 12px;border-radius:10px;
+  background:#1d2a1f;color:#eef2ec;font-size:.82rem;font-weight:650;line-height:1.25;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:var(--e2);pointer-events:none}
+#mkRead.hidden{display:none}
 /* color stays transparent under selection: without it the UA repaints the selected glyphs
    in its own colour and they double over the rasterised page. */
 .rdtext ::selection{background:var(--sel-wash);color:transparent}
@@ -1738,6 +1766,7 @@ footer p{margin:0 0 8px}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h10"></path></svg>
     </button>
   </div>
+  <div id="mkRead" class="hidden" aria-hidden="true"></div>
   <pre id="mkDebug" class="hidden" aria-hidden="true"></pre>
   <div id="rdToast" class="hidden" role="status" aria-live="polite"></div>
   <div id="rdScroll">
@@ -1783,6 +1812,9 @@ footer p{margin:0 0 8px}
   </button>
   <button id="mkNote" type="button">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 4h11l4 4v12H5z"></path><path d="M16 4v4h4"></path><path d="M8.5 12.5h7M8.5 16h4.5"></path></svg>Note
+  </button>
+  <button id="mkCopy" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 9h10v10H9z"></path><path d="M15 9V5H5v10h4"></path></svg>Copy
   </button>
 </div>
 <div id="mkPop" class="hidden" role="toolbar" aria-label="Selected mark">
@@ -2460,7 +2492,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v39";
+var APP_VERSION = "v40";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -5611,9 +5643,84 @@ function markPaintSel(){
   mkSelPage.appendChild(layer);
 }
 
+/* The words at the edge the finger is moving, so a Soldier can see what is being selected
+   without lifting to look. Kept to the tail (or head) of the range because that is the end
+   that is actually moving. */
+function markReadout(x, y, which){
+  var el = $("mkRead"); if(!el) return;
+  if(!mkRange){ el.classList.add("hidden"); return; }
+  var txt = mkRange.toString().replace(/\s+/g, " ").trim();
+  if(!txt){ el.classList.add("hidden"); return; }
+  var words = txt.split(" ");
+  var show = (which === "start")
+    ? words.slice(0, 3).join(" ")
+    : words.slice(-3).join(" ");
+  el.textContent = show;
+  el.classList.remove("hidden");
+  var w = el.offsetWidth, h = el.offsetHeight;
+  var chrome = document.querySelector(".rdbar").getBoundingClientRect().bottom;
+  var left = Math.min(Math.max(8, x - w/2), innerWidth - w - 8);
+  /* Well clear of the fingertip: above it by preference, below when there is no room. */
+  var top = y - h - 46;
+  if(top < chrome + 6) top = y + 46;
+  el.style.left = Math.round(left) + "px";
+  el.style.top  = Math.round(top) + "px";
+}
+function markHideReadout(){ var el = $("mkRead"); if(el) el.classList.add("hidden"); }
+
+/* The two grips. Positioned from the range's own first and last client rects, normalized
+   against the page, so they sit correctly at any zoom or width. */
+function markPaintGrips(){
+  Array.prototype.forEach.call(document.querySelectorAll(".rdgrips"), function(l){ l.remove(); });
+  if(!mkRange || !mkSelPage) return;
+  var rects = mkRange.getClientRects();
+  if(!rects.length) return;
+  var box = mkSelPage.getBoundingClientRect();
+  if(!box.width || !box.height) return;
+  var first = rects[0], last = rects[rects.length-1];
+  var layer = document.createElement("div"); layer.className = "rdgrips";
+  [["start", first.left, first.top, first.height],
+   ["end",   last.right, last.top,  last.height]].forEach(function(g){
+    var d = document.createElement("div");
+    d.className = "rdgrip " + g[0];
+    d.setAttribute("data-edge", g[0]);
+    d.style.left   = (((g[1]-box.left)/box.width)*100) + "%";
+    d.style.top    = (((g[2]-box.top)/box.height)*100) + "%";
+    d.style.height = ((g[3]/box.height)*100) + "%";
+    d.style.width  = "0px";
+    var bar = document.createElement("div"); bar.className = "bar";
+    var knob = document.createElement("div"); knob.className = "knob";
+    d.appendChild(bar); d.appendChild(knob);
+    layer.appendChild(d);
+  });
+  mkSelPage.appendChild(layer);
+}
+
+/* Move one end of an existing selection. The other end stays put — that is what makes it an
+   adjust rather than a new selection. */
+function markSetEdge(which, x, y){
+  if(!mkRange) return;
+  var pos = markPosAt(x, y);
+  if(!pos) return;
+  var w = markWordAt(pos);
+  var r = mkRange.cloneRange();
+  try {
+    if(which === "start") r.setStart(w.node, w.start);
+    else r.setEnd(w.node, w.end);
+  } catch(e){ return; }
+  /* Dragging one end past the other would collapse or invert the range; ignore rather than
+     letting the selection turn inside out under the finger. */
+  if(r.collapsed) return;
+  var holder = r.startContainer.parentElement && r.startContainer.parentElement.closest(".rdpage");
+  if(!holder || holder !== mkSelPage || !holder.contains(r.endContainer)) return;
+  mkRange = r;
+  markPaintSel(); markPaintGrips();
+  markReadout(x, y, which);
+}
+
 function markSelClear(){
   mkRange = null; mkSelPage = null; mkGrab = null;
-  markPaintSel();
+  markPaintSel(); markPaintGrips(); markHideReadout();
 }
 
 /* Extend the range from the word it started on out to the point under the finger, in either
@@ -5640,7 +5747,8 @@ function markExtendTo(x, y){
      anchor whose rects belong to a page it is not on. */
   if(!holder || holder !== mkGrab.holder || !holder.contains(r.endContainer)) return;
   mkRange = r; mkSelPage = holder;
-  markPaintSel();
+  markPaintSel(); markPaintGrips();
+  markReadout(x, y, "end");
 }
 
 function markSelBegin(x, y){
@@ -5655,7 +5763,7 @@ function markSelBegin(x, y){
   try { r.setStart(w.node, w.start); r.setEnd(w.node, w.end); } catch(e){ return false; }
   mkGrab = { node:w.node, start:w.start, end:w.end, holder:holder };
   mkRange = r; mkSelPage = holder;
-  markPaintSel();
+  markPaintSel(); markPaintGrips();
   dbg("  begin OK \"" + r.toString().slice(0,24) + "\" bands " + document.querySelectorAll(".rdselband").length
       + " nativeSel " + (window.getSelection().toString() ? "NOT EMPTY" : "empty"));
   return true;
@@ -6018,7 +6126,7 @@ function markSheetSection(body){
 
 function markTeardown(){
   if(mkPressTimer){ clearTimeout(mkPressTimer); mkPressTimer = 0; }
-  markSelClear();
+  markSelClear(); markHideReadout();
   mkSel = null; mkEditing = null; mkTextCache = {}; mkPageMarks = {};
   markHideBar(); markHidePop(); markCloseSheet();
 }
@@ -6413,6 +6521,33 @@ function selfTest(){
       if(rr.toString() !== "Noncommissioned")
         errs.push("markup: the word range does not read back as its own text");
       host.remove();
+    })();
+
+    /* v40: the selection's furniture. A grip whose target is under 44px is unusable with a
+       thumb on the type sizes this reader shows. */
+    (function(){
+      var page = document.createElement("div");
+      page.className = "rdpage";
+      page.style.cssText = "position:fixed;left:0;top:0;width:300px;height:200px;z-index:0;visibility:hidden";
+      var layer = document.createElement("div"); layer.className = "rdgrips";
+      var g = document.createElement("div"); g.className = "rdgrip start";
+      g.style.cssText = "left:20%;top:20%;height:9%";
+      var bar = document.createElement("div"); bar.className = "bar";
+      var knob = document.createElement("div"); knob.className = "knob";
+      g.appendChild(bar); g.appendChild(knob); layer.appendChild(g); page.appendChild(layer);
+      document.body.appendChild(page);
+      var after = getComputedStyle(g, "::after");
+      var tw = parseFloat(after.width), th = parseFloat(after.height);
+      if(tw && (tw < 44 || th < 44))
+        errs.push("markup: a selection grip's touch target is " + Math.round(tw) + "x" + Math.round(th) + ", under 44px");
+      var kn = parseFloat(getComputedStyle(knob).width);
+      if(kn && kn < 12)
+        errs.push("markup: the selection grip knob is only " + Math.round(kn) + "px");
+      page.remove();
+      if(!document.getElementById("mkRead"))
+        errs.push("markup: the drag readout is missing, so a selection is invisible under a finger");
+      if(!document.getElementById("mkCopy"))
+        errs.push("markup: the selection toolbar has no Copy");
     })();
 
     /* 4. One highlight, one wash. The merge is what stops a multi-word selection painting as
@@ -6817,6 +6952,47 @@ $("rdScroll").addEventListener("scroll", function(){
    on touch — would leave the platform this has to work on as the only untested one.        */
 var MK_HOLD = 420;      /* ms a touch must stay put before it means "select", not "scroll" */
 var MK_SLOP = 10;       /* px of movement allowed during that hold */
+var MK_DTAP = 300;      /* ms between two taps for a double-tap */
+var MK_DTAP_R = 24;     /* px they must land within */
+var mkLastTap = 0, mkLastTapX = 0, mkLastTapY = 0;
+
+/* Dragging a grip adjusts one end of an existing selection. Bound on the page rather than on
+   each grip, because the grips are rebuilt on every repaint and per-element listeners would
+   be re-attached constantly. */
+$("rdPages").addEventListener("pointerdown", function(e){
+  var grip = e.target && e.target.closest && e.target.closest(".rdgrip");
+  if(!grip) return;
+  e.preventDefault(); e.stopPropagation();
+  var which = grip.getAttribute("data-edge"), id = e.pointerId;
+  grip.classList.add("hot");
+  markHideBar();
+  markReadout(e.clientX, e.clientY, which);
+  dbg("grip down " + which);
+  var sc = $("rdScroll"), was = sc.style.touchAction;
+  sc.style.touchAction = "none";
+  var mv = function(ev){
+    if(ev.pointerId !== id) return;
+    ev.preventDefault();
+    markSetEdge(which, ev.clientX, ev.clientY);
+    /* The layer was rebuilt by the repaint, so re-mark whichever grip is now this edge. */
+    var g = document.querySelector('.rdgrip[data-edge="' + which + '"]');
+    if(g) g.classList.add("hot");
+  };
+  var end = function(ev){
+    if(ev.pointerId !== id) return;
+    document.removeEventListener("pointermove", mv, {passive:false});
+    document.removeEventListener("pointerup", end);
+    document.removeEventListener("pointercancel", end);
+    sc.style.touchAction = was;
+    markHideReadout();
+    Array.prototype.forEach.call(document.querySelectorAll(".rdgrip.hot"), function(g){ g.classList.remove("hot"); });
+    markShowBar();
+    dbg("grip up " + which + " — toolbar " + ($("mkBar").classList.contains("hidden") ? "HIDDEN" : "shown"));
+  };
+  document.addEventListener("pointermove", mv, {passive:false});
+  document.addEventListener("pointerup", end);
+  document.addEventListener("pointercancel", end);
+}, true);
 
 $("rdPages").addEventListener("pointerdown", function(e){
   if(e.button != null && e.button !== 0) return;
@@ -6834,6 +7010,10 @@ $("rdPages").addEventListener("pointerdown", function(e){
     dbg("  hold FIRED" + (moved ? " (but moved — ignored)" : ""));
     if(moved) return;
     if(!markSelBegin(startX, startY)) return;
+    /* The readout comes up the moment the hold engages, not on release. A fingertip covers the
+       word it is selecting, so without this the selection is invisible until you lift — which
+       is exactly the complaint. */
+    markReadout(startX, startY, "end");
     markHoldScroll(true);
     try { onText.setPointerCapture(id); dbg("  capture ok"); } catch(err){ dbg("  capture FAILED " + err.message); }
   };
@@ -6862,12 +7042,31 @@ $("rdPages").addEventListener("pointerdown", function(e){
     document.removeEventListener("pointercancel", up);
     if(mkPressTimer){ clearTimeout(mkPressTimer); mkPressTimer = 0; }
     if(!mkGrab){
-      /* Nothing was selected — a plain tap. Clear whatever was, so tapping the page dismisses
-         a selection the way it does everywhere else. */
+      /* A tap, not a press. iOS selects a word on DOUBLE tap, and Jordan's debug logs showed
+         him doing exactly that against a build that only understood the long hold — a run of
+         "hold CLEARED before it fired" lines and nothing selected. Both gestures now exist,
+         the way they do natively. */
+      var now = Date.now();
+      if(ev.pointerType !== "mouse"
+         && (now - mkLastTap) < MK_DTAP
+         && Math.abs(ev.clientX - mkLastTapX) < MK_DTAP_R
+         && Math.abs(ev.clientY - mkLastTapY) < MK_DTAP_R){
+        mkLastTap = 0;
+        dbg("double-tap");
+        if(markSelBegin(ev.clientX, ev.clientY)){
+          markShowBar();
+          dbg("  toolbar " + ($("mkBar").classList.contains("hidden") ? "HIDDEN" : "shown")
+              + " nativeSel " + (window.getSelection().toString() ? "NOT EMPTY" : "empty"));
+          return;
+        }
+      }
+      mkLastTap = now; mkLastTapX = ev.clientX; mkLastTapY = ev.clientY;
+      /* A single tap dismisses, so tapping the page clears a selection as it does elsewhere. */
       if(mkRange){ markClearSelection(); }
       return;
     }
     markHoldScroll(false);
+    markHideReadout();
     try { onText.releasePointerCapture(id); } catch(err){}
     mkGrab = null;
     markShowBar();
@@ -6952,6 +7151,15 @@ $("mkPopDel").addEventListener("click", function(){
     var h = document.querySelector('.rdpage[data-page="' + (m.page+1) + '"]');
     if(h) markRepaint(h, m.page+1);
   }).catch(function(){});
+});
+$("mkCopy").addEventListener("click", function(){
+  var text = mkSel ? mkSel.quote : (mkRange ? mkRange.toString() : "");
+  markClearSelection();
+  if(!text) return;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){ rdToast("Copied"); })
+      .catch(function(){ copyFallback(text, function(){ rdToast("Copied"); }); });
+  } else copyFallback(text, function(){ rdToast("Copied"); });
 });
 $("mkCancel").addEventListener("click", markCloseSheet);
 $("mkScrim").addEventListener("click", markCloseSheet);
