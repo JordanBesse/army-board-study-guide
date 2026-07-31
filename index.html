@@ -153,10 +153,17 @@ body{
    with the control moved, keeping the padding would just be a permanent indent.
    The header still bleeds the band to the full viewport width on mobile via the negative
    margin. */
+/* v49: the top safe-area inset goes on the HEADER's padding, not on .wrap's. The page is
+   viewport-fit=cover, so it extends under the Dynamic Island; the header's negative top margin
+   deliberately bleeds the band to the very top edge, which is right for a background but put
+   the wordmark itself under the island on an iPhone 17 Pro. Padding the header pushes the TEXT
+   clear while the band still reaches the edge. Padding .wrap instead would have left a strip of
+   page colour above the band. The reader's own .rdbar already did this correctly. */
 header{
   position:relative;text-align:center;padding:24px 0 16px;
   background:var(--barband);border-bottom:1px solid var(--line);
   margin:-14px -14px 14px;padding-left:14px;padding-right:14px;
+  padding-top:calc(24px + env(safe-area-inset-top));
 }
 h1{font-size:1.3rem;margin:0;letter-spacing:-.01em;font-weight:700;line-height:1.25}
 /* The wordmark-as-home control. It has to look exactly like the heading it replaced — the
@@ -538,7 +545,7 @@ header.compact #quizbar{display:block}
 .libsearch svg{width:17px;height:17px;color:var(--muted);flex:0 0 auto}
 #libSearch{
   flex:1;min-width:0;min-height:44px;border:0;background:none;color:var(--ink);
-  font:inherit;font-size:.85rem;padding:0;
+  font:inherit;font-size:16px;padding:0;   /* 16px — see the note on #mkText: under it, iOS zooms */
 }
 #libSearch::placeholder{color:var(--muted)}
 #libSearch:focus{outline:none}
@@ -862,8 +869,15 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 #mkQuote{margin:8px 0 12px;padding:10px 12px;background:var(--surface2);
   border-left:3px solid var(--mark-edge);border-radius:0 var(--r) var(--r) 0;
   font-size:.82rem;color:var(--muted);line-height:1.45;max-height:120px;overflow:auto}
+/* v49: 16px, not .87rem. iOS auto-zooms the whole view to any focused input whose computed
+   font-size is under 16px, and then does not zoom back out — which is what left the app zoomed
+   in after saving a note mid-quiz. Fixing the size removes the trigger at source; the
+   alternative, user-scalable=no on the viewport, would also stop it but takes pinch-zoom away
+   from every web user, which is a real accessibility loss for a text-heavy study app. Stated in
+   px rather than rem on purpose: the narrow-screen type ramp could otherwise compute this back
+   under the threshold. */
 #mkText{width:100%;min-height:110px;padding:10px 12px;border:1px solid var(--line);
-  border-radius:var(--r);background:var(--surface);color:var(--ink);font:inherit;font-size:.87rem;resize:vertical}
+  border-radius:var(--r);background:var(--surface);color:var(--ink);font:inherit;font-size:16px;resize:vertical}
 #mkText:focus{outline:none;border-color:var(--accent)}
 .mkrow{display:flex;gap:10px;margin-top:12px}
 .mkrow .btn{flex:1}
@@ -2959,7 +2973,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v48";
+var APP_VERSION = "v49";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -6049,6 +6063,7 @@ function qnoteOpen(n){
   $("qnoteClose").focus();
 }
 function qnoteClose(){
+  uiDismissKeyboard();
   $("qnoteCard").classList.add("hidden");
   qnoteFor = null;
 }
@@ -7311,6 +7326,21 @@ function noteEditorOpenFree(n, q){
    and the accent state cannot drift from Settings. */
 function markSetLinkToggle(on){ setSwitch("mkLinkQ", "mkLinkTxt", !!on, on ? "On" : "Off"); }
 function markLinkOn(){ return $("mkLinkQ").getAttribute("aria-checked") === "true"; }
+/* ---- v49: dismiss the keyboard when a sheet closes ----
+   Every sheet in this app closes by adding a class. A hidden element's focused input KEEPS
+   focus, so the note editor's textarea stayed first responder with its keyboard session live
+   after Done — which is exactly the `RTIInputSystemClient … Can only perform input operation
+   for an active session` spam in the simulator log, and the most likely reason the reader ends
+   up taking scrolls but no taps: iOS is still routing input to a text session that belongs to
+   a view nobody can see. Blur explicitly on the way out. */
+function uiDismissKeyboard(){
+  var el = document.activeElement;
+  if(!el) return;
+  var tag = el.tagName;
+  if(tag === "INPUT" || tag === "TEXTAREA" || el.isContentEditable){
+    try{ el.blur(); }catch(e){}
+  }
+}
 function markCloseSheet(){
   /* Flush before hiding: the debounce must never be the reason a note is lost.
      v46: a note left completely blank is DISCARDED rather than persisted as an empty row —
@@ -7318,6 +7348,9 @@ function markCloseSheet(){
      re-read on the way out unconditionally, not only inside the save promise: "it said Saved
      but the note wasn't in my list" is the one report that must not be able to recur, so the
      refresh no longer depends on which path got here or on the save having resolved. */
+  /* Blur BEFORE hiding: blurring an already-hidden field does not always retire the input
+     session on iOS, and the value reads are unaffected by losing focus. */
+  uiDismissKeyboard();
   var blank = !$("mkText").value.trim() && !$("mkTitle").value.trim();
   var stale = (mkMode === "free") ? mkNoteEditing : null;
   var p = (blank && stale)
@@ -8349,6 +8382,47 @@ function selfTest(){
         errs.push("notes: a question-linked row whose question left the bank renders nothing");
       box.remove();
     })();
+    /* v49: THE FROZEN-READER GUARD. After the note editor has been open over the reader and
+       closed, the reader chrome must be hit-testable AT ITS OWN COORDINATES — the thing that
+       fails on device is taps, while scrolling keeps working, which is the signature of
+       something sitting on top rather than of a broken handler. Checked with elementFromPoint,
+       never a .click(), because a click on the element proves the handler works and says
+       nothing about whether a finger could ever reach it.
+       Also asserts the editor does not leave a focused field behind, which is the input-session
+       leak the simulator log points at. */
+    (function(){
+      if(innerWidth <= 0) return;                 /* a collapsed pane makes every rect 0 */
+      var rd = $("reader");
+      if(!rd) { errs.push("reader: #reader is missing"); return; }
+      var wasHidden = rd.classList.contains("hidden");
+      rd.classList.remove("hidden");
+      noteEditorOpenFree(null);
+      markCloseSheet();
+      /* Nothing may still hold focus once the sheet is closed. */
+      var af = document.activeElement;
+      if(af && (af.tagName === "INPUT" || af.tagName === "TEXTAREA"))
+        errs.push("reader: closing the note editor left <" + af.tagName.toLowerCase()
+          + "> focused — the iOS keyboard session stays live and the reader stops taking taps");
+      ["rdBack","rdHome","rdMarkup","rdBookmark","rdOutline"].forEach(function(id){
+        var el = $(id);
+        if(!el) return;
+        var b = el.getBoundingClientRect();
+        if(!b.width || !b.height) return;         /* legitimately not laid out right now */
+        var cx = b.left + b.width/2, cy = b.top + b.height/2;
+        if(cx < 0 || cy < 0 || cx > innerWidth || cy > innerHeight) return;
+        var top = document.elementFromPoint(cx, cy);
+        /* The self-test panel is itself a z-index 120 overlay sitting over the bottom bar, so
+           it covers the reader's own chrome whenever the flag is on. Ignoring it is not a
+           loophole — it does not exist in the shipped app, and a check that fires on its own
+           harness is a check nobody will trust. */
+        if(top && $("stPanel") && $("stPanel").contains(top)) return;
+        if(top && top !== el && !el.contains(top))
+          errs.push("reader: #" + id + " is covered by "
+            + (top.id ? "#" + top.id : (top.className || top.tagName))
+            + " — taps would die while scrolling still worked");
+      });
+      if(wasHidden) rd.classList.add("hidden");
+    })();
     /* 5. The linked editor's passage-context card. It only ever appears on a path that
        normally has a 4 MB PDF open behind it, which is exactly why it is asserted here on a
        synthetic mark instead of being left to a manual pass. */
@@ -9167,6 +9241,27 @@ function mkRelease(e){
   if(!mkActive && mkScrollOwner) markFreeScroll("primary up");
 }
 window.addEventListener("pointerup", mkRelease, true);
+
+/* ---- v49: heal on RESUME, not only on the next press ----
+   In the wrapped app the WebContent process is suspended when the app backgrounds — the
+   simulator log shows `updateFreezerStatus: isFreezable=1` and `markAllLayersVolatile: Failed`
+   — and pointer events in flight at that moment never deliver their end. v44 already self-heals
+   on the next primary press, which is enough for the reader's own selection layer. It is not
+   enough for a Soldier who comes back to the app and finds the chrome dead, because the state
+   that has to clear includes a stranded TEXT INPUT session, and blurring on the next pointerdown
+   is one tap too late — that tap is the one that appears to do nothing.
+
+   So: on the way back to visible, retire anything left mid-flight. Cheap, idempotent, and it
+   cannot fire while a gesture is genuinely running because the page is not visible then. */
+function uiResumeHeal(){
+  if(document.visibilityState !== "visible") return;
+  uiDismissKeyboard();
+  if(typeof mkAbortActive === "function" && mkActive) mkAbortActive("resume");
+  if(typeof markFreeScroll === "function" && mkScrollOwner) markFreeScroll("resume");
+}
+document.addEventListener("visibilitychange", uiResumeHeal);
+/* pageshow also covers a bfcache restore, which is the Safari-tab equivalent of the same thing. */
+window.addEventListener("pageshow", uiResumeHeal);
 window.addEventListener("pointercancel", mkRelease, true);
 
 /* v44: the app-owned pinch is gone. It broke three builds running, each time on a
