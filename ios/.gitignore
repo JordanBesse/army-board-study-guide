@@ -4,8 +4,12 @@ App/output
 DerivedData
 xcuserdata
 
-# Cordova plugins for Capacitor
-capacitor-cordova-ios-plugins
+# capacitor-cordova-ios-plugins is also left tracked. It is almost certainly unnecessary —
+# project.pbxproj does not reference it, the Cordova product in Package.swift comes from the
+# remote capacitor-swift-pm package rather than this folder, no Cordova plugins are installed,
+# and its only contents are a CocoaPods podspec (we use SPM) and two empty .gitkeep files.
+# It is committed anyway so a clone is a faithful copy of a working project directory: the
+# cost is 400 bytes, and the cost of being wrong is another rented-Mac round trip.
 
 # NOTE — three paths Capacitor's template ignores by default are deliberately NOT ignored
 # here: App/App/public, App/App/capacitor.config.json and App/App/config.xml.
