@@ -39,6 +39,11 @@
      colour alone cannot. */
   --page:#ffffff;
   --mark:rgba(201,167,58,.34); --mark-edge:rgba(150,120,20,.85);
+  /* v45: the annotation lane needed a readable INK and a soft fill for the Notes hub, where
+     the lane has to carry small text (the reg pill "FM 7-22 · p.92") rather than a wash over
+     a white page. --mark and --mark-edge are translucent by design — correct over paper,
+     unusable as type. Same hue family, measured against the surfaces they sit on. */
+  --mark-ink:#7a5a0f; --mark-soft:#f3ead0;
   --sel-wash:rgba(79,115,80,.30);
   --m-tap:90ms; --m-state:140ms;
   /* Screen mount: menu -> quiz, question -> question, -> results. The whole motion budget
@@ -76,6 +81,7 @@
      "Night read" is the opt-in for low light. */
   --page:#ffffff;
   --mark:rgba(214,180,80,.34); --mark-edge:rgba(214,180,80,.9);
+  --mark-ink:#cbb060; --mark-soft:#39331d;
   --sel-wash:rgba(136,171,139,.34);
   --scrim:rgba(0,0,0,.55);
   /* Measured on this band: --ink 13.2:1, --muted 6.3:1. Both clear AA. This is the
@@ -188,6 +194,112 @@ header.compact #quizbar{display:block}
   #regBtn{transition:none}
   #regBtn:active{transform:none}
 }
+/* Notes entry (v45) — the third and last floater, completing the trio the pair was always
+   built to become. Horizontal row bottom-right, order Notes · References · Settings, with
+   References kept immediately left of the gear because that pairing is the locked entry
+   pattern. Identical 52px chrome to the other two and an --ink glyph like both: three equal
+   neutral marks. The old chunk-1 idea of accent glyphs for Notes and Regulations is
+   deliberately NOT revived — a permanently accent-tinted control spends the "selected"
+   meaning on chrome, and on device an accent book beside a neutral gear read as two
+   different kinds of control. Offset is one more 52px button plus the same 10px gap. */
+#notesBtn{
+  position:fixed;z-index:40;
+  right:calc(max(16px, env(safe-area-inset-right)) + 124px);
+  bottom:max(16px, env(safe-area-inset-bottom));
+  width:52px;height:52px;padding:0;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--line);background:var(--surface);
+  color:var(--ink);border-radius:14px;
+  box-shadow:var(--e1);
+  font:inherit;cursor:pointer;
+  transition:background-color var(--m-tap) ease-out,transform var(--m-tap) ease-out;
+}
+/* 27px, not the book's 30px. The lined page is a TALL mark that fills its viewBox, where the
+   open book is wide and short and needed the extra size to match the gear; measured, 27px puts
+   the page's ink at ~19px wide by 22px tall, which reads as the same weight as its neighbours
+   rather than as the largest thing in the row. */
+#notesBtn svg{width:27px;height:27px;display:block;color:var(--ink)}
+#notesBtn:hover{background:var(--surface2)}
+#notesBtn:active{background:var(--surface2);transform:scale(.96)}
+#notesBtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){
+  #notesBtn{transition:none}
+  #notesBtn:active{transform:none}
+}
+/* ---- Notes hub (v45) ----
+   A screen like the library, for the same reason: a place a Soldier navigates INTO and
+   scrolls, owning its own back control. The header mirrors the library's so the two hubs
+   read as siblings. */
+#notes .nhdr{position:relative;padding:2px 0 10px;border-bottom:1px solid var(--line)}
+#notesBack{
+  position:absolute;left:-6px;top:-2px;
+  width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+  background:none;border:0;color:var(--muted);font:inherit;font-size:26px;line-height:1;cursor:pointer;
+  border-radius:var(--r);
+}
+#notesBack:hover{background:var(--surface2)}
+#notesBack:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#notes .ntitle{text-align:center;font-size:1.06rem;font-weight:700;margin:8px 0 0}
+#notesCue{text-align:center;font-size:.75rem;color:var(--muted);margin-top:3px}
+/* Filter chips, not a segmented control: three filters over ONE recency list, where the
+   library's four views are genuinely different lists. The active chip is the only accent on
+   the row — the colour law's "accent = selected" — and it also carries a border and
+   aria-pressed, so the state survives without hue. */
+#notesChips{display:flex;gap:8px;margin-top:12px;justify-content:center}
+/* 44px, not the 38px the in-quiz `.libchip` pair uses. The app's floor is 44 and these are a
+   primary control on a screen a Soldier drives with a thumb; the older chips predate the rule
+   and are left alone rather than restyled from here. */
+.nchip{min-height:44px;padding:0 15px;border-radius:22px;border:1px solid var(--line);
+  background:var(--surface);color:var(--muted);font:inherit;font-size:.76rem;font-weight:700;cursor:pointer}
+.nchip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.nchip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#notesList{padding-bottom:96px}   /* clear of the FAB */
+/* One row shape for both kinds. What differs is the glyph, and whether the reg pill is
+   there at all — the pill's PRESENCE is the colour-independent tell that a note is linked. */
+.nrow{display:flex;align-items:flex-start;gap:11px;width:100%;text-align:left;
+  padding:12px 2px;border-bottom:1px solid var(--line);
+  background:none;border-left:0;border-right:0;border-top:0;color:inherit;font:inherit;cursor:pointer}
+@media (hover:hover) and (pointer:fine){ .nrow:hover{background:var(--hover-bg)} }
+.nrow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.nglyph{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+  flex:0 0 auto;background:var(--surface2);color:var(--muted);margin-top:1px}
+.nglyph svg{width:17px;height:17px}
+/* The annotation lane, exactly as the design system reserves it. */
+.nglyph.mk{background:var(--mark-soft);color:var(--mark-ink)}
+.nmain{flex:1;min-width:0}
+.ntext{font-size:.84rem;color:var(--ink);line-height:1.45;font-weight:600}
+.nttl{font-size:.88rem;color:var(--ink);font-weight:700}
+.nprev{font-size:.78rem;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ntag{margin-top:5px;display:flex;align-items:center;gap:7px;min-width:0}
+.npill{flex:0 0 auto;font-size:.66rem;font-weight:700;color:var(--mark-ink);background:var(--mark-soft);
+  border-radius:999px;padding:2px 8px;display:inline-flex;align-items:center;gap:4px}
+.npill svg{width:11px;height:11px}
+.nsnip{font-size:.72rem;color:var(--muted);font-style:italic;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;min-width:0}
+.nmeta{font-size:.7rem;color:var(--muted);margin-top:5px}
+.nchev{color:var(--muted);flex:0 0 auto;opacity:.55;margin-top:4px}
+.nchev svg{width:18px;height:18px}
+/* New note. An accent FAB is a legitimate primary action — the one thing this screen is for
+   when it is empty — which is why it may wear the accent where the chrome above may not. */
+#notesNew{
+  position:fixed;z-index:41;
+  right:max(16px, env(safe-area-inset-right));
+  bottom:max(16px, env(safe-area-inset-bottom));
+  width:56px;height:56px;border-radius:50%;padding:0;
+  display:flex;align-items:center;justify-content:center;
+  border:0;background:var(--accent);color:var(--accent-ink);
+  box-shadow:var(--e2);font:inherit;cursor:pointer;
+  transition:transform var(--m-tap) ease-out;
+}
+#notesNew svg{width:26px;height:26px;display:block}
+#notesNew:active{transform:scale(.96)}
+#notesNew:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@media (prefers-reduced-motion: reduce){ #notesNew{transition:none} #notesNew:active{transform:none} }
+.nempty{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  padding:56px 24px;color:var(--muted)}
+.nempty svg{width:54px;height:54px;color:var(--line)}
+.nempty h4{font-size:.95rem;color:var(--ink);margin:12px 0 6px;font-weight:700}
+.nempty p{font-size:.8rem;line-height:1.55;margin:0;max-width:30ch}
 /* ---- Library list (v26, chunk 2) ---- */
 #library .libhdr{position:relative;padding:2px 0 12px;border-bottom:1px solid var(--line)}
 #libBack{
@@ -590,9 +702,12 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 #mkSheet{position:fixed;inset:0;z-index:95;display:flex;align-items:flex-end;justify-content:center}
 #mkSheet.hidden{display:none}
 #mkScrim{position:absolute;inset:0;background:rgba(10,14,10,.5)}
+/* v45: the sheet now carries a whole editor (title or context card, body, inserts), so it is
+   capped and scrolls rather than growing past the top of a 360px phone with the keyboard up. */
 #mkPanel{position:relative;width:100%;max-width:480px;background:var(--surface);
   border:1px solid var(--line);border-radius:16px 16px 0 0;
-  padding:16px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:var(--e2)}
+  padding:16px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:var(--e2);
+  max-height:92vh;overflow-y:auto}
 @media(min-width:520px){ #mkSheet{align-items:center} #mkPanel{border-radius:16px} }
 .mkeyebrow{font-size:.66rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 /* The quoted anchor, with a --mark spine so the note is visibly tied to the passage. */
@@ -607,6 +722,69 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 #mkDelete{margin-top:10px;width:100%;background:none;border:0;color:var(--muted);
   font:inherit;font-size:.8rem;min-height:44px;cursor:pointer;border-radius:var(--r)}
 #mkDelete:hover{background:var(--hover-bg)}
+/* ---- Note editor (v45) ----
+   ONE editor for both kinds of note, which is why this grew out of the existing sheet rather
+   than a second surface being built beside it. A free-standing note gets the title line; a
+   reg-linked note gets the passage-context card instead and keeps its passage as its title.
+   Everything else — body, inserts, auto-save, the neutral trash — is shared. */
+#mkHead{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+#mkHead .mkeyebrow{flex:1}
+/* Delete is NEUTRAL. It never borrows --no: the graded lane means an answer was wrong, and a
+   Soldier removing their own note has not got anything wrong. */
+#mkTrash{width:44px;height:44px;margin:-10px -8px -10px 0;display:flex;align-items:center;justify-content:center;
+  background:none;border:0;color:var(--muted);cursor:pointer;border-radius:var(--r)}
+/* An id selector setting display:flex outranks the UA's [hidden]{display:none}, so hiding the
+   trash needs saying explicitly — otherwise a note that does not exist yet still offers a
+   delete control. Same trap as any `hidden` attribute on a styled element. */
+#mkTrash[hidden]{display:none}
+#mkTrash svg{width:19px;height:19px}
+#mkTrash:hover{background:var(--hover-bg);color:var(--ink)}
+#mkTrash:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+#mkTitle{width:100%;margin:6px 0 2px;padding:6px 0;border:0;border-bottom:1px solid var(--line);
+  background:none;color:var(--ink);font:inherit;font-size:1.02rem;font-weight:800}
+#mkTitle::placeholder{color:var(--muted);font-weight:600}
+#mkTitle:focus{outline:none;border-bottom-color:var(--accent)}
+/* The passage-context card. --mark throughout: this is the annotation lane saying "this note
+   is attached to that passage", not a selection and not a verdict. */
+#mkCtx{background:var(--surface2);border:1px solid var(--line);border-radius:12px;
+  padding:11px 13px;margin:8px 0 12px}
+#mkCtxHead{display:flex;align-items:center;gap:7px;font-size:.66rem;font-weight:800;
+  letter-spacing:.05em;text-transform:uppercase;color:var(--mark-ink)}
+#mkCtxHead svg{width:13px;height:13px;flex:0 0 auto}
+#mkCtxQuote{font-size:.8rem;color:var(--ink);font-style:italic;margin:6px 0 8px;padding-left:9px;
+  border-left:2px solid var(--mark-edge);max-height:96px;overflow:auto}
+/* Go to passage is a genuine primary action out of this surface, so it may carry the accent. */
+#mkGo{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 2px;
+  background:none;border:0;color:var(--accent);font:inherit;font-size:.78rem;font-weight:650;cursor:pointer}
+#mkGo svg{width:15px;height:15px}
+#mkGo:hover{text-decoration:underline}
+#mkGo:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r)}
+#mkText{min-height:132px}
+#mkTools{display:flex;align-items:center;gap:6px;margin-top:10px;padding-top:10px;
+  border-top:1px solid var(--line)}
+.mktool{width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+  background:none;border:0;color:var(--muted);cursor:pointer;border-radius:9px}
+.mktool svg{width:20px;height:20px}
+.mktool:hover{background:var(--hover-bg);color:var(--ink)}
+.mktool:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+/* Quiet by design: a save indicator that announced itself would be a second thing to read
+   every time a Soldier stops typing. Muted, no colour — "Saved" is not a verdict either. */
+#mkSaved{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:.72rem;
+  font-weight:650;color:var(--muted);opacity:0;transition:opacity var(--m-state) ease-out}
+#mkSaved.on{opacity:1}
+#mkSaved svg{width:15px;height:15px}
+@media (prefers-reduced-motion: reduce){ #mkSaved{transition:none} }
+/* The jumped-to passage. A mark repainted for a note the Soldier just tapped in the hub gets
+   one pulse so the eye lands on it — the page can hold several marks and "you are here" has
+   to be answerable without hunting. Under reduced motion the scroll-into-view is the whole
+   affordance and nothing animates. */
+@keyframes absgMarkFlash{
+  0%{box-shadow:0 0 0 0 var(--mark-edge)}
+  35%{box-shadow:0 0 0 4px var(--mark-edge)}
+  100%{box-shadow:0 0 0 0 var(--mark-edge)}
+}
+.rdmark.flash{animation:absgMarkFlash 1200ms ease-out 2}
+@media (prefers-reduced-motion: reduce){ .rdmark.flash{animation:none} }
 /* Marks jump-list rows inside the outline sheet. */
 /* v33: the row is a container, not a button. A checkbox cannot live inside a <button> —
    nesting interactive content is invalid and the checkbox would swallow the jump — so the
@@ -1384,7 +1562,7 @@ footer p{margin:0 0 8px}
 }
 @media print{
   body{background:#fff;color:#000}
-  .wrap>header,.wrap>main,.wrap>footer,#settingsBtn,#regBtn,#settingsPanel{display:none!important}
+  .wrap>header,.wrap>main,.wrap>footer,#settingsBtn,#regBtn,#notesBtn,#notesNew,#settingsPanel{display:none!important}
   #printArea{display:block!important}
   #printArea h1{font-size:16pt;margin:0 0 2pt;text-align:left}
   #printArea .pmeta{font-size:9pt;color:#333;margin:0 0 10pt}
@@ -1418,6 +1596,13 @@ footer p{margin:0 0 8px}
      means "read this", not "cited from this". -->
 <button id="regBtn" type="button" aria-label="Regulations library">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 7C9.2 5.4 5.6 5.4 3.6 6.3v11.1C5.6 16.5 9.2 16.5 12 18.1"></path><path d="M12 7c2.8-1.6 6.4-1.6 8.4-.7v11.1c-2-.9-5.6-.9-8.4.7"></path><path d="M12 7v11.1"></path></svg>
+</button>
+<!-- Notes entry (v45). Third floater, leftmost of the trio: Notes · References · Settings, with
+     References kept immediately left of the gear. The glyph is a symmetric lined page — drawn
+     about x=12 so it optically centres in the 52px button — and it is the same mark used for a
+     free-standing note everywhere else in the app, so the identity is one thing. -->
+<button id="notesBtn" type="button" aria-label="Notes">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="5" y="3" width="14" height="18" rx="2.5"></rect><path d="M8 8.5h8M8 12h8M9.5 15.5h5"></path></svg>
 </button>
 <header id="appbar">
   <h1>Army Board Study Guide</h1>
@@ -1752,6 +1937,27 @@ footer p{margin:0 0 8px}
   <div id="libList"></div>
 </main>
 
+<!-- The Notes hub (v45). A screen like the library, and a sibling of it by design: same header
+     shape, same back control, same scrolling list. What differs is that this list is ONE
+     recency-sorted list with filter chips rather than four views — a note a Soldier just wrote
+     belongs on top whichever kind it is, and the chips give the grouped read in one tap. -->
+<main id="notes" class="hidden">
+  <div class="nhdr">
+    <button id="notesBack" type="button" aria-label="Back">&#8249;</button>
+    <h2 class="ntitle">Notes</h2>
+    <div id="notesCue"></div>
+    <div id="notesChips" role="group" aria-label="Which notes">
+      <button type="button" class="nchip" data-filter="all" aria-pressed="true">All</button>
+      <button type="button" class="nchip" data-filter="linked" aria-pressed="false">Linked</button>
+      <button type="button" class="nchip" data-filter="mine" aria-pressed="false">My notes</button>
+    </div>
+  </div>
+  <div id="notesList"></div>
+</main>
+<button id="notesNew" type="button" class="hidden" aria-label="New note">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"></path></svg>
+</button>
+
 <!-- The reader (v27, chunk 3). Fixed and full-viewport, outside .wrap, because a 300-page
      publication is not a section of the study page. -->
 <div id="reader" class="hidden" role="dialog" aria-modal="true" aria-label="Regulation reader">
@@ -1848,15 +2054,44 @@ footer p{margin:0 0 8px}
 </div>
 <div id="mkSheet" class="hidden" role="dialog" aria-modal="true" aria-label="Note">
   <div id="mkScrim"></div>
+  <!-- v45: one editor, both kinds of note. A free-standing note shows the title line; a
+       reg-linked note shows the passage-context card in its place and keeps the passage as its
+       heading. There is no Save button by design — the note saves itself and says so quietly,
+       because a Soldier who closes this sheet has not "cancelled" anything they wrote. -->
   <div id="mkPanel">
-    <div class="mkeyebrow">Note</div>
+    <div id="mkHead">
+      <div class="mkeyebrow" id="mkKind">Note</div>
+      <button id="mkTrash" type="button" aria-label="Delete this note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 7h14M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M7 7l1 13h8l1-13"></path></svg>
+      </button>
+    </div>
+    <input id="mkTitle" type="text" placeholder="Title (optional)" aria-label="Note title" autocomplete="off">
+    <div id="mkCtx" hidden>
+      <div id="mkCtxHead">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 15l6-6M11 7l1-1a3 3 0 0 1 4 4l-1 1M13 17l-1 1a3 3 0 0 1-4-4l1-1"></path></svg>
+        <span id="mkCtxLabel"></span>
+      </div>
+      <div id="mkCtxQuote"></div>
+      <button id="mkGo" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>Go to passage
+      </button>
+    </div>
     <div id="mkQuote"></div>
     <textarea id="mkText" placeholder="What matters about this passage?" aria-label="Note text"></textarea>
-    <div class="mkrow">
-      <button class="btn sec" type="button" id="mkCancel">Cancel</button>
-      <button class="btn" type="button" id="mkSave">Save</button>
+    <div id="mkTools">
+      <button class="mktool" type="button" id="mkInsChk" aria-label="Insert a checkbox line">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="M8 12l3 3 5-6"></path></svg>
+      </button>
+      <button class="mktool" type="button" id="mkInsBul" aria-label="Insert a bullet line">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"></path></svg>
+      </button>
+      <span id="mkSaved" role="status" aria-live="polite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 12l5 5L20 6"></path></svg>Saved
+      </span>
     </div>
-    <button id="mkDelete" type="button" hidden>Delete this mark</button>
+    <div class="mkrow">
+      <button class="btn sec" type="button" id="mkCancel" style="flex:1">Done</button>
+    </div>
   </div>
 </div>
 <div id="rdSheet" class="hidden" role="dialog" aria-modal="true" aria-label="Outline">
@@ -2496,7 +2731,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v44";
+var APP_VERSION = "v45";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -3592,7 +3827,12 @@ function toMenu(){
      bring the two floaters back — otherwise a Back gesture out of the library would strand
      the home screen with no gear and no Regulations button. */
   $("library").classList.add("hidden");
+  /* v45: the Notes hub is a screen like the library, so leaving by any route puts it away and
+     brings all three floaters back — the same reason the library line above exists. */
+  $("notes").classList.add("hidden");
+  $("notesNew").classList.add("hidden");
   $("regBtn").style.display = ""; $("settingsBtn").style.display = "";
+  $("notesBtn").style.display = "";
   document.querySelector("footer").style.display = "";
   $("home").classList.remove("hidden");
   $("sub").textContent="Soldier of the Month, Promotion Board, Audie Murphy, Drill Sergeant, and ESB preparation.";
@@ -3602,7 +3842,8 @@ function toMenu(){
 }
 window.addEventListener("popstate", function(){
   var inView = !$("quiz").classList.contains("hidden") || !$("results").classList.contains("hidden")
-            || !$("flash").classList.contains("hidden") || !$("library").classList.contains("hidden");
+            || !$("flash").classList.contains("hidden") || !$("library").classList.contains("hidden")
+            || !$("notes").classList.contains("hidden");
   if(inView) toMenu();
 });
 
@@ -3702,7 +3943,13 @@ function buildPrint(){
 var REGLIB = (function(){
   "use strict";
 
-  var DB_NAME = "absg_reglib", DB_VER = 3;
+  /* v45: DB_VER 3 -> 4 for the free-standing notes store. Every upgrade in this database has
+     been additive by construction — each store is created only `if(!contains(...))` and no
+     existing store is touched, opened, or rewritten in the upgrade — so a Soldier's marks,
+     favourites and bookmarks survive the bump untouched. The self-test proves that rather
+     than asserting it: it seeds all three under the old version, upgrades, and reads them
+     back. Follow this pattern for any future bump; never migrate data in onupgradeneeded. */
+  var DB_NAME = "absg_reglib", DB_VER = 4;
   var STORE_FILES = "files";      /* id -> {id, blob, meta} */
   var STORE_MARKS = "marks";      /* v24 store, key -> {regId, loc, kind, text, color, at} */
   /* v28's annotation overlay store. Its own store rather than reusing `marks` because the
@@ -3715,6 +3962,12 @@ var REGLIB = (function(){
      own store rather than a flag on the manifest, because the manifest ships with the build
      and a Soldier's choices must survive the next one. */
   var STORE_FAVS = "favs";        /* id -> {id, at} */
+  /* v45. A FREE-STANDING note — one a Soldier wrote that is tied to no publication. Its own
+     store rather than a row in `annots` with a null regId, because `annots` is indexed by
+     [regId,page] and every read of it is "the marks on this page"; a note with no page has
+     no business in those indexes. Reg-linked notes stay in `annots` and are NOT copied here
+     — the hub reads both stores and merges, so there is exactly one copy of every note. */
+  var STORE_NOTES = "notes";      /* id -> {id, title, body, createdAt, updatedAt} */
 
   /* ---- The manifest: every publication the bank cites, in one of three states.
 
@@ -3833,26 +4086,32 @@ var REGLIB = (function(){
     + "cannot store downloaded publications. Everything else works normally.";
 
   /* ---- IndexedDB backend ---- */
+  /* The schema, in one named function so the self-test can run THE SHIPPED UPGRADE against a
+     scratch database rather than a copy of it. Every rule here is "create if absent" and
+     nothing opens, reads or rewrites an existing store — that property, not the version
+     number, is what makes a Soldier's marks, favourites and bookmarks safe across a bump. */
+  function applyUpgrade(d){
+    if(!d.objectStoreNames.contains(STORE_FILES)) d.createObjectStore(STORE_FILES, {keyPath:"id"});
+    if(!d.objectStoreNames.contains(STORE_MARKS)){
+      var m = d.createObjectStore(STORE_MARKS, {keyPath:"key", autoIncrement:true});
+      m.createIndex("byReg", "regId", {unique:false});
+    }
+    if(!d.objectStoreNames.contains(STORE_ANNOTS)){
+      var a = d.createObjectStore(STORE_ANNOTS, {keyPath:"id"});
+      a.createIndex("byReg", "regId", {unique:false});
+      a.createIndex("byRegPage", ["regId","page"], {unique:false});
+    }
+    if(!d.objectStoreNames.contains(STORE_FAVS)) d.createObjectStore(STORE_FAVS, {keyPath:"id"});
+    /* v45. Created, nothing else. */
+    if(!d.objectStoreNames.contains(STORE_NOTES)) d.createObjectStore(STORE_NOTES, {keyPath:"id"});
+  }
   var dbp = null;
   function db(){
     if(dbp) return dbp;
     dbp = new Promise(function(res, rej){
       if(!window.indexedDB) return rej(new Error("no indexedDB"));
       var rq = indexedDB.open(DB_NAME, DB_VER);
-      rq.onupgradeneeded = function(){
-        var d = rq.result;
-        if(!d.objectStoreNames.contains(STORE_FILES)) d.createObjectStore(STORE_FILES, {keyPath:"id"});
-        if(!d.objectStoreNames.contains(STORE_MARKS)){
-          var m = d.createObjectStore(STORE_MARKS, {keyPath:"key", autoIncrement:true});
-          m.createIndex("byReg", "regId", {unique:false});
-        }
-        if(!d.objectStoreNames.contains(STORE_ANNOTS)){
-          var a = d.createObjectStore(STORE_ANNOTS, {keyPath:"id"});
-          a.createIndex("byReg", "regId", {unique:false});
-          a.createIndex("byRegPage", ["regId","page"], {unique:false});
-        }
-        if(!d.objectStoreNames.contains(STORE_FAVS)) d.createObjectStore(STORE_FAVS, {keyPath:"id"});
-      };
+      rq.onupgradeneeded = function(){ applyUpgrade(rq.result); };
       rq.onsuccess = function(){
         var d = rq.result;
         /* If ANOTHER tab later needs a version upgrade, this connection is what would block
@@ -4072,6 +4331,31 @@ var REGLIB = (function(){
     }
   };
 
+  /* v45. Free-standing notes. Deliberately flat — an id, an optional title, a body and two
+     timestamps — because the hub sorts on `updatedAt` and nothing else here is derived. The
+     same `updatedAt` is the common sort key with a reg-linked note's `updated`, which is what
+     lets the hub merge two stores into one recency list without a second index. */
+  var notes = {
+    list: function(){
+      return tx(STORE_NOTES,"readonly",function(s){ return s.getAll(); })
+             .then(function(r){ return r || []; })
+             .catch(function(){ return []; });
+    },
+    get: function(id){ return tx(STORE_NOTES,"readonly",function(s){ return s.get(String(id)); }); },
+    put: function(rec){
+      var now = new Date().toISOString();
+      var n = {
+        id: rec.id || (String(Date.now()) + "-" + Math.random().toString(36).slice(2,9)),
+        title: rec.title == null ? "" : String(rec.title),
+        body:  rec.body  == null ? "" : String(rec.body),
+        createdAt: rec.createdAt || now,
+        updatedAt: now
+      };
+      return tx(STORE_NOTES,"readwrite",function(s){ return s.put(n); }).then(function(){ return n; });
+    },
+    remove: function(id){ return tx(STORE_NOTES,"readwrite",function(s){ return s.delete(String(id)); }); }
+  };
+
   var marks = {
     /* v28: the LOCKED annotation record. Content-addressed on purpose — `quote` plus its
        surrounding context is what lets a mark survive a re-download or an updated edition,
@@ -4132,6 +4416,15 @@ var REGLIB = (function(){
     },
     drop: function(id){ return tx(STORE_ANNOTS,"readwrite",function(s){ return s.delete(String(id)); }); },
     countAll: function(){ return tx(STORE_ANNOTS,"readonly",function(s){ return s.count(); }); },
+    /* v45: every mark across every publication, for the Notes hub. A full-store read rather
+       than a walk of the manifest asking per reg — the hub wants one recency-sorted list, and
+       a Soldier's whole annotation set is small next to a single page of the PDF it marks. */
+    listAll: function(){
+      return tx(STORE_ANNOTS,"readonly",function(s){ return s.getAll(); })
+             .then(function(r){ return r || []; })
+             .catch(function(){ return []; });
+    },
+    get: function(id){ return tx(STORE_ANNOTS,"readonly",function(s){ return s.get(String(id)); }); },
     add: function(regId, loc, kind, text, color){
       /* v24 shape, kept so the foundation's proof harness and any early record still work.
          New callers use put(). */
@@ -4199,9 +4492,16 @@ var REGLIB = (function(){
     capabilities: capabilities, unavailableLine: UNAVAILABLE_LINE,
     backendName: function(){ return backend().name; },
     download: download, cancel: cancel, installed: installed, remove: remove, openBlob: openBlob,
-    status: status, marks: marks, favs: favs, render: render, viewerReady: viewerReady,
+    status: status, marks: marks, favs: favs, notes: notes, render: render, viewerReady: viewerReady,
     /* Test seam: lets the proof harness register a sample entry without shipping one. */
-    _addTestReg: function(entry){ MANIFEST.push(entry); BY_ID[entry.id]=entry; return entry; }
+    _addTestReg: function(entry){ MANIFEST.push(entry); BY_ID[entry.id]=entry; return entry; },
+    /* v45 test seam. The self-test proves the DB_VER bump preserves a Soldier's data, and it
+       has to prove it about the REAL upgrade — so the shipped function and the real version
+       number are handed out rather than reimplemented in the test, which would only ever
+       prove the copy correct. It runs against a scratch database; the live one is never
+       touched by the test. */
+    _dbVer: DB_VER, _applyUpgrade: applyUpgrade,
+    _stores: {files:STORE_FILES, marks:STORE_MARKS, annots:STORE_ANNOTS, favs:STORE_FAVS, notes:STORE_NOTES}
   };
 })();
 /* The whole app script runs inside one IIFE, so everything in it is private by default —
@@ -4678,8 +4978,23 @@ function libRenderBookmarks(list){
 /* One confirm sheet, one pending action. Kept deliberately small: this is the only
    destructive act in the hub, and it is worth naming before it happens. */
 var libPendingRemove = null;
+/* v45: the same neutral chrome now answers for deleting a note, so the app has ONE confirm
+   surface rather than a second one built beside it. The title and the affirmative label are
+   set per use; every caller must set both, because they no longer live in the markup. */
+var libPendingFn = null;
+function libAsk(title, body, yesLabel, fn){
+  libPendingRemove = null; libPendingFn = fn;
+  $("libConfirmTitle").textContent = title;
+  $("libConfirmBody").textContent = body;
+  $("libConfirmYes").textContent = yesLabel;
+  $("libConfirm").classList.remove("hidden");
+  $("libConfirmNo").focus();
+}
 function libAskRemove(st){
+  libPendingFn = null;
   libPendingRemove = st;
+  $("libConfirmTitle").textContent = "Remove this download?";
+  $("libConfirmYes").textContent = "Remove";
   $("libConfirmBody").textContent =
     "The offline copy of " + st.pubNumber + " (" + libMB(st.sizeBytes) + ") comes off this device. "
     + "You can still read it, and download it again whenever you want.";
@@ -4688,7 +5003,7 @@ function libAskRemove(st){
 }
 function libCloseConfirm(){
   $("libConfirm").classList.add("hidden");
-  libPendingRemove = null;
+  libPendingRemove = null; libPendingFn = null;
 }
 
 function libEmpty(icon, head, body){
@@ -4855,10 +5170,12 @@ function openLibrary(focusId, scope){
   compactBar(false);
   $("home").classList.add("hidden"); $("quiz").classList.add("hidden");
   $("results").classList.add("hidden"); $("flash").classList.add("hidden");
+  $("notes").classList.add("hidden"); $("notesNew").classList.add("hidden");
   $("library").classList.remove("hidden");
-  /* Both floaters hide while the library is open: the Regulations pill would point at the
+  /* Every floater hides while the library is open: the Regulations button would point at the
      screen you are already on, and the library owns its own back control. */
   $("regBtn").style.display = "none"; $("settingsBtn").style.display = "none";
+  $("notesBtn").style.display = "none";
   /* v31: the page footer carries the Sources disclosure, which lists every cited
      publication — so with the library open the same regulations appeared twice on one
      screen, once as library rows and again in the footer below them. The footer belongs to
@@ -4885,6 +5202,7 @@ function openLibrary(focusId, scope){
 function closeLibrary(){
   $("library").classList.add("hidden");
   $("regBtn").style.display = ""; $("settingsBtn").style.display = "";
+  $("notesBtn").style.display = "";
   document.querySelector("footer").style.display = "";
   libScope = null;
   /* Back out to wherever the hub was opened FROM. Falling through to toMenu() unconditionally
@@ -4932,6 +5250,265 @@ function libPaintHeader(){
     });
     chips.appendChild(b);
   });
+}
+
+/* ==================== Notes hub (v45) ====================
+   The last V1 surface, and the one that makes the trio. Two kinds of note live in two
+   different stores for good reasons — a reg-linked note IS a mark on a passage and belongs in
+   `annots` with the highlight it carries; a free-standing note has no publication and no page
+   — so this screen READS BOTH and merges them into one list ordered by recency. Nothing is
+   copied between the stores: there is exactly one record per note, and this is a view over
+   two of them.                                                                            */
+var noteFilter = "all";
+var NOTEICON = {
+  /* The free-standing mark: the same symmetric lined page as the floating button, so a note
+     wears one identity everywhere. */
+  page:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 8.5h8M8 12h8M9.5 15.5h5"/></svg>',
+  /* The link mark, in the --mark lane: this note is fastened to a passage. */
+  link:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 15l6-6M10.5 7.5l1-1a3.5 3.5 0 0 1 5 5l-1 1M13.5 16.5l-1 1a3.5 3.5 0 0 1-5-5l1-1"/></svg>',
+  pill:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 15l6-6M11 7l1-1a3 3 0 0 1 4 4l-1 1M13 17l-1 1a3 3 0 0 1-4-4l1-1"/></svg>',
+  chev:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"/></svg>'
+};
+
+function openNotes(){
+  if(tick){ clearInterval(tick); tick=null; }
+  stopSpeech(); $("speakRow").classList.add("hidden");
+  compactBar(false);
+  $("home").classList.add("hidden"); $("quiz").classList.add("hidden");
+  $("results").classList.add("hidden"); $("flash").classList.add("hidden");
+  $("library").classList.add("hidden");
+  $("notes").classList.remove("hidden");
+  /* All three floaters go while the hub is open — the Notes button would point at the screen
+     you are already on — and the FAB takes their place. Same rule the library follows. */
+  $("regBtn").style.display = "none"; $("settingsBtn").style.display = "none";
+  $("notesBtn").style.display = "none";
+  $("notesNew").classList.remove("hidden");
+  document.querySelector("footer").style.display = "none";
+  $("sub").textContent = "Notes — everything you have written, on this device.";
+  noteFilter = "all"; notesPaintChips();
+  mount($("notes"));
+  window.scrollTo(0,0);
+  try{ history.pushState({view:"notes"},""); }catch(e){}
+  notesRefresh();
+}
+function closeNotes(){
+  $("notes").classList.add("hidden");
+  $("notesNew").classList.add("hidden");
+  $("regBtn").style.display = ""; $("settingsBtn").style.display = "";
+  $("notesBtn").style.display = "";
+  document.querySelector("footer").style.display = "";
+  toMenu();
+}
+function notesPaintChips(){
+  Array.prototype.forEach.call(document.querySelectorAll("#notesChips .nchip"), function(b){
+    b.setAttribute("aria-pressed", b.getAttribute("data-filter") === noteFilter ? "true" : "false");
+  });
+}
+
+/* The merged read. Both stores are asked at once and the results are normalised to one row
+   shape, so the sort and the render never have to know which store a row came from. The
+   common key is the update timestamp both records already carry — `updated` on a mark,
+   `updatedAt` on a note — which is why no new index was needed for this. */
+function notesLoad(){
+  if(!REGLIB.capabilities().available) return Promise.resolve(null);
+  return Promise.all([
+    REGLIB.marks.listAll().catch(function(){ return []; }),
+    REGLIB.notes.list().catch(function(){ return []; })
+  ]).then(function(both){
+    var rows = [];
+    both[0].forEach(function(m){
+      /* A note is a mark that CARRIES one. A bare highlight and a bookmark are marks too and
+         they are not notes — they belong to the reader's Marks list, not to this hub. */
+      if(!m || !m.note || !String(m.note).trim()) return;
+      var meta = REGLIB.byId(m.regId);
+      rows.push({
+        kind:"linked", id:m.id, mark:m,
+        pub: meta ? meta.pubNumber : String(m.regId),
+        page: m.page, pageLabel: m.pageLabel,
+        body: String(m.note),
+        quote: (m.anchor && m.anchor.quote) || "",
+        at: m.updated || m.created || ""
+      });
+    });
+    both[1].forEach(function(n){
+      rows.push({
+        kind:"mine", id:n.id, note:n,
+        title: n.title || "", body: n.body || "",
+        at: n.updatedAt || n.createdAt || ""
+      });
+    });
+    rows.sort(function(a,b){ return a.at < b.at ? 1 : (a.at > b.at ? -1 : 0); });
+    return rows;
+  });
+}
+function notesRefresh(){
+  return notesLoad().then(function(rows){
+    if(rows === null){
+      /* Nowhere to save. The empty state says so — so the New-note button must go with it,
+         or the screen contradicts itself by inviting a note it will silently drop. */
+      $("notesNew").classList.add("hidden");
+      $("notesCue").textContent = "";
+      $("notesList").textContent = "";
+      $("notesList").appendChild(notesEmpty(
+        "Notes need the installed app",
+        "Add to Home Screen — or open nco-prep.com — to keep notes on this device. "
+        + "This standalone file can't store them."));
+      return;
+    }
+    notesRender(rows);
+  }).catch(function(){
+    $("notesNew").classList.add("hidden");
+    $("notesList").textContent = "";
+    $("notesList").appendChild(notesEmpty("Notes aren't available right now",
+      "Close any other tab with this app open and reload."));
+  });
+}
+function notesEmpty(head, body){
+  var e = document.createElement("div"); e.className = "nempty";
+  e.innerHTML = NOTEICON.page;
+  var h = document.createElement("h4"); h.textContent = head;
+  var p = document.createElement("p"); p.textContent = body;
+  e.appendChild(h); e.appendChild(p);
+  return e;
+}
+/* "2h ago" beats a timestamp on a list a Soldier scans — but only up to a week, after which
+   the date is what actually locates a note. Built from the parts, never `new Date(iso)` on a
+   date-only string, which is the AUDIT_DATE lesson. */
+function noteWhen(iso){
+  if(!iso) return "";
+  var t = Date.parse(iso); if(isNaN(t)) return "";
+  var mins = Math.floor((Date.now() - t) / 60000);
+  if(mins < 1) return "just now";
+  if(mins < 60) return mins + "m ago";
+  var hrs = Math.floor(mins/60);
+  if(hrs < 24) return hrs + "h ago";
+  var days = Math.floor(hrs/24);
+  if(days === 1) return "yesterday";
+  if(days < 7) return days + " days ago";
+  var d = new Date(t);
+  return d.toLocaleDateString(undefined, {month:"short", day:"numeric"});
+}
+/* A checklist note reports its own progress. The editor writes checkbox lines as "[ ] " and
+   "[x] ", so the count is read straight off the body — nothing extra is stored, and a note
+   that is not a checklist simply has no boxes and no meta. */
+function noteProgress(body){
+  var lines = String(body||"").split("\n"), done = 0, total = 0;
+  lines.forEach(function(l){
+    var m = /^\s*\[( |x|X)\]\s?/.exec(l);
+    if(!m) return;
+    total++; if(m[1] !== " ") done++;
+  });
+  return total ? (done + " of " + total + " done") : "";
+}
+/* The body as one scannable line: markers stripped, blank lines collapsed. */
+function notePreview(body){
+  return String(body||"").split("\n").map(function(l){
+    return l.replace(/^\s*(\[( |x|X)\]|[-*•])\s?/, "").trim();
+  }).filter(function(l){ return l; }).join(" · ");
+}
+
+function notesRender(rows){
+  var host = $("notesList"), cue = $("notesCue");
+  host.textContent = "";
+  var linked = rows.filter(function(r){ return r.kind === "linked"; }).length;
+  var mine = rows.length - linked;
+  var shown = rows.filter(function(r){
+    return noteFilter === "all" || (noteFilter === "linked" ? r.kind === "linked" : r.kind === "mine");
+  });
+  /* The header cue answers the question the screen raises — how many, and where do they live.
+     "saved on this device" is the honest half: nothing here syncs anywhere. */
+  cue.textContent = noteFilter === "linked"
+    ? (linked + (linked === 1 ? " note linked to a regulation" : " notes linked to regulations"))
+    : noteFilter === "mine"
+    ? (mine + (mine === 1 ? " note of your own" : " notes of your own"))
+    : (rows.length + (rows.length === 1 ? " note · " : " notes · ") + "saved on this device");
+  if(!rows.length){
+    host.appendChild(notesEmpty("No notes yet",
+      "Write one here, or add a note while reading a regulation — it'll show up linked to that passage."));
+    return;
+  }
+  if(!shown.length){
+    host.appendChild(notesEmpty(
+      noteFilter === "linked" ? "No linked notes yet" : "No notes of your own yet",
+      noteFilter === "linked"
+        ? "Select a passage while reading a regulation and choose Note — it will show up here."
+        : "Tap the + button to write one."));
+    return;
+  }
+  shown.forEach(function(r){ host.appendChild(notesRow(r)); });
+}
+
+function notesRow(r){
+  var row = document.createElement("button");
+  row.type = "button"; row.className = "nrow";
+  row.setAttribute("data-kind", r.kind);
+  var g = document.createElement("span");
+  g.className = "nglyph" + (r.kind === "linked" ? " mk" : "");
+  g.innerHTML = r.kind === "linked" ? NOTEICON.link : NOTEICON.page;
+  var main = document.createElement("div"); main.className = "nmain";
+  if(r.kind === "linked"){
+    var t = document.createElement("div"); t.className = "ntext";
+    t.textContent = r.body;
+    main.appendChild(t);
+    var tag = document.createElement("div"); tag.className = "ntag";
+    var pill = document.createElement("span"); pill.className = "npill";
+    pill.innerHTML = NOTEICON.pill;
+    /* The printed page label when the publication has one, the index otherwise — a Soldier
+       cites the number on the page, not pdf.js's offset. */
+    pill.appendChild(document.createTextNode(
+      r.pub + " · p." + (r.pageLabel != null ? r.pageLabel : (r.page + 1))));
+    tag.appendChild(pill);
+    if(r.quote){
+      var s = document.createElement("span"); s.className = "nsnip";
+      s.textContent = "“" + r.quote + "”";
+      tag.appendChild(s);
+    }
+    main.appendChild(tag);
+    row.setAttribute("aria-label", "Note on " + r.pub + ", page "
+      + (r.pageLabel != null ? r.pageLabel : (r.page + 1)) + ". Go to the passage.");
+  } else {
+    if(r.title){
+      var h = document.createElement("div"); h.className = "nttl";
+      h.textContent = r.title;
+      main.appendChild(h);
+    }
+    var p = document.createElement("div");
+    p.className = r.title ? "nprev" : "ntext";
+    p.textContent = notePreview(r.body) || "Empty note";
+    main.appendChild(p);
+    var meta = document.createElement("div"); meta.className = "nmeta";
+    var prog = noteProgress(r.body), when = noteWhen(r.at);
+    meta.textContent = (when ? "Edited " + when : "") + (prog ? (when ? " · " : "") + prog : "");
+    if(meta.textContent) main.appendChild(meta);
+  }
+  var chev = document.createElement("span");
+  chev.className = "nchev"; chev.innerHTML = NOTEICON.chev;
+  row.appendChild(g); row.appendChild(main); row.appendChild(chev);
+  /* The two row types do different things on tap, and that is the point of telling them
+     apart: a linked note takes you to the passage it is about, a note of your own opens. */
+  row.addEventListener("click", function(){
+    if(r.kind === "linked") noteGoToPassage(r.mark);
+    else noteEditorOpenFree(r.note);
+  });
+  return row;
+}
+
+/* Jump to the passage. Reuses the Bookmarks path exactly — openReader(id, page) — and adds
+   the one thing a note needs that a bookmark does not: the mark itself is flashed on arrival,
+   because a page can hold several and "which one" has to be answerable without hunting. The
+   reader repaints marks as each page renders (v36), so the highlight is already there. */
+function noteGoToPassage(m){
+  if(!m) return;
+  var meta = REGLIB.byId(m.regId);
+  if(!meta || !REGLIB.viewerReady()){
+    $("noticeText").textContent = "That publication isn't available to open in this copy of the app.";
+    $("notice").classList.remove("hidden");
+    return;
+  }
+  markCloseSheet();
+  mkFlashId = m.id;
+  openReader(m.regId, m.page + 1);
+  markFlashPending();
 }
 
 /* ==================== Regulation reader (v27, chunk 3) ====================
@@ -5387,6 +5964,17 @@ function rdOpenSheet(focus){
 var mkSel = null, mkEditing = null, mkTextCache = {};
 var mkPageMarks = {},        /* page number -> the marks on it, for tap hit-testing */
     mkPicked = null;         /* the placed mark the popover is currently acting on */
+/* v45 editor state. `mkPendingCap` is a captured selection that has NOT been written yet:
+   opening the editor on fresh text stores nothing until something is typed, so tapping Note
+   and changing your mind leaves no empty record behind. `mkNoteEditing` is the free-standing
+   note under the same editor. `mkFlashId` is the mark a hub jump wants pulsed on arrival. */
+var mkPendingCap = null, mkNoteEditing = null, mkSaveTimer = 0, mkSavedTimer = 0, mkFlashId = null;
+/* Which KIND of note the editor is holding: "linked", "free", or null for closed. Explicit,
+   not inferred from which target happens to be set — inferring it means any path that clears
+   the target while text is still in the box falls through to "must be a new free-standing
+   note" and mints a stray one. That is not hypothetical: the first version inferred it, and
+   the self-test's own probe created a junk note on the way out. */
+var mkMode = null;
 
 function markEnable(){ return true; }   /* presence of this function is what shows the toggle */
 
@@ -5979,6 +6567,9 @@ function markRepaint(holder, n){
       markMergeRects(m.anchor.rects).forEach(function(r){
         var d = document.createElement("div");
         d.className = "rdmark" + (m.type === "note" ? " note" : "");
+        /* v45: the band carries its mark's id so a hub jump can find and pulse the exact
+           passage it came from. Painted bands were anonymous until now. */
+        d.setAttribute("data-mark", m.id);
         d.style.left = (r.x*100)+"%"; d.style.top = (r.y*100)+"%";
         d.style.width = (r.w*100)+"%"; d.style.height = (r.h*100)+"%";
         layer.appendChild(d);
@@ -5995,7 +6586,40 @@ function markRepaint(holder, n){
       }
     });
     holder.insertBefore(layer, holder.firstChild);
+    markFlashNow();
   }).catch(function(){});
+}
+
+/* ---- Arriving from the Notes hub (v45) ----
+   The reader already puts a Soldier on the right PAGE — that is the Bookmarks path, reused
+   unchanged. A note needs one thing more: a page can hold several marks, so the one the note
+   is about is pulsed and scrolled to. Colour does not carry it (the pulse is the --mark lane
+   widening), and under reduced motion nothing animates: being scrolled to the passage is then
+   the whole affordance, which is enough. */
+function markFlashNow(){
+  if(!mkFlashId) return false;
+  var els = document.querySelectorAll('.rdmark[data-mark="' + mkFlashId + '"]');
+  if(!els.length) return false;
+  mkFlashId = null;
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  try{ els[0].scrollIntoView({block:"center", behavior: reduce ? "auto" : "smooth"}); }catch(e){}
+  Array.prototype.forEach.call(els, function(e){ e.classList.add("flash"); });
+  setTimeout(function(){
+    Array.prototype.forEach.call(els, function(e){ e.classList.remove("flash"); });
+  }, 2600);
+  return true;
+}
+/* The page may not have rasterised yet — a streamed publication opens in about a second, but
+   "about" is not a number to build on. Poll briefly rather than guess a delay, and give up
+   quietly: a jump that lands on the right page without a pulse is still a jump that worked. */
+function markFlashPending(){
+  var tries = 0;
+  (function attempt(){
+    if(!mkFlashId) return;
+    if(markFlashNow()) return;
+    if(++tries > 50){ mkFlashId = null; return; }
+    setTimeout(attempt, 120);
+  })();
 }
 
 /* Which mark, if any, is under this point? Marks are stored in normalized page coordinates,
@@ -6034,20 +6658,213 @@ function markShowPop(m, cx, cy){
 }
 function markHidePop(){ $("mkPop").classList.add("hidden"); mkPicked = null; }
 
-function markOpenSheet(quote, existing){
-  mkEditing = existing || null;
-  $("mkQuote").textContent = quote;
-  $("mkText").value = existing && existing.note ? existing.note : "";
-  $("mkDelete").hidden = !existing;
+/* ---- The note editor (v45) ----
+   ONE surface for both kinds of note, deliberately grown out of the sheet the reader already
+   used rather than forked into a second editor. Three ways in, one way through:
+
+     markOpenSheet(quote)        a fresh selection in the reader — nothing stored yet
+     markOpenExisting(m)         a mark on the page, or a linked note opened from the hub
+     noteEditorOpenFree(n)       a free-standing note, or null for a new one
+
+   There is NO Save button. The note writes itself on a short debounce and says so quietly,
+   which is why "Cancel" became "Done": once a Soldier has typed, there is nothing to cancel,
+   and a sheet that could silently throw away what they wrote is a worse trade than a note
+   they have to delete on purpose. */
+function markEditorReset(){
+  if(mkSaveTimer){ clearTimeout(mkSaveTimer); mkSaveTimer = 0; }
+  if(mkSavedTimer){ clearTimeout(mkSavedTimer); mkSavedTimer = 0; }
+  $("mkSaved").classList.remove("on");
+  mkEditing = null; mkNoteEditing = null; mkPendingCap = null; mkMode = null;
+  $("mkTitle").value = "";
+  $("mkText").value = "";
+  $("mkCtx").hidden = true;
+  $("mkQuote").textContent = "";
+  $("mkQuote").style.display = "none";
+  $("mkTitle").style.display = "none";
+}
+function markEditorShow(){
   $("mkSheet").classList.remove("hidden");
+}
+/* A fresh selection. The record is NOT created here — see mkPendingCap. */
+function markOpenSheet(quote, existing){
+  if(existing) return markOpenExisting(existing);
+  markEditorReset();
+  mkPendingCap = mkSel; mkMode = "linked";
+  $("mkKind").textContent = "Note";
+  $("mkQuote").textContent = quote;
+  $("mkQuote").style.display = "";
+  $("mkTrash").hidden = true;
+  $("mkText").placeholder = "What matters about this passage?";
+  markEditorShow();
   $("mkText").focus();
 }
+/* An existing mark — always with the passage-context card, wherever it was opened from. The
+   card says which publication and page the note is fastened to, which the bare quote block
+   never did, and "Go to passage" is useful in the reader too: a note opened from the Marks
+   list can be pages away from the passage it is about. */
 function markOpenExisting(m){
-  markOpenSheet(m.anchor.quote, m);
+  markEditorReset();
+  mkEditing = m; mkMode = "linked";
+  $("mkKind").textContent = "Note";
+  $("mkTrash").hidden = false;
+  $("mkText").placeholder = "What matters about this passage?";
+  $("mkText").value = m.note || "";
+  var meta = REGLIB.byId(m.regId);
+  $("mkCtxLabel").textContent = "Linked · " + (meta ? meta.pubNumber : m.regId)
+    + " · p." + (m.pageLabel != null ? m.pageLabel : (m.page + 1));
+  $("mkCtxQuote").textContent = "“" + ((m.anchor && m.anchor.quote) || "") + "”";
+  $("mkCtx").hidden = false;
+  markEditorShow();
+  $("mkText").focus();
+}
+/* A free-standing note. `n` null means a new one, which — like a fresh selection — is not
+   written until something is typed. */
+function noteEditorOpenFree(n){
+  markEditorReset();
+  mkNoteEditing = n || null; mkMode = "free";
+  $("mkKind").textContent = "Note";
+  $("mkTrash").hidden = !n;
+  $("mkTitle").style.display = "";
+  $("mkTitle").value = n && n.title ? n.title : "";
+  $("mkText").placeholder = "Write it down.";
+  $("mkText").value = n && n.body ? n.body : "";
+  markEditorShow();
+  (n ? $("mkText") : $("mkTitle")).focus();
 }
 function markCloseSheet(){
+  /* Flush before hiding: the debounce must never be the reason a note is lost. */
+  markEditorFlush();
   $("mkSheet").classList.add("hidden");
-  mkEditing = null;
+  markEditorReset();
+}
+function markShowSaved(){
+  var el = $("mkSaved");
+  el.classList.add("on");
+  if(mkSavedTimer) clearTimeout(mkSavedTimer);
+  mkSavedTimer = setTimeout(function(){ el.classList.remove("on"); mkSavedTimer = 0; }, 1800);
+}
+function markEditorTouched(){
+  if(mkSaveTimer) clearTimeout(mkSaveTimer);
+  mkSaveTimer = setTimeout(function(){ mkSaveTimer = 0; markEditorFlush(); }, 500);
+}
+/* The single write path for every kind of note this editor holds. */
+function markEditorFlush(){
+  if(mkSaveTimer){ clearTimeout(mkSaveTimer); mkSaveTimer = 0; }
+  /* No mode means the editor is not holding anything — a flush here must write nothing at
+     all, however much text is still sitting in the box. */
+  if(!mkMode) return Promise.resolve(null);
+  var text = $("mkText").value, title = $("mkTitle").value;
+  /* A free-standing note. */
+  if(mkMode === "free"){
+    if(!mkNoteEditing && !text.trim() && !title.trim()) return Promise.resolve(null);
+    return REGLIB.notes.put({
+      id: mkNoteEditing ? mkNoteEditing.id : null,
+      title: title, body: text,
+      createdAt: mkNoteEditing ? mkNoteEditing.createdAt : null
+    }).then(function(n){
+      mkNoteEditing = n;
+      $("mkTrash").hidden = false;
+      markShowSaved();
+      notesRefreshIfOpen();
+      return n;
+    }).catch(function(){ return null; });
+  }
+  /* A reg-linked note that already exists. Keeping the id AND the anchor is load-bearing —
+     the anchor is the join key back to the passage, so a re-save must never mint a new one.
+     Empty text takes the mark back to being a plain highlight, which is exactly what the
+     Save button used to do. */
+  if(mkEditing){
+    var m = mkEditing;
+    return REGLIB.marks.put({
+      id:m.id, regId:m.regId, page:m.page, pageLabel:m.pageLabel,
+      type: text.trim() ? "note" : "highlight",
+      anchor:m.anchor, color:m.color, note: text.trim() ? text : null,
+      created:m.created
+    }).then(function(saved){
+      mkEditing = saved;
+      markShowSaved();
+      var holder = document.querySelector('.rdpage[data-page="' + (m.page+1) + '"]');
+      if(holder) markRepaint(holder, m.page+1);
+      notesRefreshIfOpen();
+      return saved;
+    }).catch(function(){ return null; });
+  }
+  /* A fresh selection, first keystroke: this is where the record is finally created. */
+  if(mkPendingCap && text.trim()){
+    var cap = mkPendingCap;
+    mkPendingCap = null;
+    return markCommit("note", text, cap).then(function(saved){
+      mkEditing = saved;
+      if(saved) $("mkTrash").hidden = false;
+      markShowSaved();
+      notesRefreshIfOpen();
+      return saved;
+    }).catch(function(){ return null; });
+  }
+  return Promise.resolve(null);
+}
+function notesRefreshIfOpen(){
+  if(!$("notes").classList.contains("hidden")) notesRefresh();
+}
+/* Checkbox and bullet inserts. Plain text markers rather than a rich-text model, because the
+   note has to survive as a string in one field and be readable if it is ever read raw. */
+function markInsertLine(marker){
+  var ta = $("mkText"), v = ta.value;
+  var pos = ta.selectionStart == null ? v.length : ta.selectionStart;
+  /* Start of the line the caret sits on, so the marker lands where a Soldier is writing. */
+  var ls = v.lastIndexOf("\n", pos - 1) + 1;
+  var line = v.slice(ls, pos);
+  var pre = /^\s*(\[( |x|X)\]|[-*•])\s?/.exec(line);
+  if(pre){
+    /* Already marked: swap the marker rather than stacking a second one. */
+    ta.value = v.slice(0, ls) + marker + line.slice(pre[0].length) + v.slice(pos);
+    pos = ls + marker.length + (line.length - pre[0].length);
+  } else if(line.trim() === "" && ls === pos){
+    ta.value = v.slice(0, pos) + marker + v.slice(pos);
+    pos = pos + marker.length;
+  } else {
+    var ins = (v.slice(0, pos).slice(-1) === "\n" ? "" : "\n") + marker;
+    ta.value = v.slice(0, pos) + ins + v.slice(pos);
+    pos = pos + ins.length;
+  }
+  ta.focus();
+  try{ ta.setSelectionRange(pos, pos); }catch(e){}
+  markEditorTouched();
+}
+/* Delete. Neutral chrome, and it NAMES the consequence: deleting a linked note from anywhere
+   removes the whole mark — the note and the highlight it carries — which is what the reader's
+   own Marks delete has always done. One delete behaviour, not two. */
+function markEditorDelete(){
+  if(mkEditing){
+    var m = mkEditing;
+    libAsk("Delete this note?",
+      "This also removes its highlight from the page.",
+      "Delete", function(){
+        /* Drop the editor's claim on the record BEFORE closing. markCloseSheet flushes on the
+           way out, and a flush still holding a deleted mark would write it straight back. */
+        markEditorReset();
+        REGLIB.marks.drop(m.id).then(function(){
+          markCloseSheet();
+          var holder = document.querySelector('.rdpage[data-page="' + (m.page+1) + '"]');
+          if(holder) markRepaint(holder, m.page+1);
+          notesRefreshIfOpen();
+        });
+      });
+    return;
+  }
+  if(mkNoteEditing){
+    var n = mkNoteEditing;
+    libAsk("Delete this note?", "It comes off this device. Nothing else is affected.",
+      "Delete", function(){
+        markEditorReset();
+        REGLIB.notes.remove(n.id).then(function(){
+          markCloseSheet();
+          notesRefreshIfOpen();
+        });
+      });
+    return;
+  }
+  markCloseSheet();
 }
 
 /* The Marks jump-list, folded into the outline sheet so the reading surface keeps only the
@@ -6157,8 +6974,12 @@ function markSheetSection(body){
 function markTeardown(){
   if(mkPressTimer){ clearTimeout(mkPressTimer); mkPressTimer = 0; }
   markSelClear(); markHideReadout();
-  mkSel = null; mkEditing = null; mkTextCache = {}; mkPageMarks = {};
-  markHideBar(); markHidePop(); markCloseSheet();
+  /* Close the editor BEFORE clearing state, not after: closing flushes, and a flush that has
+     already had its target nulled would read the leftover text as a brand-new free-standing
+     note and write one on the way out of the reader. */
+  markCloseSheet();
+  mkSel = null; mkEditing = null; mkTextCache = {}; mkPageMarks = {}; mkFlashId = null;
+  markHideBar(); markHidePop();
 }
 /* Test seam. The whole app script is one IIFE, so the markup internals are private; the
    proof harness needs a handle to build a text layer and read back a captured anchor
@@ -6166,7 +6987,11 @@ function markTeardown(){
 window.__MARKUP__ = {
   paintPage: markPaintPage, capture: markCaptureSelection, repaint: markRepaint,
   save: markSave, openSheet: markOpenSheet, pageText: function(n){ return mkTextCache[n]; },
-  overlap: markRectsOverlap, hitAt: markHitAt
+  overlap: markRectsOverlap, hitAt: markHitAt,
+  /* v45: the linked-note editor, so its passage-context card can be exercised without a
+     rasterised PDF behind it — the card is the one part of the editor that only ever appears
+     on a path that normally needs a 4 MB document open first. */
+  openExisting: markOpenExisting, editorFlush: markEditorFlush
 };
 
 /* An outline destination can be a named string or an explicit ref; both have to resolve to
@@ -6719,6 +7544,126 @@ function selfTest(){
       errs.push("markup: markHitAt is not reachable, so a highlight cannot be tapped");
   })();
 
+  /* ---- Notes hub (v45). The structural half; the store half is asynchronous and runs in
+     notesStoreCheck(). ---- */
+  (function(){
+    /* 1. The trio. Three floaters, one row, equal chrome — and all three --ink, which is the
+       thing that keeps failing to stick: the accent-glyph idea has been proposed twice and
+       overturned twice, so assert it rather than trusting the next reader of the CSS. */
+    var trio = ["notesBtn","regBtn","settingsBtn"].map(function(id){ return document.getElementById(id); });
+    if(trio.some(function(el){ return !el; })){
+      errs.push("notes: the home trio is incomplete — Notes, References and Settings must all exist");
+    } else {
+      /* Resolve --ink through the cascade rather than parsing the token, so the comparison is
+         against the same value the browser paints with. */
+      var probe = document.createElement("span");
+      probe.style.cssText = "position:absolute;left:-9999px;color:var(--ink)";
+      document.body.appendChild(probe);
+      var ink = getComputedStyle(probe).color;
+      probe.remove();
+      trio.forEach(function(el){
+        var cs = getComputedStyle(el), b = el.getBoundingClientRect();
+        if(b.width && (b.width < 44 || b.height < 44))
+          errs.push("notes: #" + el.id + " is " + Math.round(b.width) + "x" + Math.round(b.height) + ", under the 44px floor");
+        var svg = el.querySelector("svg");
+        if(!svg) errs.push("notes: #" + el.id + " has no glyph");
+        else if(getComputedStyle(svg).color !== ink)
+          errs.push("notes: #" + el.id + "'s glyph is not --ink — the trio must be three equal neutral marks");
+        if(cs.position !== "fixed")
+          errs.push("notes: #" + el.id + " is not fixed, so the trio would scroll away");
+      });
+      /* Order matters and is locked: References stays immediately left of the gear, Notes
+         joins on the outside. Read off the laid-out geometry, not the markup order. */
+      var r = trio.map(function(el){ return el.getBoundingClientRect().right; });
+      if(r[0] && r[1] && r[2] && !(r[0] < r[1] && r[1] < r[2]))
+        errs.push("notes: the trio order is wrong — it must read Notes · References · Settings, left to right");
+    }
+    /* 2. The hub's own furniture. */
+    if(!document.getElementById("notes")) errs.push("notes: the hub screen is missing");
+    if(document.querySelectorAll("#notesChips .nchip").length !== 3)
+      errs.push("notes: the filter chips must be exactly All · Linked · My notes");
+    var fab = document.getElementById("notesNew");
+    if(!fab) errs.push("notes: the new-note button is missing");
+    /* Tap targets. Read off the COMPUTED style, not the laid-out box: the hub is hidden when
+       the self-test runs, so every rect is 0 and a rect-based check silently passes on a
+       control it never saw. A first cut did exactly that — it skipped a 38px chip and
+       reported clean. Computed min-height answers the same question with the screen closed. */
+    [["#notesChips .nchip", "a filter chip"], ["#notesBack", "the back control"],
+     ["#notesNew", "the new-note button"], ["#mkTrash", "the editor's delete control"],
+     [".mktool", "an editor insert control"], ["#mkGo", "Go to passage"]].forEach(function(pair){
+      Array.prototype.forEach.call(document.querySelectorAll(pair[0]), function(el){
+        var cs = getComputedStyle(el);
+        var h = Math.max(parseFloat(cs.minHeight) || 0, parseFloat(cs.height) || 0);
+        var w = Math.max(parseFloat(cs.minWidth) || 0, parseFloat(cs.width) || 0);
+        if(h && h < 44) errs.push("notes: " + pair[1] + " is " + Math.round(h) + "px tall, under the 44px floor");
+        if(w && w < 44) errs.push("notes: " + pair[1] + " is " + Math.round(w) + "px wide, under the 44px floor");
+      });
+    });
+    /* 3. The editor. Auto-save is the design — a Save button coming back would mean two ways
+       to persist a note and one of them silently losing it. */
+    if(document.getElementById("mkSave"))
+      errs.push("notes: the editor has a Save button again — it saves itself, and two paths would disagree");
+    ["mkTitle","mkCtx","mkTrash","mkInsChk","mkInsBul","mkSaved"].forEach(function(id){
+      if(!document.getElementById(id)) errs.push("notes: the editor is missing #" + id);
+    });
+    if(typeof notesLoad !== "function") errs.push("notes: notesLoad is not reachable, so the hub cannot read either store");
+    if(typeof markEditorFlush !== "function") errs.push("notes: the editor has no save path");
+    if(typeof markEditorDelete !== "function") errs.push("notes: the editor has no delete path");
+    /* 4. The row builder, rendered rather than reasoned about — the reg pill's PRESENCE is
+       the colour-independent tell, so a linked row without one is a real defect. */
+    (function(){
+      if(typeof notesRow !== "function"){ errs.push("notes: notesRow is not reachable"); return; }
+      var box = document.createElement("div");
+      box.style.cssText = "position:absolute;left:-9999px;width:360px";
+      document.body.appendChild(box);
+      var linked = notesRow({kind:"linked", id:"t1", mark:{id:"t1", regId:"fm-7-22", page:91},
+        pub:"FM 7-22", page:91, pageLabel:"92", body:"Grader must be certified.",
+        quote:"scored by a certified grader", at:new Date().toISOString()});
+      var mine = notesRow({kind:"mine", id:"t2", note:{id:"t2"}, title:"Board day",
+        body:"[x] Boots\n[ ] Orders", at:new Date().toISOString()});
+      box.appendChild(linked); box.appendChild(mine);
+      if(!linked.querySelector(".npill")) errs.push("notes: a reg-linked row renders no publication pill");
+      if(linked.querySelector(".npill") && linked.querySelector(".npill").textContent.indexOf("p.92") === -1)
+        errs.push("notes: the pill shows the page index instead of the printed page label");
+      if(mine.querySelector(".npill")) errs.push("notes: a free-standing row renders a publication pill");
+      if(!linked.querySelector(".nglyph.mk")) errs.push("notes: the reg-linked glyph is not in the --mark lane");
+      if(mine.querySelector(".nglyph.mk")) errs.push("notes: a free-standing row borrows the --mark lane");
+      if(typeof noteProgress === "function" && noteProgress("[x] a\n[ ] b") !== "1 of 2 done")
+        errs.push("notes: the checklist progress meta miscounts");
+      box.remove();
+    })();
+    /* 5. The linked editor's passage-context card. It only ever appears on a path that
+       normally has a 4 MB PDF open behind it, which is exactly why it is asserted here on a
+       synthetic mark instead of being left to a manual pass. */
+    (function(){
+      if(typeof markOpenExisting !== "function"){ errs.push("notes: markOpenExisting is not reachable"); return; }
+      var probe = {id:"__st__", regId:"fm-7-22", page:91, pageLabel:"92", type:"note",
+        anchor:{quote:"scored by a certified grader", prefix:"", suffix:"", textPosition:null,
+                rects:[{x:.1,y:.2,w:.5,h:.02}]},
+        color:"mark", note:"probe", created:null};
+      markOpenExisting(probe);
+      var label = ($("mkCtxLabel").textContent || "");
+      if($("mkCtx").hidden) errs.push("notes: a linked note opens with no passage-context card");
+      if(label.indexOf("FM 7-22") === -1 || label.indexOf("p.92") === -1)
+        errs.push("notes: the context card does not name the publication and page (" + label + ")");
+      if(($("mkCtxQuote").textContent||"").indexOf("certified grader") === -1)
+        errs.push("notes: the context card does not carry the anchored quote");
+      if(getComputedStyle($("mkTitle")).display !== "none")
+        errs.push("notes: a linked note offers a title line — its passage is its heading");
+      if(!$("mkGo") || $("mkGo").getBoundingClientRect().height < 44)
+        errs.push("notes: Go to passage is under the 44px floor");
+      /* And the bug this probe FOUND, now locked shut: dropping the editor's target while
+         text is still in the box must write nothing. Inferring the note kind from whichever
+         target happened to be set made this fall through to "new free-standing note", and
+         the probe minted a junk note every time the self-test ran. */
+      mkEditing = null; mkNoteEditing = null; mkPendingCap = null; mkMode = null;
+      markEditorFlush();
+      markCloseSheet();
+      /* Whether anything was actually written is a question for the store, so it is asked in
+         notesStoreCheck() where an async answer can still reach the report. */
+    })();
+  })();
+
   if(errs.length){
     console.error("SELF-TEST FAILED — "+errs.length+" problem(s) across "+QUESTIONS.length+" questions");
     errs.slice(0,40).forEach(function(e){ console.error("   "+e); });
@@ -6727,7 +7672,210 @@ function selfTest(){
   }
   regReachCheck();
   markStoreCheck();
+  notesStoreCheck();
   return errs;
+}
+
+/* ==================== v45: the migration proof ====================
+   The single riskiest thing this build does is bump DB_VER on a database that already holds a
+   Soldier's marks, favourites and bookmarks. "It should be fine, the upgrade only creates a
+   store" is exactly the kind of claim that deserves a test rather than a comment, so this
+   runs the SHIPPED upgrade function over a SCRATCH database seeded to look like the old
+   version, and checks all three kinds of record read back afterwards.
+
+   Scratch, never the live database: a test that seeds and deletes rows in a Soldier's real
+   store to prove their data is safe would be its own worst outcome.                       */
+function notesStoreCheck(){
+  var out = { problems:[], skipped:false, ran:false };
+  window.__notesCheck = out;
+  if(!window.REGLIB || !REGLIB._applyUpgrade || !window.indexedDB){ out.skipped = "no store"; return; }
+  if(!REGLIB.capabilities().available){ out.skipped = "storage unavailable"; return; }
+
+  var SCRATCH = "absg_reglib_selftest", S = REGLIB._stores, NEWVER = REGLIB._dbVer;
+  var seedMark = { id:"m1", regId:"fm-7-22", page:3, pageLabel:"4", type:"highlight",
+                   anchor:{quote:"holistic health", prefix:"", suffix:"", textPosition:null,
+                           rects:[{x:.1,y:.2,w:.5,h:.02}]},
+                   color:"mark", note:null, created:"2026-07-30T00:00:00.000Z",
+                   updated:"2026-07-30T00:00:00.000Z" };
+  var seedBookmark = { id:"b1", regId:"fm-7-22", page:9, pageLabel:"10", type:"bookmark",
+                       anchor:{quote:"", prefix:"", suffix:"", textPosition:null, rects:[]},
+                       color:"mark", note:null, created:"2026-07-30T00:00:00.000Z",
+                       updated:"2026-07-30T00:00:00.000Z" };
+
+  function wipe(){
+    return new Promise(function(res){
+      var rq = indexedDB.deleteDatabase(SCRATCH);
+      rq.onsuccess = rq.onerror = rq.onblocked = function(){ res(); };
+    });
+  }
+  /* The OLD schema, written out because it is history and cannot change: this is what a
+     device that last ran v35-v44 actually has on it. */
+  function openOld(){
+    return new Promise(function(res, rej){
+      var rq = indexedDB.open(SCRATCH, 3);
+      rq.onupgradeneeded = function(){
+        var d = rq.result;
+        d.createObjectStore(S.files, {keyPath:"id"});
+        var m = d.createObjectStore(S.marks, {keyPath:"key", autoIncrement:true});
+        m.createIndex("byReg", "regId", {unique:false});
+        var a = d.createObjectStore(S.annots, {keyPath:"id"});
+        a.createIndex("byReg", "regId", {unique:false});
+        a.createIndex("byRegPage", ["regId","page"], {unique:false});
+        d.createObjectStore(S.favs, {keyPath:"id"});
+      };
+      rq.onsuccess = function(){ res(rq.result); };
+      rq.onerror = function(){ rej(rq.error); };
+    });
+  }
+  function openNew(){
+    return new Promise(function(res, rej){
+      var rq = indexedDB.open(SCRATCH, NEWVER);
+      /* THE SHIPPED FUNCTION, not a copy of it. */
+      rq.onupgradeneeded = function(){ REGLIB._applyUpgrade(rq.result); };
+      rq.onsuccess = function(){ res(rq.result); };
+      rq.onerror = function(){ rej(rq.error); };
+      rq.onblocked = function(){ rej(new Error("scratch upgrade blocked")); };
+    });
+  }
+  function write(d, store, rec){
+    return new Promise(function(res, rej){
+      var t = d.transaction(store, "readwrite");
+      t.objectStore(store).put(rec);
+      t.oncomplete = function(){ res(); };
+      t.onerror = function(){ rej(t.error); };
+    });
+  }
+  function readAll(d, store){
+    return new Promise(function(res, rej){
+      var t = d.transaction(store, "readonly");
+      var rq = t.objectStore(store).getAll();
+      rq.onsuccess = function(){ res(rq.result || []); };
+      rq.onerror = function(){ rej(rq.error); };
+    });
+  }
+
+  wipe().then(openOld).then(function(d){
+    return write(d, S.annots, seedMark)
+      .then(function(){ return write(d, S.annots, seedBookmark); })
+      .then(function(){ return write(d, S.favs, {id:"fm-7-22", at:"2026-07-30T00:00:00.000Z"}); })
+      .then(function(){ d.close(); });
+  }).then(openNew).then(function(d){
+    return Promise.all([readAll(d, S.annots), readAll(d, S.favs)]).then(function(r){
+      var annots = r[0], favs = r[1];
+      var hi = annots.filter(function(m){ return m.id === "m1"; })[0];
+      var bm = annots.filter(function(m){ return m.id === "b1"; })[0];
+      if(!hi) out.problems.push("the DB_VER bump lost a stored HIGHLIGHT");
+      else if(!hi.anchor || hi.anchor.quote !== "holistic health" || !(hi.anchor.rects||[]).length)
+        out.problems.push("a highlight survived the bump with a damaged anchor");
+      if(!bm) out.problems.push("the DB_VER bump lost a stored BOOKMARK");
+      if(!favs.filter(function(f){ return f.id === "fm-7-22"; }).length)
+        out.problems.push("the DB_VER bump lost a stored FAVOURITE");
+      if(!d.objectStoreNames.contains(S.notes))
+        out.problems.push("the upgrade did not create the notes store");
+      d.close();
+    });
+  }).then(wipe).then(function(){
+    /* The new store, exercised through the SHIPPED accessor on the real database — create,
+       read back, delete, confirm gone. Named so that a leftover is unmistakable if the
+       delete leg ever fails. */
+    var made = null;
+    return REGLIB.notes.put({title:"Self-test note", body:"safe to delete"}).then(function(n){
+      made = n;
+      if(!n || !n.id) out.problems.push("a free-standing note did not save");
+      if(n && !n.updatedAt) out.problems.push("a free-standing note saved without the timestamp the hub sorts on");
+      return REGLIB.notes.list();
+    }).then(function(list){
+      if(!list.filter(function(n){ return made && n.id === made.id; }).length)
+        out.problems.push("a saved note did not read back");
+      return made ? REGLIB.notes.remove(made.id) : null;
+    }).then(function(){
+      return REGLIB.notes.list();
+    }).then(function(list){
+      if(list.filter(function(n){ return made && n.id === made.id; }).length)
+        out.problems.push("a deleted note survived");
+    });
+  }).then(function(){
+    /* The stray-note guard. The editor is opened on a linked mark, its target is dropped with
+       text still in the box, and the flush must write NOTHING. Before mkMode gated the flush,
+       this minted a free-standing note out of the leftover text — found by the self-test's own
+       context-card probe leaving junk in the store on every run. */
+    if(typeof markOpenExisting !== "function") return null;
+    return REGLIB.notes.list().then(function(before){
+      markOpenExisting({id:"__stray__", regId:"fm-7-22", page:1, pageLabel:"2", type:"note",
+        anchor:{quote:"stray guard", prefix:"", suffix:"", textPosition:null,
+                rects:[{x:.1,y:.1,w:.2,h:.02}]},
+        color:"mark", note:"stray guard text", created:null});
+      mkEditing = null; mkNoteEditing = null; mkPendingCap = null; mkMode = null;
+      markEditorFlush();
+      markCloseSheet();
+      return REGLIB.notes.list().then(function(after){
+        if(after.length !== before.length)
+          out.problems.push("the editor wrote a note from a dropped target — mkMode is not gating the flush");
+      });
+    });
+  }).then(function(){
+    /* The merged read: the hub must see BOTH stores, and every linked row it produces must
+       carry an anchor that can actually be jumped to. */
+    if(typeof notesLoad !== "function"){ out.problems.push("notesLoad is not reachable"); return null; }
+    return notesLoad().then(function(rows){
+      if(rows === null) return;
+      rows.forEach(function(r){
+        if(r.kind !== "linked") return;
+        if(!r.mark || !r.mark.anchor || !(r.mark.anchor.rects||[]).length)
+          out.problems.push("a linked note resolves to no paintable anchor (" + r.pub + ")");
+        if(typeof r.page !== "number")
+          out.problems.push("a linked note has no page to jump to (" + r.pub + ")");
+      });
+    });
+  }).then(function(){
+    /* Delete-is-confirmed-first, proved by driving it: a hub delete on a reg-linked note must
+       open the confirm and leave the mark in the store until the Soldier says yes. */
+    var probe = null;
+    return REGLIB.marks.put({
+      regId:"__selftest__", page:0, pageLabel:null, type:"note",
+      anchor:{quote:"selftest", prefix:"", suffix:"", textPosition:null,
+              rects:[{x:.1,y:.2,w:.4,h:.02}]},
+      color:"mark", note:"confirm probe"
+    }).then(function(m){
+      probe = m;
+      var wasEditing = mkEditing;
+      mkEditing = m;
+      markEditorDelete();
+      var open = !document.getElementById("libConfirm").classList.contains("hidden");
+      if(!open) out.problems.push("deleting a linked note does not ask first");
+      var body = document.getElementById("libConfirmBody").textContent || "";
+      if(open && body.toLowerCase().indexOf("highlight") === -1)
+        out.problems.push("the delete confirm does not name the consequence to the highlight");
+      var run = libPendingFn;
+      libCloseConfirm();
+      mkEditing = wasEditing;
+      return REGLIB.marks.get(probe.id).then(function(still){
+        if(!still) out.problems.push("the mark was deleted BEFORE the confirm was answered");
+        return run ? null : null;
+      });
+    }).then(function(){
+      return probe ? REGLIB.marks.drop(probe.id) : null;
+    }).then(function(){
+      return probe ? REGLIB.marks.get(probe.id) : null;
+    }).then(function(left){
+      if(left) out.problems.push("a confirmed delete left the mark in the store");
+    });
+  }).then(function(){
+    out.ran = true;
+    if(out.problems.length){
+      console.error("NOTES STORE CHECK FAILED — " + out.problems.length + " problem(s)");
+      out.problems.forEach(function(p){ console.error("   " + p); });
+    } else {
+      console.log("NOTES STORE CHECK PASSED — the DB_VER bump preserves marks, favourites and "
+        + "bookmarks; notes round-trip; a linked delete is confirmed first.");
+    }
+    if(typeof stPanelUpdate === "function") stPanelUpdate();
+  }).catch(function(e){
+    out.ran = true;
+    out.problems.push("could not run: " + (e && e.message));
+    console.error("NOTES STORE CHECK — could not run: " + (e && e.message));
+    if(typeof stPanelUpdate === "function") stPanelUpdate();
+  });
 }
 
 /* Does a mark actually round-trip and, more to the point, actually LEAVE? A delete that
@@ -6929,6 +8077,20 @@ $("printBtn").addEventListener("click", function(){ buildPrint(); window.print()
 
 /* ---------------- regulation library (v26) ---------------- */
 $("regBtn").addEventListener("click", openLibrary);
+/* Plain `click`, exactly like its two siblings. The v43 pointerup-tap exists for buttons
+   INSIDE a scroller, where iOS swallows the click that follows a scroll; these three are fixed
+   chrome that never moves under the finger, so a click is right and a pointerdown would fire
+   while a Soldier was only resting a thumb. */
+$("notesBtn").addEventListener("click", openNotes);
+$("notesBack").addEventListener("click", closeNotes);
+$("notesNew").addEventListener("click", function(){ noteEditorOpenFree(null); });
+Array.prototype.forEach.call(document.querySelectorAll("#notesChips .nchip"), function(b){
+  b.addEventListener("click", function(){
+    noteFilter = b.getAttribute("data-filter");
+    notesPaintChips();
+    notesRefresh();
+  });
+});
 /* v43: neither binding this button has had is right on its own, and the reason is worth
    keeping. pointerdown (v36) fires the instant a finger lands, so starting a scroll on a
    button inside a scroller navigates. A plain click (v42) is the opposite failure: iOS
@@ -6968,8 +8130,9 @@ $("libBack").addEventListener("click", closeLibrary);
 $("libConfirmNo").addEventListener("click", libCloseConfirm);
 $("libConfirmScrim").addEventListener("click", libCloseConfirm);
 $("libConfirmYes").addEventListener("click", function(){
-  var st = libPendingRemove;
+  var st = libPendingRemove, fn = libPendingFn;
   libCloseConfirm();
+  if(fn){ fn(); return; }
   if(!st) return;
   REGLIB.remove(st.id).then(function(){ libRefresh(); }).catch(function(){ libRefresh(); });
 });
@@ -7340,35 +8503,28 @@ $("mkCopy").addEventListener("click", function(){
       .catch(function(){ copyFallback(text, function(){ rdToast("Copied"); }); });
   } else copyFallback(text, function(){ rdToast("Copied"); });
 });
+/* v45: no Save button. Both fields write themselves on a debounce, the sheet flushes on the
+   way out, and Done is only a way to close. */
 $("mkCancel").addEventListener("click", markCloseSheet);
 $("mkScrim").addEventListener("click", markCloseSheet);
-$("mkSave").addEventListener("click", function(){
-  var text = $("mkText").value.trim();
-  if(mkEditing){
-    /* Editing an existing mark keeps its id and anchor — the anchor is the join key, so
-       re-saving must never mint a new one. */
-    REGLIB.marks.put({
-      id: mkEditing.id, regId: mkEditing.regId, page: mkEditing.page,
-      pageLabel: mkEditing.pageLabel, type: text ? "note" : "highlight",
-      anchor: mkEditing.anchor, color: mkEditing.color, note: text || null,
-      created: mkEditing.created
-    }).then(function(){
-      markCloseSheet();
-      var holder = document.querySelector('.rdpage[data-page="' + (mkEditing.page+1) + '"]');
-      if(holder) markRepaint(holder, mkEditing.page+1);
-    });
+$("mkText").addEventListener("input", markEditorTouched);
+$("mkTitle").addEventListener("input", markEditorTouched);
+$("mkTrash").addEventListener("click", markEditorDelete);
+$("mkInsChk").addEventListener("click", function(){ markInsertLine("[ ] "); });
+$("mkInsBul").addEventListener("click", function(){ markInsertLine("• "); });
+$("mkGo").addEventListener("click", function(){
+  if(!mkEditing) return;
+  var m = mkEditing;
+  markEditorFlush();
+  /* Already reading that publication? Then this is a scroll, not an open. */
+  if(rdId === m.regId && rdDoc){
+    markCloseSheet();
+    mkFlashId = m.id;
+    rdGoto(m.page + 1);
+    markFlashPending();
     return;
   }
-  markSave(text ? "note" : "highlight", text || null).then(markCloseSheet);
-});
-$("mkDelete").addEventListener("click", function(){
-  if(!mkEditing) return;
-  var pg = mkEditing.page;
-  REGLIB.marks.drop(mkEditing.id).then(function(){
-    markCloseSheet();
-    var holder = document.querySelector('.rdpage[data-page="' + (pg+1) + '"]');
-    if(holder) markRepaint(holder, pg+1);
-  });
+  noteGoToPassage(m);
 });
 /* The highlighter toggle is GONE in v29, deliberately. Selecting text already raises the
    Highlight / Note toolbar, so a mode toggle had nothing to switch: it could only explain
@@ -7529,6 +8685,23 @@ function stPanelUpdate(){
       "Storage " + (cap.available ? REGLIB.backendName()
         : "unavailable (" + (cap.bareFile ? "opened as a file, not installed" : "no storage") + ")")));
   }
+  /* v45. The v35 habit, and the reason this reads `ran` before it reads `problems`: an empty
+     problem list once meant the check never executed, and it reported PASS for a test that had
+     not happened. "No problems" and "did not run" must never render the same. */
+  var nc = window.__notesCheck;
+  if(!nc){
+    body.appendChild(stRow("skip", "NOTES STORE CHECK not started"));
+  } else if(nc.skipped){
+    body.appendChild(stRow("skip", "NOTES STORE CHECK skipped (" + nc.skipped + ")"));
+  } else if(!nc.ran){
+    body.appendChild(stRow("skip", "NOTES STORE CHECK running…"));
+  } else if(nc.problems.length){
+    nc.problems.forEach(function(p){ body.appendChild(stRow("bad", "notes: " + p)); });
+  } else {
+    body.appendChild(stRow("ok", "NOTES STORE CHECK — DB v" + (window.REGLIB ? REGLIB._dbVer : "?")
+      + " upgrade keeps marks, favourites and bookmarks; notes round-trip; linked delete confirms"));
+  }
+
   var rc = window.__regCheck;
   if(!rc){
     body.appendChild(stRow("skip", "REG URL CHECK not run yet"));
