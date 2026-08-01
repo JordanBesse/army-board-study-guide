@@ -24,6 +24,14 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<!-- v54: export compliance, declared in the repo so no build ever stops to ask. The app
+	     ships no cryptography of its own: it stores everything locally in localStorage and
+	     IndexedDB, and the only encryption it touches is the HTTPS that fetches a publication,
+	     which is exempt under the standard-protocols exemption. If a future version ever adds
+	     its own crypto — an encrypted export, a synced account — this key has to be revisited
+	     rather than left as-is. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
