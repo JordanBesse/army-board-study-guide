@@ -2,7 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- v52: browser zoom is OFF app-wide. The app owns every zoom gesture it wants — the reader's
+     +/- buttons and rdSetZoom, and double-tap-to-select in the text layer — and iOS's own
+     double-tap and pinch were scaling the whole WebView on top of that, which is what Jordan
+     saw as "the app zoomed in". Two zoom systems over one gesture cannot be arbitrated, only
+     stopped; the same conclusion v41 reached for pinch inside the reader.
+     Noted once, not relitigated: this also removes pinch-zoom for web visitors, which is a
+     real accessibility cost. It is Jordan's call for the shipped app, and the v49 input-focus
+     fix (all focusable inputs at 16px) still stands on its own, so nothing depends on scaling
+     being available to stay readable. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'">
 <title>Army Board Study Guide</title>
 
@@ -115,10 +124,12 @@ header{
   position:relative;text-align:center;padding:24px 0 16px;
   background:var(--barband);border-bottom:1px solid var(--line);
   margin:-14px -14px 14px;padding-left:14px;padding-right:14px;
-  /* v50: 32px, up from 24. On the device the wordmark cleared the island but sat tight
-     under it; the extra 8px is the gap Jordan asked for. It rides on top of the inset, so on
-     a device with no island nothing moves by more than those 8px. */
-  padding-top:calc(32px + env(safe-area-inset-top));
+  /* v52: back to 8px on top of the inset. v50 raised this to 32 for "a bit lower", but on the
+     device that reads as a large empty band under the island — the inset is already doing most
+     of the work and 32px more is a lot. The reader's .rdbar uses 6px + inset and looks right,
+     so this now sits within 2px of it. It never showed in a desktop browser because env() is
+     0 there, which is exactly why the number was wrong twice. */
+  padding-top:calc(8px + env(safe-area-inset-top));
 }
 h1{font-size:1.3rem;margin:0;letter-spacing:-.01em;font-weight:700;line-height:1.25}
 /* The wordmark-as-home control. It has to look exactly like the heading it replaced — the
@@ -967,6 +978,10 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .mkgo .ex b{display:block;font-weight:400;color:var(--ink);
   overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .mkgo .ex i{font-style:normal;color:var(--muted);font-size:.74rem}
+/* v52: the source publication, in the annotation lane. Same --mark-ink/--mark-soft pair the
+   Notes hub uses for its reg pill, so "which publication" looks the same wherever it appears. */
+.mkreg{display:inline-block;margin:3px 0 0;padding:1px 7px;border-radius:999px;
+  background:var(--mark-soft);color:var(--mark-ink);font-size:.66rem;font-weight:700}
 .mknone{font-size:.8rem;color:var(--muted);padding:12px 4px}
 /* ---- Sources -> library (v29). Quiet: the sources list is a reference, not a shop. ---- */
 .refregs{display:flex;align-items:center;gap:14px;margin-top:2px}
@@ -2958,7 +2973,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v51";
+var APP_VERSION = "v52";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -7591,9 +7606,19 @@ function markSheetSection(body){
         ? ("Bookmarked page" + (m.pageLabel ? " " + m.pageLabel : ""))
         : m.anchor.quote;
       var pg = document.createElement("i");
+      /* v52: name the publication on every row. The list is scoped to one reg and the sheet
+         header says which, but a row read on its own gave no clue — and moving between regs
+         made that genuinely confusing. It is a display addition only: regId is already on
+         every mark, and this reads it rather than storing anything new. Falls back to the raw
+         id if a mark points at a publication the manifest no longer lists, which is the honest
+         degradation — better a stale id than a blank where the source should be. */
+      var meta = REGLIB.byId(m.regId);
+      var reg = document.createElement("span");
+      reg.className = "mkreg";
+      reg.textContent = meta ? meta.pubNumber : String(m.regId);
       pg.textContent = (m.pageLabel ? "p. " + m.pageLabel + " · " : "") + "page " + (m.page+1)
                      + (m.note ? " · note" : "");
-      ex.appendChild(q); ex.appendChild(pg);
+      ex.appendChild(q); ex.appendChild(reg); ex.appendChild(pg);
       b.appendChild(sw); b.appendChild(ex);
       b.addEventListener("click", function(){
         $("rdSheet").classList.add("hidden");
@@ -8298,6 +8323,20 @@ function selfTest(){
       box.remove();
     })();
     /* 2. Quiz-safe navigation. */
+    /* v52: browser zoom must stay off app-wide. The app owns every zoom gesture it wants, and
+       iOS double-tap/pinch scaling the whole WebView on top of that is what read as "the app
+       zoomed in". A silent revert of the viewport would bring it straight back. */
+    (function(){
+      var vp = document.querySelector('meta[name="viewport"]');
+      var c = vp ? (vp.getAttribute("content") || "") : "";
+      if(!vp) errs.push("viewport: the meta tag is missing");
+      else {
+        if(c.indexOf("user-scalable=no") === -1)
+          errs.push("viewport: user scaling is enabled again — iOS double-tap and pinch will zoom the whole app");
+        if(c.indexOf("viewport-fit=cover") === -1)
+          errs.push("viewport: viewport-fit=cover is gone — the safe-area insets stop resolving");
+      }
+    })();
     if(typeof quizIsLive !== "function") errs.push("nav: quizIsLive is not reachable");
     if(typeof goHomeNow !== "function") errs.push("nav: goHomeNow is not reachable");
     if(typeof applyQuizRes !== "function") errs.push("nav: applyQuizRes is not reachable");
