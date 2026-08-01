@@ -1,6 +1,6 @@
 {
 	"appId": "com.ncoprep.studyguide",
-	"appName": "Army Board Study Guide",
+	"appName": "Army NCO Prep",
 	"webDir": "ios-www",
 	"ios": {
 		"contentInset": "always",

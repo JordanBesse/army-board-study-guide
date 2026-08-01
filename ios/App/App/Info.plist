@@ -6,8 +6,10 @@
 	<string>$(CAPACITOR_DEBUG)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
+	<!-- v53: the name under the home-screen icon. Kept short so iOS does not truncate it;
+	     the App Store record is the longer "Army NCO Prep - Board Study". -->
 	<key>CFBundleDisplayName</key>
-        <string>Army Board Study Guide</string>
+        <string>Army NCO Prep</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

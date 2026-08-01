@@ -13,7 +13,7 @@
      being available to stay readable. -->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'">
-<title>Army Board Study Guide</title>
+<title>Army NCO Prep</title>
 
 
 <style>
@@ -1769,7 +1769,9 @@ footer p{margin:0 0 8px}
        pattern. Before this, the only way out of a menu was the small top-left back arrow, and
        a note opened from the reader took two of them to escape. A <button> inside the <h1> so
        the heading stays a heading for assistive tech and the control is a real control. -->
-  <h1><button id="homeBtn" type="button" aria-label="Home — back to the main menu">Army Board Study Guide</button></h1>
+  <!-- v53: the brand is "Army NCO Prep". The descriptive subtitle underneath is unchanged —
+       it is what tells a Soldier which boards this covers, and the short brand needs it. -->
+  <h1><button id="homeBtn" type="button" aria-label="Home — back to the main menu">Army NCO Prep</button></h1>
   <p id="sub">Soldier of the Month, Promotion Board, Audie Murphy, Drill Sergeant, and ESB preparation.</p>
   <div id="quizbar">
     <div class="qb-board" id="qbBoard"></div>
@@ -2973,7 +2975,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v52";
+var APP_VERSION = "v53";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -3639,7 +3641,7 @@ function scopeRefs(list){
   /* The project address, not a personal one: in-app feedback, the privacy page's contact,
      and the App Store support URL all have to name the same mailbox. */
   $("mailFb").href = "mailto:jb.devteam@pm.me"
-    + "?subject=" + encodeURIComponent("Army Board Study Guide feedback (" + APP_VERSION + ")")
+    + "?subject=" + encodeURIComponent("Army NCO Prep feedback (" + APP_VERSION + ")")
     + "&body=" + encodeURIComponent(body);
 })();
 
@@ -4222,7 +4224,7 @@ function buildPrint(){
   var cats=selectedCats();
   var pool=QUESTIONS.filter(function(q){ return inBoard(q,board) && cats.indexOf(q.c)!==-1; });
   var host=$("printArea"); host.innerHTML="";
-  var h1=document.createElement("h1"); h1.textContent="Army Board Study Guide"; host.appendChild(h1);
+  var h1=document.createElement("h1"); h1.textContent="Army NCO Prep"; host.appendChild(h1);
   var meta=document.createElement("p"); meta.className="pmeta";
   meta.textContent=BOARDS[board].label+" — "+pool.length+" questions. Study aid only; verify against the current regulation.";
   host.appendChild(meta);
@@ -8323,6 +8325,25 @@ function selfTest(){
       box.remove();
     })();
     /* 2. Quiz-safe navigation. */
+    /* v53: the brand, and the things a rebrand must NOT take with it.
+       Renaming the app is exactly the moment someone "tidies up" a storage key to match — and
+       `absg_v3` / `absg_reglib` are where a Soldier's whole study history and every mark,
+       favourite, bookmark and note live. Changing either silently orphans all of it, with no
+       error and no way back. The published download filename and the Pages URL are load-bearing
+       for the same reason in public: they are what the checksum and the one canonical link
+       point at. */
+    if(KEY !== "absg_v3")
+      errs.push("brand: the save key is '" + KEY + "', not absg_v3 — every existing Soldier's history would be orphaned");
+    (function(){
+      var h = $("homeBtn"), t = (document.title || "");
+      if(h && h.textContent.trim() !== "Army NCO Prep")
+        errs.push("brand: the wordmark reads '" + h.textContent.trim() + "'");
+      if(t !== "Army NCO Prep") errs.push("brand: the page title reads '" + t + "'");
+      /* The subtitle is the thing the short brand leans on — it names the boards. */
+      var sub = $("sub");
+      if(sub && sub.textContent.indexOf("Soldier of the Month") === -1)
+        errs.push("brand: the home subtitle no longer names the boards");
+    })();
     /* v52: browser zoom must stay off app-wide. The app owns every zoom gesture it wants, and
        iOS double-tap/pinch scaling the whole WebView on top of that is what read as "the app
        zoomed in". A silent revert of the viewport would bring it straight back. */

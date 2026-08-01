@@ -2,7 +2,7 @@
   "name": "army-board-study-guide",
   "version": "1.0.0",
   "private": true,
-  "description": "Capacitor iOS wrap for the Army Board Study Guide web build.",
+  "description": "Capacitor iOS wrap for the Army NCO Prep web build.",
   "scripts": {
     "sync": "cap sync ios"
   },

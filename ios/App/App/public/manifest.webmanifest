@@ -1,6 +1,6 @@
 {
-  "name": "Army Board Study Guide",
-  "short_name": "Board Study",
+  "name": "Army NCO Prep",
+  "short_name": "NCO Prep",
   "description": "Offline study and quiz app for Army boards and badges: Soldier of the Month, promotion, Audie Murphy Club, Drill Sergeant, and the Expert Soldier Badge. No account, works with no signal.",
   "start_url": "./",
   "scope": "./",

@@ -1,4 +1,4 @@
-# Army Board Study Guide
+# Army NCO Prep
 
 An offline study guide for the **Soldier of the Month**, **promotion (SPC to SGT and SGT to SSG)**,
 and **Sergeant Audie Murphy Club** boards. 455 multiple-choice questions across 26 categories, each
