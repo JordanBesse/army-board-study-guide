@@ -6798,11 +6798,16 @@ var MK_DEBUG = /[?&]debug=1/.test(location.search), mkDbgLines = [], mkDbgVia = 
 
    Both probes are measured, not assumed: a zero-height element in normal flow at the very start
    of the document, and a position:fixed element pinned to top:0. On every desktop browser they
-   read the same, which is exactly why this had to be measured on the device instead. ---- */
+   read the same, which is exactly why this had to be measured on the device instead.
+
+   How to actually read it on the phone, which is the whole point: the wrapped app has no address
+   bar, so ?debug=1 cannot be typed there — and running it in mobile Safari instead would answer
+   the wrong question, because ios.contentInset only exists inside the Capacitor WebView. Safari
+   would report (B) even if the wrap is (A). So this is also exposed as window.__insetProbe(),
+   which returns the same text: with the app running in the simulator, attach Safari's Web
+   Inspector (Develop > Simulator > index.html) and call it in the console. No debug UI ships to
+   anyone, and the measurement is taken in the only place it is meaningful. ---- */
 function insetProbe(){
-  if(!MK_DEBUG) return;
-  var el = document.getElementById("insetProbe");
-  if(!el) return;
   function px(v){ return Math.round(v * 10) / 10; }
   function envOf(side){
     /* Resolve env() by letting the engine compute it, rather than hardcoding a device table. */
@@ -6846,9 +6851,18 @@ function insetProbe(){
   L.push("wordmark   " + topOf("#appbar h1"));
   L.push("notes 1st  " + topOf("#notesBack") + "   refs 1st " + topOf("#libBack"));
   L.push("rdbar 1st  " + topOf(".rdbar button"));
-  el.textContent = L.join("\n");
-  el.classList.remove("hidden");
+  var text = L.join("\n");
+  /* The on-screen pane is the web convenience; the return value is what the Web Inspector
+     console shows. Rendering is the optional half, measuring is not. */
+  if(MK_DEBUG){
+    var el = document.getElementById("insetProbe");
+    if(el){ el.textContent = text; el.classList.remove("hidden"); }
+  }
+  return text;
 }
+/* Reachable from Safari's Web Inspector against the simulator, where there is no address bar to
+   put ?debug=1 into. Costs one property; ships no visible surface. */
+window.__insetProbe = insetProbe;
 
 function dbg(msg){
   if(!MK_DEBUG) return;
