@@ -3008,7 +3008,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v54";
+var APP_VERSION = "v55";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -5728,6 +5728,64 @@ function goHomeNow(){
      many words, and only runs when there is something to drop. */
   toMenu();
 }
+
+/* ---- v55: the Android hardware back button.
+
+   On Android, Capacitor's default back behaviour pops WebView history and, when there is none,
+   FINISHES THE ACTIVITY. This app is a single page, so there is no history to pop — which means
+   the default is "back closes the app," from any screen, including mid-quiz. That is the v47
+   defect wearing a different hat: a Soldier twenty questions in, reaching for back to close the
+   reader, loses the quiz instead. Android users press back constantly; on iOS there is no such
+   button, which is why this never came up before.
+
+   The model is peel-one-layer: back closes the innermost thing that is open, and only exits
+   the app from the bare home screen. It routes through the SAME controls a tap uses, rather
+   than reimplementing the teardown — the library and notes hubs carry snapshot/restore logic
+   (v35, v47) that keeps a quiz alive, and a second implementation would be a second place for
+   that to go wrong.
+
+   Guarded on the Capacitor App plugin, so it is inert on the web and on iOS. Registering a
+   listener at all is what suppresses Capacitor's default handler, so every branch must do
+   something deliberate — falling through silently would leave back dead rather than default. */
+function backPressed(){
+  function open(id){ var e = $(id); return e && !e.classList.contains("hidden"); }
+  function tap(id){ var e = $(id); if(e){ e.click(); return true; } return false; }
+
+  /* Transient confirms and sheets first — innermost wins. */
+  if(open("libConfirm")){ libCloseConfirm(); return; }
+  if(open("qnoteCard")){ qnoteClose(); return; }
+  if(open("mkSheet")){ markCloseSheet(); return; }
+  if(open("settingsPanel")){ if(typeof settingsClose === "function") settingsClose(); return; }
+  if(open("rdSheet")){ $("rdSheet").classList.add("hidden"); return; }
+  if(open("reader")){ closeReader(); return; }
+
+  /* Select mode is a state, not a screen: back should leave the mode, not the hub. */
+  if(!$("notes").classList.contains("hidden") && noteSelMode){ tap("notesCancel"); return; }
+
+  /* The two hubs own their own back controls, and those restore a quiz correctly. */
+  if(!$("notes").classList.contains("hidden")){ tap("notesBack"); return; }
+  if(!$("library").classList.contains("hidden")){ tap("libBack"); return; }
+
+  /* On a live quiz this asks before abandoning — same confirm the wordmark uses. */
+  if(quizIsLive()){ goHome(); return; }
+
+  /* Results and flash-cards are screens you back out of, not out of the app. */
+  if(!$("results").classList.contains("hidden") || !$("flash").classList.contains("hidden")){
+    goHomeNow(); return;
+  }
+
+  /* Bare home. Only here does back mean leave. */
+  try {
+    var C = window.Capacitor;
+    if(C && C.Plugins && C.Plugins.App && C.Plugins.App.exitApp) C.Plugins.App.exitApp();
+  } catch(e){}
+}
+(function(){
+  var C = window.Capacitor;
+  if(!C || !C.Plugins || !C.Plugins.App || !C.Plugins.App.addListener) return;
+  try { C.Plugins.App.addListener("backButton", backPressed); } catch(e){}
+})();
+
 function closeNotes(){
   $("notes").classList.add("hidden");
   $("notesNew").classList.add("hidden");
@@ -8535,6 +8593,55 @@ function selfTest(){
         if(/safe-area-inset-top/.test(authoredPad(sel)))
           errs.push("insets: " + sel + " applies safe-area-inset-top, but it sits under the app bar "
             + "which already applies it — on a notched device its title drops by a second full inset");
+      });
+    })();
+    /* v55: the service-worker stand-down must cover BOTH wraps, not just iOS.
+
+       The original test was `location.protocol === "capacitor:"`, which is true on iOS and
+       false on Android — Capacitor's default androidScheme is https, so the Android wrap runs
+       at https://localhost and quietly registered a worker inside the shipped app. Inside an
+       app that is unrecoverable for the user: no address bar, no devtools, and a Play update
+       can leave them on the old HTML for good.
+
+       Asserted against the built page text rather than by running it, because this leg runs on
+       the web where `wrapped` is correctly false — executing it here proves nothing. The
+       string is what ships, so the string is what is checked.
+
+       The needles are ASSEMBLED rather than written out, and that is not decoration. Written
+       as one literal, the needle appears in THIS function too — so indexOf finds the test's own
+       source and the check passes no matter what the build actually contains. The first version
+       of this guard did exactly that: deleting the Android clause from build6.js and rebuilding
+       still gave a green self-test. Split needles appear as one contiguous run only inside
+       PWA_JS, which is the thing being tested. */
+    (function(){
+      var src = document.documentElement.innerHTML;
+      var q = String.fromCharCode(34);
+      if(src.indexOf(q + "serviceWorker" + q + " in navigator") === -1){
+        errs.push("sw: the registration block is missing from the build");
+        return;
+      }
+      var iosNeedle = "location.protocol === " + q + "capacitor:" + q;
+      var androidNeedle = "location.hostname === " + q + "local" + "host" + q;
+      if(src.indexOf(iosNeedle) === -1)
+        errs.push("sw: the iOS wrap stand-down (capacitor: protocol) is gone");
+      if(src.indexOf(androidNeedle) === -1)
+        errs.push("sw: the ANDROID wrap stand-down is gone — a worker would install inside the "
+          + "shipped app at https://localhost and a Play update could strand users on old HTML");
+    })();
+    /* v55: the Android back handler is unreachable on this platform, so what can be checked
+       here is that it exists and that every surface it peels is still addressable. A renamed
+       or removed id would make one branch a no-op — back would go dead on that screen, and
+       only a device would ever show it. */
+    (function(){
+      if(typeof backPressed !== "function"){
+        errs.push("android: backPressed is not reachable — the hardware back button would fall "
+          + "back to Capacitor's default, which closes the app mid-quiz");
+        return;
+      }
+      ["libConfirm","qnoteCard","mkSheet","settingsPanel","rdSheet","reader","notes","library",
+       "results","flash","notesCancel","notesBack","libBack"].forEach(function(id){
+        if(!document.getElementById(id))
+          errs.push("android: back-button target #" + id + " is missing — that branch is a no-op");
       });
     })();
     if(typeof quizIsLive !== "function") errs.push("nav: quizIsLive is not reachable");

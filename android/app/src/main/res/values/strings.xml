@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Army NCO Prep</string>
+    <string name="title_activity_main">Army NCO Prep</string>
+    <string name="package_name">com.ncoprep.studyguide</string>
+    <string name="custom_url_scheme">com.ncoprep.studyguide</string>
+</resources>

@@ -9,5 +9,7 @@
 	"server": {
 		"iosScheme": "capacitor"
 	},
-	"packageClassList": []
+	"packageClassList": [
+		"AppPlugin"
+	]
 }

@@ -1,0 +1,12 @@
+{
+	"appId": "com.ncoprep.studyguide",
+	"appName": "Army NCO Prep",
+	"webDir": "ios-www",
+	"ios": {
+		"contentInset": "always",
+		"limitsNavigationsToAppBoundDomains": false
+	},
+	"server": {
+		"iosScheme": "capacitor"
+	}
+}

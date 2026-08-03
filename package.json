@@ -2,11 +2,15 @@
   "name": "army-board-study-guide",
   "version": "1.0.0",
   "private": true,
-  "description": "Capacitor iOS wrap for the Army NCO Prep web build.",
+  "description": "Capacitor iOS and Android wraps for the Army NCO Prep web build.",
   "scripts": {
-    "sync": "cap sync ios"
+    "sync": "cap sync ios && cap sync android",
+    "sync:ios": "cap sync ios",
+    "sync:android": "cap sync android"
   },
   "dependencies": {
+    "@capacitor/android": "^8.4.2",
+    "@capacitor/app": "^8.1.1",
     "@capacitor/cli": "^8.4.2",
     "@capacitor/core": "^8.4.2",
     "@capacitor/ios": "^8.4.2"
