@@ -3348,7 +3348,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v71";
+var APP_VERSION = "v72";
 /* The store-facing release number — what a tester sees on their Play or App Store listing.
    It has to be stated here because nothing in the web build can read the wrap's manifest,
    so this is a SECOND place the release number lives: it must be changed in lockstep with
@@ -3841,7 +3841,12 @@ function distinctSources(){
    degradation — better a bare number than a wrong title. */
 var SOURCE_TITLES = {
   "ADP 5-0":"The Operations Process",
-  "ADP 6-0":"Mission Command: Command and Control of Army Forces",
+  /* v72 — the 07 July 2026 edition supersedes the 31 July 2019 one and is titled simply
+     "Command and Control"; "Mission Command" left the title and survives as a chapter.
+     Same defect class as the ATP 6-22.1 title fix in v70: the row disagreed with the
+     cover of the PDF it opens. Both bank questions were re-verified against the new
+     edition before this was touched — disciplined initiative and mutual trust both hold. */
+  "ADP 6-0":"Command and Control",
   "ADP 6-22":"Army Leadership and the Profession",
   "ADP 7-0":"Training",
   "AR 27-10":"Military Justice",
@@ -4773,7 +4778,7 @@ var REGLIB = (function(){
 
   var MANIFEST = [
     reg("ADP 5-0","The Operations Process","Operations",false,"adp-5-0.pdf",6998325),
-    reg("ADP 6-0","Mission Command","Leadership",false,"adp-6-0.pdf",7188054),
+    reg("ADP 6-0","Command and Control","Leadership",false,"adp-6-0.pdf",7188054),
     reg("ADP 6-22","Army Leadership and the Profession","Leadership",true,"adp-6-22.pdf",4508515),
     reg("ADP 7-0","Training","Training",false,"adp-7-0.pdf",4447715),
     reg("AR 27-10","Military Justice","Justice",true,"ar-27-10.pdf",2065704),
