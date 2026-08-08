@@ -2714,7 +2714,7 @@ var QUESTIONS = [
 {c:"Uniforms and Appearance",q:"How far may a female Soldier's ponytail extend when standing at the position of attention?",o:["No farther than the bottom of the shoulder blades","No farther than the top edge of the uniform collar","No farther than the natural waistline of the Soldier","There is no length restriction of any kind"],a:"No farther than the bottom of the shoulder blades",s:"AR 670-1",e:"The ponytail must also be worn down the center of the back, not pulled over the shoulder.",t:"knowledge",tr:"core"},
 {c:"Uniforms and Appearance",q:"What is the maximum authorized fingernail length for female Soldiers?",o:["1/4 inch from the fingertip","1/2 inch from the fingertip","1/8 inch from the fingertip","There is no limit"],a:"1/4 inch from the fingertip",s:"AR 670-1",e:"Extreme shapes such as stiletto, coffin, and arrow are not authorized; square and rounded are.",t:"knowledge",tr:"core"},
 {c:"Uniforms and Appearance",q:"What is the maximum diameter for earrings authorized for female Soldiers in the ACU?",o:["6 mm, about 1/4 inch","10 mm, about 3/8 inch","3 mm, about 1/8 inch","12 mm, about 1/2 inch"],a:"6 mm, about 1/4 inch",s:"AR 670-1",e:"They must be unadorned studs in gold, silver, or clear diamond, and fit snugly against the ear.",t:"knowledge",tr:"core"},
-{c:"Uniforms and Appearance",q:"Are male Soldiers authorized to wear clear nail polish?",o:["Yes, clear polish is authorized","No, nail polish is never authorized for males","Only in the service uniform","Only with a medical profile"],a:"Yes, clear polish is authorized",s:"AR 670-1",e:"Male Soldiers may wear clear nail polish; colored polish is not authorized for males.",t:"knowledge",tr:"core"},
+{c:"Uniforms and Appearance",q:"Are male Soldiers authorized to wear clear nail polish?",o:["No, nail polish is not authorized","Yes, clear polish is authorized","Yes, in the service uniform only","Yes, with a medical profile only"],a:"No, nail polish is not authorized",s:"AR 670-1 as amended by Army Directive 2025-18",e:"Clear polish was authorized for males in 2021; Army Directive 2025-18 withdrew it. Female Soldiers may still wear clear polish.",t:"knowledge",tr:"core"},
 {c:"Uniforms and Appearance",q:"If a Soldier's hair does not part naturally, what is authorized?",o:["One straight part no wider than 3 mm cut into a natural parting area","Any design of the Soldier's own choosing, cut anywhere into the hairline","Two or more straight parts of any width cut into the natural parting area","No cut part of any kind is authorized under the current grooming standard"],a:"One straight part no wider than 3 mm cut into a natural parting area",s:"AR 670-1",e:"Designs, shapes, or symbols cut into the hair or scalp are prohibited.",t:"knowledge",tr:"core"},
 {c:"Uniforms and Appearance",q:"Which hair colors are prohibited under AR 670-1?",o:["Purple, blue, green, bright pink, and fluorescent colors","Any color other than the Soldier's natural color","Blonde and auburn","Only fluorescent colors"],a:"Purple, blue, green, bright pink, and fluorescent colors",s:"AR 670-1",e:"Highlights are authorized if they are a uniform blend of natural colors with no vast difference in shade.",t:"knowledge",tr:"core"},
 {c:"Uniforms and Appearance",q:"For an approved religious accommodation, what is the maximum length of a beard?",o:["2 inches from the bottom of the chin, or rolled and tied to that length","1 inch from the bottom of the chin, measured at attention","4 inches from the bottom of the chin, or rolled and tied to that length","There is no length limit once the accommodation is approved"],a:"2 inches from the bottom of the chin, or rolled and tied to that length",s:"AR 670-1",e:"Religious accommodations also cover turbans, hijabs, and under-turbans within the same standards.",t:"knowledge",tr:"core"},
@@ -3227,7 +3227,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v59";
+var APP_VERSION = "v60";
 /* The store-facing release number — what a tester sees on their Play or App Store listing.
    It has to be stated here because nothing in the web build can read the wrap's manifest,
    so this is a SECOND place the release number lives: it must be changed in lockstep with
@@ -3240,7 +3240,7 @@ var APP_RELEASE = "1.0";
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
    audit that did not touch the bank. Display only: no logic, no storage, no network. */
-var AUDIT_DATE = "2026-07-28";
+var AUDIT_DATE = "2026-08-08";
 
 /* ---------------- helpers ---------------- */
 function $(id){ return document.getElementById(id); }
@@ -3801,6 +3801,15 @@ var SOURCE_DESC = {
   "TR 350-16 (27 March 2023)":"Drill Sergeant selection, training, and duties."
 };
 function labelFor(src){ return SOURCE_LABEL[src] || src; }
+/* v60: the publication a citation is ABOUT, with any Supersession Sweep tail removed.
+
+   The sweep names the amending authority in the citation — "AR 670-1 as amended by Army
+   Directive 2025-18" — because a Soldier should see which rule they are graded against and
+   why it moved. But three separate things key off the citation string to find the underlying
+   publication: the library lookup, the title map, and the manifest cross-check. The first
+   corrected question failed two of them at once. One helper, used by all three, so the next
+   sweep does not have to rediscover this. */
+function citeBase(src){ return String(src == null ? "" : src).replace(/\s+as amended by\b[\s\S]*$/i, "").trim(); }
 /* Group and sort on the first token of the DISPLAYED label, so a composite citation
    ("ADP 6-22 / AR 608-1") files under its first publication rather than drifting. */
 function sortKeyFor(src){ return labelFor(src).split(" / ")[0]; }
@@ -3811,6 +3820,7 @@ function letterFor(src){
 /* A citation like "ADP 6-22 / AR 608-1" is two publications. Split it, look each up,
    and join the titles the same way, so a composite still tells you what it is. */
 function titleFor(src){
+  src = citeBase(src);
   if(SOURCE_TITLES[src]) return SOURCE_TITLES[src];
   if(src.indexOf(" / ") === -1) return "";
   var parts = src.split(" / ").map(function(p){ return SOURCE_TITLES[p] || ""; });
@@ -3833,7 +3843,17 @@ function titleFor(src){
    with no publication behind it, like "Army heritage", simply gets nothing. */
 function regForSource(src){
   if(!window.REGLIB) return null;
-  var parts = labelFor(src).split(" / ");
+  /* v60: strip an "as amended by …" tail before matching.
+
+     The Supersession Sweep names the amending authority in the citation, so a question can
+     read "AR 670-1 as amended by Army Directive 2025-18". That is the right thing for a
+     Soldier to SEE — it says which rule they are being graded against and why it changed. But
+     the citation is also how the References hub finds the publication to open, and the
+     amended form matches no pubNumber, so without this the first corrected question would
+     have quietly severed the link from the question to the regulation behind it: a dead
+     "cited" row where the reg used to open. Same shape as the existing edition-parenthetical
+     strip below — the base publication is what the library holds. */
+  var parts = citeBase(labelFor(src)).split(" / ");
   for(var i=0; i<parts.length; i++){
     var p = parts[i].replace(/\s*\([^)]*\)\s*$/, "").trim();
     var hit = null;
@@ -8861,6 +8881,22 @@ function selfTest(){
         if(r.kind === "ref" && ((r.st && r.st.downloadable) || REGLIB.byId(r.id).url))
           errs.push("references: reference-only " + r.name + " is offered for download");
       });
+      /* v60: a Supersession Sweep citation must still open its regulation.
+
+         The sweep names the amending authority in the citation ("AR 670-1 as amended by Army
+         Directive 2025-18") so a Soldier can see which rule they are graded against. That
+         string matches no pubNumber, so without the "as amended by" strip in regForSource the
+         correction would silently sever the question from the publication behind it — the reg
+         stops opening and nothing anywhere says so. Every amended citation is checked against
+         the base publication it names, so the next sweep cannot reintroduce it. */
+      distinctSources().forEach(function(d){
+        if(!/\bas amended by\b/i.test(d.src)) return;
+        var base = d.src.replace(/\s+as amended by\b[\s\S]*$/i, "").trim();
+        var hit = regForSource(d.src);
+        if(!hit)
+          errs.push("references: '" + d.src + "' no longer resolves to a publication — the "
+            + "amended citation broke the link to " + base + ", so the regulation stops opening");
+      });
       /* Every publication row has to be reachable by exactly one manifest id, or a favorite
          saved against it would point at nothing. */
       var ids = {};
@@ -8940,7 +8976,7 @@ function selfTest(){
     var missing = {};
     QUESTIONS.forEach(function(q){
       if(!q.s) return;
-      labelFor(q.s).split(" / ").forEach(function(p){
+      citeBase(labelFor(q.s)).split(" / ").forEach(function(p){
         /* Two citations pin an edition inline — "TR 350-16 (27 March 2023)". The pub
            number is the identity and the parenthetical is the edition, so strip it
            before matching or those pubs read as missing when they are right there. */
