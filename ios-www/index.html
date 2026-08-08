@@ -1766,6 +1766,74 @@ details.cats[open] summary::after{content:"\2212"}
 @media (prefers-reduced-motion: reduce){
   .flashcard.flip{animation:none}
 }
+/* ---- v57: Recite the Creed ----
+   The header copies #library's exactly — same absolute back button, same centred title,
+   and deliberately NO safe-area inset: the app bar above already applies one, and adding a
+   second drops the title by a full inset on a notched phone. The self-test asserts that. */
+#creed .crdhdr{position:relative;padding:2px 0 12px;border-bottom:1px solid var(--line)}
+#crdBack{
+  position:absolute;left:-6px;top:-2px;
+  width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+  background:none;border:0;color:var(--muted);font:inherit;font-size:26px;line-height:1;cursor:pointer;
+  border-radius:var(--r);
+}
+#crdBack:hover{background:var(--surface2)}
+#crdBack:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#creed .crdtitle{text-align:center;font-size:1.06rem;font-weight:700;margin:8px 0 0}
+#crdCue{text-align:center;font-size:.75rem;color:var(--muted);margin-top:3px}
+
+/* The reference text. Line height is generous because words change colour underneath a
+   moving finger-free gaze — a Soldier is reciting, not reading closely, and needs to find
+   their place fast. */
+#crdText{
+  font-size:1.02rem;line-height:1.75;
+  max-height:46vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:2px 2px 6px;
+}
+#crdText p{margin:0 0 14px}
+#crdText p:last-child{margin-bottom:0}
+/* Four word states. Pending is the resting ink; the other three are the only colour in the
+   view, so the eye lands on what changed. --accent-soft behind a matched word rather than
+   coloured glyphs, because coloured text at this size is harder to read, not easier. */
+.crdw{border-radius:4px;padding:0 1px;transition:background-color var(--m-state) linear, color var(--m-state) linear}
+.crdw.ok{background:var(--accent-soft);color:var(--accent)}
+.crdw.miss{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
+.crdw.now{background:var(--surface2);box-shadow:inset 0 -2px 0 var(--accent)}
+@media (prefers-reduced-motion: reduce){ .crdw{transition:none} }
+
+/* The mic. One full-width primary control rather than a round FAB: it is the only action on
+   the screen, and a 56px bar is a bigger target than any circle that would fit beside text. */
+#crdMic{width:100%;min-height:56px;font-size:1rem;display:flex;align-items:center;justify-content:center;gap:9px}
+#crdMic .dot{width:11px;height:11px;border-radius:99px;background:currentColor;flex:none}
+#crdMic.live .dot{animation:crdPulse 1.4s ease-in-out infinite}
+@keyframes crdPulse{50%{opacity:.25}}
+@media (prefers-reduced-motion: reduce){ #crdMic.live .dot{animation:none} }
+#crdStatus{text-align:center;font-size:.8rem;color:var(--muted);margin:10px 0 0;min-height:1.2em}
+
+/* The score. The number carries the result, so it gets the size; everything else is caption. */
+#crdScore{text-align:center;padding:4px 0 2px}
+#crdScore .pct{font-size:2.5rem;font-weight:750;line-height:1.1;color:var(--ink)}
+#crdScore .cap{font-size:.83rem;color:var(--muted);margin-top:2px}
+#crdLists{margin-top:14px}
+#crdLists h3{font-size:.83rem;font-weight:700;margin:0 0 6px;color:var(--ink)}
+#crdLists .wl{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px;padding:0;list-style:none}
+#crdLists .wl li{
+  font-size:.82rem;padding:3px 9px;border-radius:99px;
+  background:var(--surface2);color:var(--ink);border:1px solid var(--line);
+}
+/* Missed PHRASES, not word pills — a run can be a whole line, and a line does not belong in
+   a chip. Left rule rather than a border box, so a list of them still scans as one list. */
+#crdLists .pl{margin:0 0 14px;padding:0;list-style:none}
+#crdLists .pl li{
+  font-size:.88rem;line-height:1.45;color:var(--ink);
+  padding:5px 0 5px 11px;border-left:2px solid var(--line);margin-bottom:5px;
+}
+#crdLists .none{font-size:.83rem;color:var(--muted);margin:0 0 14px}
+/* The consent notice. Bordered rather than tinted so it reads as a gate, not a tip. */
+#crdConsent{border:1px solid var(--line);border-radius:var(--r);padding:14px}
+#crdConsent h3{margin:0 0 8px;font-size:1rem}
+#crdConsent p{margin:0 0 10px;font-size:.88rem;line-height:1.5;color:var(--ink)}
+#crdConsent .sub{color:var(--muted);font-size:.83rem}
 footer{margin-top:22px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:.78rem;text-align:center}
 footer p{margin:0 0 8px}
 .linkbtn{
@@ -2062,6 +2130,11 @@ footer p{margin:0 0 8px}
     <div class="stack">
       <button class="btn sec" type="button" id="flashBtn">Flashcard Review</button>
       <button class="btn sec" type="button" id="missedBtn">Practice Missed Questions</button>
+      <!-- v57. Shown only where the browser can actually hear: on a browser without speech
+           recognition the button is removed and the note below takes its place, rather than
+           being left tappable and failing at the worst moment. -->
+      <button class="btn sec hidden" type="button" id="creedBtn">Recite the Creed</button>
+      <p class="hint hidden" id="creedNoSupport" style="margin:0">Recite the Creed needs speech recognition, which this browser doesn't have yet. Try Chrome, Edge, or Android.</p>
       <button class="btn sec" type="button" id="printBtn">Print a Study Sheet</button>
     </div>
   </div>
@@ -2161,6 +2234,63 @@ footer p{margin:0 0 8px}
       <button class="btn sec" type="button" id="fnext">Next &#8250;</button>
     </div>
     <button class="fghost" type="button" id="fexit">Back to Main Menu</button>
+  </div>
+</main>
+
+<!-- v57: Recite the Creed. A screen like flash/library rather than a sheet, because it is a
+     place a Soldier navigates INTO, scrolls, and owns a back affordance in.
+
+     Four panels, one visible at a time: pick a creed -> the consent gate (first use only) ->
+     recite -> the score. They are siblings rather than separate screens so leaving by any
+     route only has to hide ONE thing, which is what keeps toMenu/goHomeNow/back honest. -->
+<main id="creed" class="hidden">
+  <div class="crdhdr">
+    <button id="crdBack" type="button" aria-label="Back">&#8249;</button>
+    <h2 class="crdtitle" id="crdTitle">Recite the Creed</h2>
+    <p id="crdCue"></p>
+  </div>
+
+  <!-- 1. Pick -->
+  <div class="card" id="crdPick">
+    <p class="hint" id="crdPickHint">Say it aloud. The app follows along and marks each word as you get it.</p>
+    <div class="stack" id="crdList"></div>
+  </div>
+
+  <!-- 2. The consent gate. Shown once, before the first recitation ever runs. Nothing about
+       speech is touched until the Soldier taps through this. -->
+  <div class="card hidden" id="crdConsentCard">
+    <div id="crdConsent">
+      <h3>This one needs the internet</h3>
+      <p>To follow along, this uses your device's speech recognition &mdash; which <b>sends what you say to your browser's speech service</b> and needs a connection. It is the only part of this app that does.</p>
+      <p class="sub">Your recitation is scored here on your device. Nothing about your score, your notes, or your study history leaves it, and the rest of the app keeps working offline exactly as before.</p>
+      <button class="btn" type="button" id="crdAgree" style="width:100%">Continue</button>
+      <button class="fghost" type="button" id="crdDecline">Not now</button>
+    </div>
+  </div>
+
+  <!-- 3. Recite -->
+  <div class="card hidden" id="crdRun">
+    <div class="fhead">
+      <span class="tag" id="crdTag"></span>
+      <span class="counter" id="crdCount"></span>
+    </div>
+    <div id="crdText"></div>
+    <button class="btn" type="button" id="crdMic" style="margin-top:14px">
+      <span class="dot" aria-hidden="true"></span><span id="crdMicTxt">Start reciting</span>
+    </button>
+    <p id="crdStatus" role="status" aria-live="polite"></p>
+    <button class="fghost" type="button" id="crdQuit">Back to the creeds</button>
+  </div>
+
+  <!-- 4. Score -->
+  <div class="card hidden" id="crdDone">
+    <div id="crdScore">
+      <div class="pct" id="crdPct">0%</div>
+      <p class="cap" id="crdCap"></p>
+    </div>
+    <div id="crdLists"></div>
+    <button class="btn" type="button" id="crdAgain" style="width:100%">Recite it again</button>
+    <button class="fghost" type="button" id="crdBackToList">Back to the creeds</button>
   </div>
 </main>
 
@@ -3066,7 +3196,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v56";
+var APP_VERSION = "v57";
 /* The store-facing release number — what a tester sees on their Play or App Store listing.
    It has to be stated here because nothing in the web build can read the wrap's manifest,
    so this is a SECOND place the release number lives: it must be changed in lockstep with
@@ -3100,7 +3230,7 @@ function rawDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
    closed-book board simulation. Order is load-bearing — the settings control cycles it. */
 var QRES = ["both","notes","off"];
 var QRES_LABEL = { both:"Notes + References", notes:"Notes only", off:"Off" };
-function blankData(){ return { v:SCHEMA, theme:"light", cb:false, tts:false, stats:{}, scores:[], rprior:{}, qres:"both" }; }
+function blankData(){ return { v:SCHEMA, theme:"light", cb:false, tts:false, stats:{}, scores:[], rprior:{}, qres:"both", creedOk:false }; }
 function validShape(d){
   return !!d && typeof d==="object" && d.v===SCHEMA
       && d.stats && typeof d.stats==="object" && !Array.isArray(d.stats)
@@ -3144,6 +3274,12 @@ function loadData(){
          "notes" (jot only, no reference browsing) or "off" (closed-book board sim). Optional
          and defaulted here for exactly the reason above: it must never reach validShape. */
       if(QRES.indexOf(parsed.qres) === -1) parsed.qres = "both";
+      /* v57: whether the Soldier has accepted the speech notice. Defaulted here for the same
+         reason as everything above it — it must never reach validShape, or every existing
+         save becomes invalid and the recovery path wipes real study history. Defaulting to
+         false is also the safe direction: an unreadable or absent flag means ASK AGAIN, never
+         "already agreed". */
+      if(typeof parsed.creedOk !== "boolean") parsed.creedOk = false;
       return parsed;
     }
     rawDel(KEY);
@@ -4238,6 +4374,11 @@ function toMenu(){
   stopSpeech(); $("speakRow").classList.add("hidden");
   compactBar(false);
   $("quiz").classList.add("hidden"); quizNoteShow(false); applyQuizRes(); $("results").classList.add("hidden"); $("flash").classList.add("hidden");
+  /* v57: the creed screen is a screen like the others, so leaving by ANY route puts it away —
+     and releases the microphone. A screen the Soldier is no longer on must never still be
+     listening, whichever way they got off it. crdAbort is safe to call when nothing is live. */
+  if(typeof crdAbort === "function") crdAbort();
+  $("creed").classList.add("hidden");
   /* The library is a screen like the others, so leaving by any route must put it away and
      bring the two floaters back — otherwise a Back gesture out of the library would strand
      the home screen with no gear and no Regulations button. */
@@ -4262,7 +4403,7 @@ function toMenu(){
 window.addEventListener("popstate", function(){
   var inView = !$("quiz").classList.contains("hidden") || !$("results").classList.contains("hidden")
             || !$("flash").classList.contains("hidden") || !$("library").classList.contains("hidden")
-            || !$("notes").classList.contains("hidden");
+            || !$("notes").classList.contains("hidden") || !$("creed").classList.contains("hidden");
   if(inView) toMenu();
 });
 
@@ -5800,6 +5941,446 @@ function goHomeNow(){
   toMenu();
 }
 
+/* ================= v57: Recite the Creed =================
+
+   A Soldier recites aloud; the app follows along word by word and scores it.
+
+   THE ONE THING THIS APP DOES THAT IS NOT OFFLINE. Browser SpeechRecognition streams the
+   microphone to the browser's own speech service, so audio leaves the device. Everything
+   that follows is shaped by keeping that departure as small and as visible as possible:
+
+   - Nothing here runs on load. No object is constructed, no permission is requested, and
+     no audio is captured until a Soldier taps into the mode and then taps Continue on a
+     notice that says plainly what happens.
+   - Only TRANSCRIPTION leaves. The reference text ships in the bundle, the normaliser and
+     the aligner are the code below, and the score is computed and kept here. No score, note,
+     or study record is ever transmitted.
+   - The page's own CSP is untouched (`connect-src 'self' https://www.nco-prep.com`). The
+     audio does not travel through the page — the browser handles it — which is exactly why
+     a CSP cannot be relied on to protect a Soldier here, and why the notice has to.
+
+   The reference text is the answer key, so a single wrong word in it marks a correct
+   recitation wrong at that spot. Both creeds below were taken from two independent sources
+   in Jordan's own board material — `05. Reference Material\02. Study Guides\Board Study
+   Guide\P Board.docx` and `MSF Board Study Guide.docx` — and they agree word for word. They
+   differ only in the capitalisation of "noncommissioned officer" and two commas, all of
+   which the normaliser removes before anything is compared.
+
+   TC 7-22.7 (the NCO Guide, both the 2020 and August 2025 editions) carries the creed as an
+   IMAGE, so it cannot be extracted as text and could not be used as the source. What it does
+   give is an integrity check, stated in its own induction script: "Each major paragraph
+   begins with three letters: N, C, O." The self-test asserts that acrostic still holds. */
+
+var CREEDS = [
+  { id:"nco", name:"The NCO Creed", cite:"Creed of the Noncommissioned Officer",
+    paras:[
+      "No one is more professional than I. I am a Noncommissioned Officer, a leader of Soldiers. As a Noncommissioned Officer, I realize that I am a member of a time-honored corps, which is known as “The Backbone of the Army.” I am proud of the Corps of Noncommissioned Officers and will at all times conduct myself so as to bring credit upon the Corps, the military service, and my country regardless of the situation in which I find myself. I will not use my grade or position to attain pleasure, profit, or personal safety.",
+      "Competence is my watchword. My two basic responsibilities will always be uppermost in my mind—accomplishment of my mission and the welfare of my Soldiers. I will strive to remain technically and tactically proficient. I am aware of my role as a Noncommissioned Officer. I will fulfill my responsibilities inherent in that role. All Soldiers are entitled to outstanding leadership; I will provide that leadership. I know my Soldiers and I will always place their needs above my own. I will communicate consistently with my Soldiers and never leave them uninformed. I will be fair and impartial when recommending both rewards and punishment.",
+      "Officers of my unit will have maximum time to accomplish their duties; they will not have to accomplish mine. I will earn their respect and confidence as well as that of my Soldiers. I will be loyal to those with whom I serve; seniors, peers, and subordinates alike. I will exercise initiative by taking appropriate action in the absence of orders. I will not compromise my integrity, nor my moral courage. I will not forget, nor will I allow my comrades to forget that we are professionals, Noncommissioned Officers, leaders!"
+    ] },
+  { id:"soldier", name:"The Soldier's Creed", cite:"The Soldier's Creed",
+    paras:[
+      "I am an American Soldier. I am a Warrior and a member of a team. I serve the people of the United States, and live the Army Values.",
+      "I will always place the mission first. I will never accept defeat. I will never quit. I will never leave a fallen comrade.",
+      "I am disciplined, physically and mentally tough, trained and proficient in my warrior tasks and drills. I always maintain my arms, my equipment and myself. I am an expert and I am a professional. I stand ready to deploy, engage, and destroy, the enemies of the United States of America in close combat. I am a guardian of freedom and the American way of life.",
+      "I am an American Soldier."
+    ] }
+];
+
+/* Spoken forms a speech engine produces that the written creed does not. Expanded on BOTH
+   sides, so it does not matter which form appears where — only that they agree. */
+var CREED_CONTRACT = [
+  [/\bi'm\b/g,"i am"], [/\bi'll\b/g,"i will"], [/\bi've\b/g,"i have"], [/\bi'd\b/g,"i would"],
+  [/\bcan't\b/g,"can not"], [/\bcannot\b/g,"can not"], [/\bwon't\b/g,"will not"],
+  [/\bdon't\b/g,"do not"], [/\bdoesn't\b/g,"does not"], [/\bdidn't\b/g,"did not"],
+  [/\bisn't\b/g,"is not"], [/\baren't\b/g,"are not"], [/\bit's\b/g,"it is"],
+  [/\bthat's\b/g,"that is"], [/\bthey're\b/g,"they are"], [/\bwe're\b/g,"we are"]
+];
+var CREED_NUM = {"0":"zero","1":"one","2":"two","3":"three","4":"four","5":"five",
+                 "6":"six","7":"seven","8":"eight","9":"nine","10":"ten"};
+
+/* One function, used for the reference AND the transcript, because grading tracks WORDS and
+   speech engines punctuate and capitalise unpredictably. Hyphens and em dashes become gaps:
+   "time-honored" is two spoken words, and "mind—accomplishment" is two words with a pause. */
+function creedWords(s){
+  var t = String(s == null ? "" : s).toLowerCase();
+  t = t.replace(/[‘’]/g, "'");
+  CREED_CONTRACT.forEach(function(r){ t = t.replace(r[0], r[1]); });
+  t = t.replace(/[^a-z0-9']+/g, " ");
+  t = t.replace(/'/g, "");          /* what is left is possessive: soldier's -> soldiers */
+  var out = [];
+  t.split(/\s+/).forEach(function(w){
+    if(!w) return;
+    out.push(Object.prototype.hasOwnProperty.call(CREED_NUM, w) ? CREED_NUM[w] : w);
+  });
+  return out;
+}
+
+/* Word-level LCS alignment.
+
+   Comparing index against index is the obvious approach and it is wrong: drop ONE word early
+   and every word after it shifts, so a near-perfect recitation reads as a total failure. The
+   longest common subsequence absorbs a skip or an insertion locally and picks the thread back
+   up, which is what a human listener does.
+
+   Reference words past where the Soldier has reached come back as "pending", NOT "miss" —
+   during a live recitation those have not been skipped, they simply have not been said yet.
+   The caller decides when pending becomes missed (it does, on stop). */
+var CREED_SAID_CAP = 4;   /* bound the table: rambling must not grow memory without limit */
+function creedAlign(ref, said){
+  var n = ref.length;
+  if(said.length > n * CREED_SAID_CAP) said = said.slice(0, n * CREED_SAID_CAP);
+  var m = said.length, W = m + 1, i, j;
+  var T = new Int32Array((n + 1) * W);
+  for(i = n - 1; i >= 0; i--){
+    for(j = m - 1; j >= 0; j--){
+      T[i * W + j] = (ref[i] === said[j])
+        ? T[(i + 1) * W + (j + 1)] + 1
+        : Math.max(T[(i + 1) * W + j], T[i * W + (j + 1)]);
+    }
+  }
+  var status = new Array(n), extra = [], matched = 0;
+  i = 0; j = 0;
+  while(i < n && j < m){
+    if(ref[i] === said[j]){ status[i] = "ok"; matched++; i++; j++; }
+    else if(T[(i + 1) * W + j] >= T[i * W + (j + 1)]){ status[i] = "miss"; i++; }
+    else { extra.push(said[j]); j++; }
+  }
+  var reached = i;
+  while(i < n){ status[i] = "pending"; i++; }
+  while(j < m){ extra.push(said[j]); j++; }
+  return { status:status, extra:extra, matched:matched, total:n, reached:reached };
+}
+
+/* ---- the mode ---- */
+var CREED_SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+var crdPick = null, crdRef = [], crdSpans = [], crdRec = null, crdLive = false;
+var crdFinal = "", crdInterim = "", crdRestarts = 0, crdLast = null;
+
+/* Two ways this mode cannot work, and both have to be settled BEFORE the button is offered.
+
+   The second one is the download. The self-contained copy is opened straight off the disk at
+   `file:`, and Chrome will not run speech recognition from a bare file — the API is present,
+   so a plain feature test says yes and then the recogniser fails at the moment a Soldier
+   starts reciting. That is the worst possible time to find out. The app already knows about
+   this case elsewhere ("opened as a file, not installed"); this is the same fact. */
+function creedFileCopy(){ return location.protocol === "file:"; }
+function creedSupported(){ return !!CREED_SR && !creedFileCopy(); }
+
+function crdPanel(name){
+  [["crdPick","pick"],["crdConsentCard","consent"],["crdRun","run"],["crdDone","done"]]
+    .forEach(function(p){ $(p[0]).classList[p[1] === name ? "remove" : "add"]("hidden"); });
+}
+
+function crdRenderList(){
+  var wrap = $("crdList");
+  wrap.textContent = "";
+  CREEDS.forEach(function(c){
+    var b = document.createElement("button");
+    b.className = "btn sec"; b.type = "button"; b.setAttribute("data-creed", c.id);
+    b.textContent = c.name;
+    b.addEventListener("click", function(){ crdChoose(c.id); });
+    wrap.appendChild(b);
+  });
+}
+
+function crdChoose(id){
+  var c = null;
+  CREEDS.forEach(function(x){ if(x.id === id) c = x; });
+  if(!c) return;
+  crdPick = c;
+  $("crdTitle").textContent = c.name;
+  /* The gate runs before ANY speech object exists, and only once per device. */
+  if(!DATA.creedOk){ crdPanel("consent"); $("crdAgree").focus(); return; }
+  crdBegin();
+}
+
+function crdBegin(){
+  if(!crdPick) return;
+  crdFinal = ""; crdInterim = ""; crdRestarts = 0;
+  crdRef = [];
+  crdSpans = [];
+  var box = $("crdText");
+  box.textContent = "";
+  /* Spans are built ONCE and then only have classes changed. Re-rendering the text on every
+     interim result would throw away the scroll position several times a second — the Soldier
+     would lose their place in the thing they are reading aloud. */
+  crdPick.paras.forEach(function(p){
+    var para = document.createElement("p");
+    p.split(/\s+/).forEach(function(raw){
+      if(!raw) return;
+      var norm = creedWords(raw);
+      if(!norm.length) return;            /* a token that is pure punctuation */
+      var sp = document.createElement("span");
+      sp.className = "crdw";
+      sp.textContent = raw;
+      para.appendChild(sp);
+      para.appendChild(document.createTextNode(" "));
+      /* One span can cover more than one normalised word ("time-honored"). Record the span's
+         slice of the reference so painting stays aligned with scoring. */
+      crdSpans.push({ el:sp, from:crdRef.length, to:crdRef.length + norm.length });
+      norm.forEach(function(w){ crdRef.push(w); });
+    });
+    box.appendChild(para);
+  });
+  $("crdTag").textContent = crdPick.cite;
+  $("crdCount").textContent = crdRef.length + " words";
+  $("crdCue").textContent = "";
+  crdPaint(null);
+  crdSetMic(false);
+  $("crdStatus").textContent = "";
+  crdPanel("run");
+  box.scrollTop = 0;
+}
+
+function crdSetMic(live){
+  $("crdMic").classList[live ? "add" : "remove"]("live");
+  $("crdMic").classList[live ? "add" : "remove"]("sec");
+  $("crdMicTxt").textContent = live ? "Stop" : "Start reciting";
+}
+
+/* Paint from an alignment. Only classes change, and only where they differ — this runs on
+   every interim result, several times a second. */
+function crdPaint(al){
+  var next = al ? al.reached : 0;
+  crdSpans.forEach(function(s){
+    var cls = "crdw";
+    if(al){
+      var ok = 0, miss = 0, k;
+      for(k = s.from; k < s.to; k++){
+        if(al.status[k] === "ok") ok++;
+        else if(al.status[k] === "miss") miss++;
+      }
+      if(ok && !miss) cls = "crdw ok";
+      else if(miss && !ok) cls = "crdw miss";
+      else if(ok && miss) cls = "crdw ok";
+      else if(s.from <= next && next < s.to) cls = "crdw now";
+    } else if(s.from === 0) cls = "crdw now";
+    if(s.el.className !== cls) s.el.className = cls;
+  });
+  /* Keep the place they are on in view, without yanking the page around. */
+  var cur = null;
+  crdSpans.forEach(function(s){ if(!cur && s.from <= next && next < s.to) cur = s.el; });
+  if(cur){
+    var box = $("crdText");
+    var top = cur.offsetTop - box.clientHeight / 2;
+    if(Math.abs(box.scrollTop - top) > box.clientHeight / 4) box.scrollTop = Math.max(0, top);
+  }
+}
+
+/* The creed's OWN words for a slice of the reference — original spelling, capitals and
+   punctuation, not the normalised tokens. A Soldier looking for what they dropped needs the
+   line as it is written, not "i will never quit". */
+function crdPhrase(from, to){
+  var parts = [];
+  crdSpans.forEach(function(s){
+    if(s.to > from && s.from < to) parts.push(s.el.textContent);
+  });
+  return parts.join(" ").replace(/\s+/g, " ").trim();
+}
+
+function crdHeard(){
+  var said = creedWords(crdFinal + " " + crdInterim);
+  crdLast = creedAlign(crdRef, said);
+  crdPaint(crdLast);
+}
+
+function crdStart(){
+  if(!CREED_SR || crdLive) return;
+  var rec;
+  try { rec = new CREED_SR(); }
+  catch(e){ $("crdStatus").textContent = "Speech recognition could not start on this browser."; return; }
+  rec.continuous = true;
+  rec.interimResults = true;
+  rec.lang = "en-US";
+  rec.onresult = function(ev){
+    var interim = "", i;
+    for(i = ev.resultIndex; i < ev.results.length; i++){
+      if(ev.results[i].isFinal) crdFinal += " " + ev.results[i][0].transcript;
+      else interim += " " + ev.results[i][0].transcript;
+    }
+    crdInterim = interim;
+    crdHeard();
+  };
+  rec.onerror = function(ev){
+    var e = ev && ev.error;
+    if(e === "no-speech" || e === "aborted") return;   /* normal, not a failure */
+    crdLive = false;
+    crdSetMic(false);
+    $("crdStatus").textContent =
+      (e === "not-allowed" || e === "service-not-allowed")
+        ? "The microphone is blocked. Allow microphone access for this site, then try again."
+      : (e === "network")
+        ? "Speech recognition needs an internet connection. The rest of the app still works offline."
+        : "Speech recognition stopped (" + (e || "unknown") + ").";
+  };
+  /* Chrome ends a session on its own after a pause. A creed takes longer than that, so a
+     silent end while the Soldier is still reciting has to restart — but bounded, or a
+     failing engine becomes an invisible restart loop holding the microphone open. */
+  rec.onend = function(){
+    if(!crdLive) return;
+    if(crdRestarts >= 20){
+      crdLive = false; crdSetMic(false);
+      $("crdStatus").textContent = "Speech recognition kept dropping out. Tap to start again.";
+      return;
+    }
+    crdRestarts++;
+    try { rec.start(); } catch(e){ crdLive = false; crdSetMic(false); }
+  };
+  crdRec = rec;
+  crdLive = true;
+  crdSetMic(true);
+  $("crdStatus").textContent = "Listening — begin when ready.";
+  try { rec.start(); }
+  catch(e){ crdLive = false; crdSetMic(false); $("crdStatus").textContent = "Could not start listening."; }
+}
+
+function crdStop(){
+  if(!crdLive) return;
+  crdLive = false;
+  crdSetMic(false);
+  if(crdRec){ try { crdRec.stop(); } catch(e){} }
+  crdFinish();
+}
+
+/* Stop recognition without scoring — leaving the screen, not finishing a recitation. */
+function crdAbort(){
+  crdLive = false;
+  if(crdRec){ try { crdRec.abort ? crdRec.abort() : crdRec.stop(); } catch(e){} }
+  crdRec = null;
+  crdSetMic(false);
+}
+
+function crdFinish(){
+  crdInterim = "";
+  var said = creedWords(crdFinal);
+  var al = creedAlign(crdRef, said);
+  crdLast = al;
+  var pct = al.total ? Math.round(al.matched / al.total * 100) : 0;
+  $("crdPct").textContent = pct + "%";
+  $("crdCap").textContent = al.matched + " of " + al.total + " words, in order";
+
+  /* Pending becomes missed here and only here: on stop, a word never reached WAS left out.
+
+     Reported as contiguous PHRASES, not as a bag of words. The first version listed unique
+     missed words and, for a Soldier who dropped "I will never quit", printed "quit, i, will,
+     never" — three of which appear correctly said elsewhere in the same creed. That is worse
+     than useless: it names words they got right. A run of consecutive misses is the thing
+     they actually left out, and it is shown in the creed's own words, so they can find it. */
+  var missed = [], run = null;
+  al.status.forEach(function(s, i){
+    if(s === "ok"){ if(run){ missed.push(run); run = null; } return; }
+    if(run) run.to = i + 1; else run = { from:i, to:i + 1 };
+  });
+  if(run) missed.push(run);
+  missed = missed.map(function(r){ return crdPhrase(r.from, r.to); }).filter(Boolean);
+
+  var extra = [], seenX = {};
+  al.extra.forEach(function(w){ if(!seenX[w]){ seenX[w] = 1; extra.push(w); } });
+
+  var host = $("crdLists");
+  host.textContent = "";
+  function block(title, items, emptyMsg, cls){
+    var h = document.createElement("h3"); h.textContent = title; host.appendChild(h);
+    if(!items.length){
+      var p = document.createElement("p"); p.className = "none"; p.textContent = emptyMsg;
+      host.appendChild(p); return;
+    }
+    var ul = document.createElement("ul"); ul.className = cls;
+    items.slice(0, 25).forEach(function(w){
+      var li = document.createElement("li"); li.textContent = w; ul.appendChild(li);
+    });
+    if(items.length > 25){
+      var li2 = document.createElement("li");
+      li2.textContent = "+" + (items.length - 25) + " more";
+      ul.appendChild(li2);
+    }
+    host.appendChild(ul);
+  }
+  block("What you left out", missed, "Nothing missed — every word, in order.", "pl");
+  block("Words that weren't in the creed", extra, "Nothing extra.", "wl");
+  crdPanel("done");
+  $("crdTitle").textContent = crdPick ? crdPick.name : "Recite the Creed";
+}
+
+function openCreed(){
+  if(!creedSupported()) return;
+  crdPick = null;
+  $("crdTitle").textContent = "Recite the Creed";
+  $("crdCue").textContent = "Speech is the only part of this app that goes online.";
+  crdRenderList();
+  crdPanel("pick");
+  $("home").classList.add("hidden");
+  $("quiz").classList.add("hidden"); $("results").classList.add("hidden");
+  $("flash").classList.add("hidden");
+  $("creed").classList.remove("hidden");
+  $("sub").textContent = "Recite a creed aloud and have it graded as you go.";
+  mount($("creed"));
+  window.scrollTo(0, 0);
+}
+
+/* Back out one layer at a time: score -> the creed list -> the menu. The mic is released on
+   every one of those, because a screen the Soldier has left must never still be listening. */
+function creedBack(){
+  crdAbort();
+  if(!$("crdDone").classList.contains("hidden") || !$("crdRun").classList.contains("hidden")
+     || !$("crdConsentCard").classList.contains("hidden")){
+    crdPick = null;
+    $("crdTitle").textContent = "Recite the Creed";
+    crdPanel("pick");
+    return;
+  }
+  toMenu();
+}
+
+(function(){
+  /* Feature detection decides what the home screen even offers. A control that cannot work
+     must not be tappable — finding out at the moment you try to use it is the worst time. */
+  if(creedSupported()) $("creedBtn").classList.remove("hidden");
+  else {
+    if(creedFileCopy())
+      $("creedNoSupport").textContent = "Recite the Creed needs the installed app or nco-prep.com — "
+        + "speech recognition doesn't run from a downloaded file. Everything else here works as normal.";
+    $("creedNoSupport").classList.remove("hidden");
+  }
+
+  $("creedBtn").addEventListener("click", openCreed);
+  $("crdBack").addEventListener("click", creedBack);
+  $("crdQuit").addEventListener("click", creedBack);
+  $("crdBackToList").addEventListener("click", creedBack);
+  $("crdDecline").addEventListener("click", function(){ crdPick = null; crdPanel("pick"); });
+  $("crdAgree").addEventListener("click", function(){
+    DATA.creedOk = true; save();
+    crdBegin();
+  });
+  $("crdMic").addEventListener("click", function(){ crdLive ? crdStop() : crdStart(); });
+  $("crdAgain").addEventListener("click", function(){ crdBegin(); });
+})();
+
+/* Test seam — same precedent as window.__MARKUP__ and window.REGLIB.
+
+   Grading cannot be proven without speaking into a microphone, and a microphone is exactly
+   what a build machine does not have. `say` pushes a transcript through the SAME code the
+   recogniser's onresult handler feeds — normalise, align, paint — so the live highlighting
+   and the score can be exercised end to end with no audio and no permission prompt.
+
+   It reads and writes the real state rather than a copy: a seam that tests a parallel
+   implementation proves nothing about what ships. Nothing here can START the recogniser. */
+window.__CREED__ = {
+  words: creedWords, align: creedAlign, texts: CREEDS,
+  choose: function(id){ DATA.creedOk = true; crdChoose(id); },
+  say: function(text, andFinish){
+    crdFinal = String(text || "");
+    crdInterim = "";
+    crdHeard();
+    if(andFinish) crdFinish();
+    return crdLast;
+  },
+  states: function(){
+    return crdSpans.map(function(s){ return s.el.className.replace("crdw", "").trim() || "pending"; });
+  }
+};
+
 /* ---- v55: the Android hardware back button.
 
    On Android, Capacitor's default back behaviour pops WebView history and, when there is none,
@@ -5829,6 +6410,11 @@ function backPressed(){
   if(open("settingsPanel")){ if(typeof settingsClose === "function") settingsClose(); return; }
   if(open("rdSheet")){ $("rdSheet").classList.add("hidden"); return; }
   if(open("reader")){ closeReader(); return; }
+
+  /* v57: the creed screen peels its own layers — score to list, list to menu — and releases
+     the microphone on every one of them. Above the hubs because it is not reachable inside
+     them, and above the quiz check because a quiz cannot be running underneath it. */
+  if(!$("creed").classList.contains("hidden")){ creedBack(); return; }
 
   /* Select mode is a state, not a screen: back should leave the mode, not the hub. */
   if(!$("notes").classList.contains("hidden") && noteSelMode){ tap("notesCancel"); return; }
@@ -8655,7 +9241,7 @@ function selfTest(){
       if(hp && hp.indexOf("safe-area-inset-top") !== -1 && hp.indexOf("max(") === -1)
         errs.push("insets: the app bar's top padding is a bare calc() again — desktop and iOS "
           + "share one number, so tuning the phone will move the browser layout with it");
-      ["#notes .nhdr", "#library .libhdr"].forEach(function(sel){
+      ["#notes .nhdr", "#library .libhdr", "#creed .crdhdr"].forEach(function(sel){
         var e = document.querySelector(sel);
         if(!e) { errs.push("insets: " + sel + " is missing"); return; }
         if(getComputedStyle(e).position === "fixed") return; /* no longer under the bar */
@@ -8744,6 +9330,141 @@ function selfTest(){
       if(shown !== versionLabel())
         errs.push("version: Settings shows '" + shown + "' but this build is '" + versionLabel()
           + "' — a bug report would name the wrong build");
+    })();
+    /* v57: Recite the Creed.
+
+       The reference text IS the answer key. A single wrong word in it marks a correct
+       recitation wrong at that spot and the Soldier has no way to tell it was the app. So it
+       is asserted rather than trusted, from three angles that a careless "tidy-up" edit would
+       have to defeat all three of at once. */
+    (function(){
+      if(typeof CREEDS === "undefined" || !CREEDS.length){
+        errs.push("creed: the reference texts are missing"); return;
+      }
+      CREEDS.forEach(function(c){
+        if(!c.paras || !c.paras.length){ errs.push("creed: " + c.id + " has no text"); return; }
+        c.paras.forEach(function(p, i){
+          if(!creedWords(p).length) errs.push("creed: " + c.id + " paragraph " + (i + 1) + " is empty");
+        });
+      });
+
+      var nco = null, sol = null;
+      CREEDS.forEach(function(c){ if(c.id === "nco") nco = c; if(c.id === "soldier") sol = c; });
+      if(!nco || !sol){ errs.push("creed: the NCO Creed and Soldier's Creed must both be present"); return; }
+
+      /* 1. The acrostic. TC 7-22.7's own induction script states that each major paragraph of
+            the NCO Creed begins with N, C, O in turn. A reordered or truncated creed fails
+            this, and it is a property of the real document rather than of my transcription. */
+      if(nco.paras.length !== 3)
+        errs.push("creed: the NCO Creed has " + nco.paras.length + " paragraphs, not 3");
+      else {
+        var acro = nco.paras.map(function(p){ return p.trim().charAt(0).toUpperCase(); }).join("");
+        if(acro !== "NCO")
+          errs.push("creed: the NCO Creed paragraphs spell '" + acro + "', not N-C-O — "
+            + "TC 7-22.7 states each major paragraph begins with those three letters in order");
+      }
+
+      /* 2. The landmarks where the two source documents agreed and the OLDER circulating
+            variant differs. These are the exact words an well-meaning edit would change back:
+            "watch-word", "welfare of my Soldiers" without the "the", and the reversed
+            "tactically and technically". If one of these goes, the text has drifted. */
+      var ncoAll = creedWords(nco.paras.join(" ")).join(" ");
+      [["competence is my watchword", "the 'watchword' spelling"],
+       ["and the welfare of my soldiers", "'and THE welfare of my Soldiers'"],
+       ["technically and tactically proficient", "'technically and tactically', in that order"],
+       ["seniors peers and subordinates alike", "the closing of the loyalty line"],
+       ["no one is more professional than i", "the opening line"],
+       ["the backbone of the army", "the Backbone of the Army"]
+      ].forEach(function(pair){
+        if(ncoAll.indexOf(pair[0]) === -1)
+          errs.push("creed: the NCO Creed no longer contains " + pair[1]
+            + " — the reference has drifted from the verified wording and would mark correct "
+            + "recitations wrong");
+      });
+      var solAll = creedWords(sol.paras.join(" ")).join(" ");
+      [["i am an american soldier", "the opening line"],
+       ["i will always place the mission first i will never accept defeat i will never quit "
+        + "i will never leave a fallen comrade", "the four Warrior Ethos lines, in order"],
+       ["i am a guardian of freedom and the american way of life", "the closing line"]
+      ].forEach(function(pair){
+        if(solAll.indexOf(pair[0]) === -1)
+          errs.push("creed: the Soldier's Creed no longer contains " + pair[1]);
+      });
+
+      /* 3. The normaliser must absorb what a speech engine actually does to text — case,
+            punctuation, hyphens, contractions, digits. If it stops, grading turns into a
+            formatting test and a perfect recitation scores badly. */
+      function sameWords(a, b){ return creedWords(a).join(" ") === creedWords(b).join(" "); }
+      [["Time-honored corps.", "time honored corps"],
+       ["I'm a leader", "I am a leader"],
+       ["mind—accomplishment", "mind accomplishment"],
+       ["My 2 basic", "My two basic"],
+       ["The Soldier's needs", "the soldiers needs"],
+       ["“The Backbone of the Army.”", "the backbone of the army"]
+      ].forEach(function(pair){
+        if(!sameWords(pair[0], pair[1]))
+          errs.push("creed: the normaliser treats \"" + pair[0] + "\" and \"" + pair[1]
+            + "\" as different words, so grading would fail on formatting rather than content");
+      });
+
+      /* 4. The aligner. This is the whole reason for an LCS rather than an index-by-index
+            compare: ONE dropped word early must not cascade into everything after it reading
+            as wrong. Index compare scores the case below 1/5; the alignment scores it 4/5. */
+      var ref = ["a","b","c","d","e"];
+      var skip = creedAlign(ref, ["a","c","d","e"]);
+      if(skip.matched !== 4)
+        errs.push("creed: a single skipped word scores " + skip.matched + "/5, not 4/5 — the "
+          + "alignment is cascading, so one missed word would fail the whole recitation");
+      if(skip.status[1] !== "miss")
+        errs.push("creed: the skipped word is not reported as missed");
+      var sub = creedAlign(["a","b","c"], ["a","x","c"]);
+      if(sub.matched !== 2 || sub.extra.indexOf("x") === -1)
+        errs.push("creed: a substituted word is not flagged as extra with the original missed");
+      var ins = creedAlign(["a","b","c"], ["a","q","b","c"]);
+      if(ins.matched !== 3 || ins.extra.indexOf("q") === -1)
+        errs.push("creed: an inserted word breaks the alignment of the words after it");
+      var perfect = creedAlign(ref, ref.slice());
+      if(perfect.matched !== 5 || perfect.extra.length)
+        errs.push("creed: an exact recitation does not score 100%");
+      /* Mid-recitation, words not yet reached are PENDING, not missed — marking them wrong
+         while someone is still speaking would paint the whole creed red on the first word. */
+      var partial = creedAlign(ref, ["a","b"]);
+      if(partial.status[2] !== "pending" || partial.reached !== 2)
+        errs.push("creed: words not yet spoken are being treated as missed during a live recitation");
+
+      /* 5. The gate and the wiring. Nothing may capture audio before the notice is accepted,
+            and the entry point must match what the browser can actually do. */
+      ["creed","crdPick","crdConsentCard","crdRun","crdDone","crdText","crdMic","crdBack",
+       "crdAgree","crdDecline","crdQuit","crdAgain","crdBackToList","creedBtn","creedNoSupport"
+      ].forEach(function(id){
+        if(!document.getElementById(id)) errs.push("creed: #" + id + " is missing");
+      });
+      if(typeof creedBack !== "function")
+        errs.push("creed: creedBack is not reachable — back would strand the screen with the mic open");
+      if(typeof crdAbort !== "function")
+        errs.push("creed: crdAbort is not reachable — leaving the screen could leave the microphone live");
+      var supported = creedSupported();
+      var btnShown = !$("creedBtn").classList.contains("hidden");
+      var noteShown = !$("creedNoSupport").classList.contains("hidden");
+      if(btnShown !== supported)
+        errs.push("creed: browser support is " + supported + " but the entry point is "
+          + (btnShown ? "offered" : "hidden") + " — a control that cannot work must not be tappable");
+      if(btnShown === noteShown)
+        errs.push("creed: the entry button and the unsupported note are both "
+          + (btnShown ? "showing" : "hidden"));
+      /* The consent flag must never reach validShape, exactly like qres/cb/tts before it. */
+      var probe = {v:SCHEMA, theme:"light", stats:{}, scores:[]};
+      if(!validShape(probe))
+        errs.push("creed: a save without the speech-consent flag no longer validates — study history would be wiped");
+      if(typeof DATA.creedOk !== "boolean")
+        errs.push("creed: the speech-consent flag is not a boolean, so the notice could be skipped");
+      /* The safe direction is ASK AGAIN. A save that predates this feature must not be read
+         as consent already given. */
+      var old = {v:SCHEMA, theme:"light", stats:{}, scores:[]};
+      rawSet("absg_creedprobe", JSON.stringify(old));
+      rawDel("absg_creedprobe");
+      if(validShape(old) && old.creedOk === true)
+        errs.push("creed: an older save is being read as having accepted the speech notice");
     })();
     if(typeof quizIsLive !== "function") errs.push("nav: quizIsLive is not reachable");
     if(typeof goHomeNow !== "function") errs.push("nav: goHomeNow is not reachable");
