@@ -47,7 +47,15 @@
      as "selected" or "graded". --mark-edge is the under-edge that carries the mark when
      colour alone cannot. */
   --page:#ffffff;
-  --mark:rgba(201,167,58,.34); --mark-edge:rgba(150,120,20,.85);
+  /* v64: the default wash is lightened from .34 to .26. It read as opaque over the page —
+     the point of a highlighter is that the words underneath stay the thing you are reading. */
+  --mark:rgba(201,167,58,.26); --mark-edge:rgba(150,120,20,.85);
+  /* v64: the highlighter palette. Four hues at one alpha so no colour shouts louder than
+     another, all deliberately OUTSIDE the accent / ok / no lanes so a highlight can never be
+     read as "selected" or "graded". The reg page is always white paper — --page is #ffffff in
+     BOTH themes — so these are tuned against white once and hold in either theme. */
+  --hl-y:rgba(201,167,58,.26); --hl-g:rgba(96,170,110,.26);
+  --hl-b:rgba(86,150,214,.26); --hl-p:rgba(214,110,165,.26);
   /* v45: the annotation lane needed a readable INK and a soft fill for the Notes hub, where
      the lane has to carry small text (the reg pill "FM 7-22 · p.92") rather than a wash over
      a white page. --mark and --mark-edge are translucent by design — correct over paper,
@@ -89,7 +97,10 @@
      darkens; recolouring the document would change what a Soldier is reading and citing.
      "Night read" is the opt-in for low light. */
   --page:#ffffff;
-  --mark:rgba(214,180,80,.34); --mark-edge:rgba(214,180,80,.9);
+  --mark:rgba(214,180,80,.26); --mark-edge:rgba(214,180,80,.9);
+  /* Same values as light: the page under them is white in both themes. */
+  --hl-y:rgba(201,167,58,.26); --hl-g:rgba(96,170,110,.26);
+  --hl-b:rgba(86,150,214,.26); --hl-p:rgba(214,110,165,.26);
   --mark-ink:#cbb060; --mark-soft:#39331d;
   --sel-wash:rgba(136,171,139,.34);
   --scrim:rgba(0,0,0,.55);
@@ -815,6 +826,13 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 /* The wash is --mark, deliberately outside the accent / ok / no lanes, so a highlight can
    never read as "selected" or "graded". The under-edge is the second, non-colour signal. */
 .rdmark{position:absolute;background:var(--mark);border-radius:1px}
+/* v64: per-highlight colour. A mark stored before this build carries color:"mark" and gets
+   no class, so it keeps painting from --mark — no migration, and nothing already on a page
+   changes appearance. */
+.rdmark.c-y{background:var(--hl-y)}
+.rdmark.c-g{background:var(--hl-g)}
+.rdmark.c-b{background:var(--hl-b)}
+.rdmark.c-p{background:var(--hl-p)}
 .rdmark.note{box-shadow:inset 0 -2px 0 0 var(--mark-edge)}
 /* A noted passage also gets a margin tab, because colour is never the only signal. */
 .rdtab{position:absolute;left:-2px;width:4px;border-radius:2px;background:var(--mark-edge);z-index:3}
@@ -864,8 +882,26 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
   @keyframes toastIn{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}
 }
 /* v50: absolute within #reader, not fixed — see the note on .rdbottom. */
-#mkBar,#mkPop{position:absolute;z-index:90;display:flex;gap:2px;padding:4px;
+#mkBar,#mkPop{position:absolute;z-index:90;display:flex;flex-wrap:wrap;gap:2px;padding:4px;
   background:#1d2a1f;border-radius:12px;box-shadow:var(--e2)}
+/* v64: the colour row. A full-width second line inside the same chip rather than a submenu —
+   a highlighter colour is a one-tap decision, and a menu to reach a menu is two taps to do
+   nothing. Tapping a swatch in the selection bar highlights in that colour directly; in the
+   mark popover it recolours the highlight already under the finger. */
+.mkswatches{flex:1 0 100%;display:flex;gap:6px;justify-content:center;
+  padding:6px 2px 2px;margin-top:2px;border-top:1px solid rgba(238,242,236,.18)}
+/* 44px, the project's tap-target standard — the same floor the marks checkbox is held to.
+   Four of them plus gaps is 200px inside a 352px bar, so there was no reason to go smaller. */
+#mkBar .mkswatches button,#mkPop .mkswatches button{
+  min-height:44px;min-width:44px;padding:0;border-radius:9px;justify-content:center}
+.mkswatches .sw span{display:block;width:20px;height:20px;border-radius:6px;
+  border:1px solid rgba(238,242,236,.5)}
+/* The swatch shows the wash over white, because white paper is what it will sit on. */
+.mkswatches .sw-y span{background:#ffffff;box-shadow:inset 0 0 0 20px var(--hl-y)}
+.mkswatches .sw-g span{background:#ffffff;box-shadow:inset 0 0 0 20px var(--hl-g)}
+.mkswatches .sw-b span{background:#ffffff;box-shadow:inset 0 0 0 20px var(--hl-b)}
+.mkswatches .sw-p span{background:#ffffff;box-shadow:inset 0 0 0 20px var(--hl-p)}
+.mkswatches .sw[aria-pressed="true"] span{border-color:#eef2ec;border-width:2px}
 #mkBar.hidden,#mkPop.hidden{display:none}
 #mkBar button,#mkPop button{min-height:44px;padding:0 14px;display:flex;align-items:center;gap:7px;
   background:none;border:0;color:#eef2ec;font:inherit;font-size:.82rem;font-weight:650;
@@ -2510,6 +2546,7 @@ footer p{margin:0 0 8px}
   <button id="mkCopy" type="button">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 9h10v10H9z"></path><path d="M15 9V5H5v10h4"></path></svg>Copy
   </button>
+  <div class="mkswatches" role="group" aria-label="Highlight colour"><button type="button" class="sw sw-y" data-new-color="y" aria-label="Yellow"><span></span></button><button type="button" class="sw sw-g" data-new-color="g" aria-label="Green"><span></span></button><button type="button" class="sw sw-b" data-new-color="b" aria-label="Blue"><span></span></button><button type="button" class="sw sw-p" data-new-color="p" aria-label="Pink"><span></span></button></div>
 </div>
 <div id="mkPop" class="hidden" role="toolbar" aria-label="Selected mark">
   <button id="mkPopNote" type="button">
@@ -2521,6 +2558,7 @@ footer p{margin:0 0 8px}
   <button id="mkPopDel" type="button">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"></path></svg>Remove
   </button>
+  <div class="mkswatches" role="group" aria-label="Highlight colour"><button type="button" class="sw sw-y" data-set-color="y" aria-label="Yellow"><span></span></button><button type="button" class="sw sw-g" data-set-color="g" aria-label="Green"><span></span></button><button type="button" class="sw sw-b" data-set-color="b" aria-label="Blue"><span></span></button><button type="button" class="sw sw-p" data-set-color="p" aria-label="Pink"><span></span></button></div>
   </div>
   <!-- v50: the outline / marks sheet lives inside #reader too. It is opened only from the
        reader, and its rows are the Bookmarks jump list — controls a Soldier taps. Same
@@ -3256,7 +3294,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v63";
+var APP_VERSION = "v64";
 /* The store-facing release number — what a tester sees on their Play or App Store listing.
    It has to be stated here because nothing in the web build can read the wrap's manifest,
    so this is a SECOND place the release number lives: it must be changed in lockstep with
@@ -8284,6 +8322,39 @@ var MK_OVERLAP = 0.5;
 /* v33: highlighting the same passage twice used to add a SECOND mark over the first, so the
    wash deepened with every pass and there was no way back short of the note sheet. It is a
    toggle now: a highlight that lands on an existing highlight removes it. */
+/* v64: the highlighter colour. Session state, not a saved preference — a Soldier picking
+   blue for one passage has not chosen blue forever, and a colour that silently persisted
+   across sessions would surprise them the next time they highlighted. */
+var MK_COLORS = ["y","g","b","p"];
+var mkColor = "y";
+function markColorClass(m){
+  var c = m && m.color;
+  return MK_COLORS.indexOf(c) === -1 ? "" : " c-" + c;   /* legacy "mark" -> no class -> --mark */
+}
+function markSetColor(k){
+  if(MK_COLORS.indexOf(k) === -1) return;
+  mkColor = k;
+  Array.prototype.forEach.call(document.querySelectorAll("[data-new-color]"), function(b){
+    b.setAttribute("aria-pressed", b.getAttribute("data-new-color") === k ? "true" : "false");
+  });
+}
+/* Recolour the highlight under the finger. Repaint from the store rather than restyling the
+   band in place, so what is on the page is always what was saved. */
+function markRecolor(k){
+  if(!mkPicked || MK_COLORS.indexOf(k) === -1) return;
+  var m = mkPicked;
+  if(m.type === "bookmark") return;            /* nothing painted to recolour */
+  markSetColor(k);
+  /* put() rebuilds the record but preserves the id, so this updates rather than duplicates —
+     and color was already part of the locked shape, so nothing about that shape changes. */
+  REGLIB.marks.put({ id:m.id, regId:m.regId, page:m.page, pageLabel:m.pageLabel, type:m.type,
+                     anchor:m.anchor, color:k, note:m.note, created:m.created })
+    .then(function(){
+      markHidePop();
+      var h = document.querySelector('.rdpage[data-page="' + (m.page + 1) + '"]');
+      if(h) markRepaint(h, m.page + 1);
+    });
+}
 function markSave(type, noteText){
   if(!mkSel) return Promise.resolve(null);
   var cap = mkSel;
@@ -8323,7 +8394,9 @@ function markCommit(type, noteText, cap){
     regId: rdId, page: cap.page, pageLabel: cap.pageLabel, type: type,
     anchor: { quote:cap.quote, prefix:cap.prefix, suffix:cap.suffix,
               textPosition:cap.textPosition, rects:cap.rects },
-    color: "mark", note: noteText == null ? null : noteText
+    /* v64: the record already carried a color field, unused and always "mark". It now
+       carries the chosen key. Legacy records keep "mark" and paint from --mark. */
+    color: (type === "highlight" ? mkColor : "mark"), note: noteText == null ? null : noteText
   }).then(function(m){
     markClearSelection();
     markRepaint(cap.holder, cap.page + 1);
@@ -8350,7 +8423,7 @@ function markRepaint(holder, n){
          The merge is idempotent, so a mark saved by v34 passes through unchanged. */
       markMergeRects(m.anchor.rects).forEach(function(r){
         var d = document.createElement("div");
-        d.className = "rdmark" + (m.type === "note" ? " note" : "");
+        d.className = "rdmark" + (m.type === "note" ? " note" : "") + markColorClass(m);
         /* v45: the band carries its mark's id so a hub jump can find and pulse the exact
            passage it came from. Painted bands were anonymous until now. */
         d.setAttribute("data-mark", m.id);
@@ -11244,6 +11317,19 @@ document.addEventListener("selectionchange", function(){
   markShowBar();
 });
 $("mkHi").addEventListener("click", function(){ markSave("highlight", null); });
+/* v64: the colour swatches. In the selection bar a swatch IS the highlight action — pick the
+   colour and it is placed, one tap, no mode to remember. In the mark popover it recolours the
+   highlight already under the finger. */
+Array.prototype.forEach.call(document.querySelectorAll("[data-new-color]"), function(b){
+  b.addEventListener("click", function(){
+    markSetColor(b.getAttribute("data-new-color"));
+    markSave("highlight", null);
+  });
+});
+Array.prototype.forEach.call(document.querySelectorAll("[data-set-color]"), function(b){
+  b.addEventListener("click", function(){ markRecolor(b.getAttribute("data-set-color")); });
+});
+markSetColor(mkColor);   /* paint the initial pressed state */
 $("mkNote").addEventListener("click", function(){
   if(!mkSel) return;
   markOpenSheet(mkSel.quote, null);
