@@ -147,6 +147,20 @@
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
+/* v63: stop the page rubber-banding past its own content.
+
+   The report was "pages scroll past the content into black space at both the top and bottom."
+   It is not a layout fault — measured on every screen there is no gap above the header, and
+   the 92px below the last element is the documented floating-control lane. It is iOS
+   overscroll: the document had no overscroll-behavior, so a flick past either end bounced into
+   the page background, which in dark mode is #11150f and reads as black. That it appears at
+   BOTH ends is the tell — a padding bug could only ever show at one.
+
+   The second reason matters more than the cosmetics. Without this, pull-to-refresh is live on
+   the main document, and a quiz lives in memory only — so an accidental pull mid-quiz reloads
+   the page and the quiz is gone, with no confirm and nothing to restore. That is the same
+   class of loss v35/v46/v47 each closed by another route. */
+html,body{overscroll-behavior-y:none}
 body{
   background:var(--bg);color:var(--ink);
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
@@ -3290,7 +3304,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v62";
+var APP_VERSION = "v63";
 /* The store-facing release number — what a tester sees on their Play or App Store listing.
    It has to be stated here because nothing in the web build can read the wrap's manifest,
    so this is a SECOND place the release number lives: it must be changed in lockstep with
@@ -4428,7 +4442,13 @@ function finish(){
   $("retryWeak").classList.toggle("hidden", !lastWeakCats.length);
 
   if(total){
-    DATA.scores.unshift({d:today(),p:pct,c:correct,t:total,board:BOARDS[board].label,boardId:board,mode:modeLabel(mode)});
+    /* v63: record the completion time when the Soldier asked to be timed. Additive and
+       optional — an untimed run stores no `sec` at all, and every record written before this
+       build simply has none, so the history renderer must treat absent as untimed rather
+       than as zero. A stored 0 would read as "0:00", which is a lie about a real quiz. */
+    var rec = {d:today(),p:pct,c:correct,t:total,board:BOARDS[board].label,boardId:board,mode:modeLabel(mode)};
+    if(useTimer && elapsed > 0) rec.sec = elapsed;
+    DATA.scores.unshift(rec);
     DATA.scores=DATA.scores.slice(0,HIST_MAX);
     save();
   }
@@ -4474,8 +4494,11 @@ function showHistory(){
   h.forEach(function(r){
     if(!r) return;
     var li=document.createElement("li");
+    /* Absent `sec` means the quiz was not timed — which is not the same as finishing in
+       no time. Only a positive number renders. */
+    var timeBit = (typeof r.sec === "number" && r.sec > 0) ? " — " + fmtTime(r.sec) : "";
     li.textContent = (r.d||"") + " — " + (typeof r.p==="number"?r.p:0) + "% (" + (r.c|0) + " of " + (r.t|0) + ") — " +
-                     (r.board||"Unlabeled") + " — " + (r.mode||"Quiz");
+                     (r.board||"Unlabeled") + " — " + (r.mode||"Quiz") + timeBit;
     ul.appendChild(li);
   });
   $("histCard").classList.remove("hidden");
