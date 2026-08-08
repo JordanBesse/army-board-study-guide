@@ -1814,6 +1814,40 @@ details.cats[open] summary::after{content:"\2212"}
 #crdConsent h3{margin:0 0 8px;font-size:1rem}
 #crdConsent p{margin:0 0 10px;font-size:.88rem;line-height:1.5;color:var(--ink)}
 #crdConsent .sub{color:var(--muted);font-size:.83rem}
+/* ---- v62: the Recite the Creed flagship card (AD spec) ----
+   Measurements are the AD's: 48px chip at 12px radius, 15px card padding, 13px gap, 12px
+   above the quiet card below it — all inside the existing 4/8/12/14/16 rhythm. */
+.creedhero{
+  display:flex;align-items:center;gap:13px;width:100%;text-align:left;
+  background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  box-shadow:var(--e2);padding:15px;margin:0 0 12px;
+  font:inherit;color:var(--ink);cursor:pointer;
+  transition:background-color var(--m-state) ease-out, box-shadow var(--m-state) ease-out;
+}
+.creedhero .chip{
+  width:48px;height:48px;border-radius:12px;flex:0 0 auto;
+  background:var(--accent);color:var(--accent-ink);
+  display:flex;align-items:center;justify-content:center;
+  transition:background-color var(--m-state) ease-out;
+}
+.creedhero .chip svg{width:26px;height:26px}
+.creedhero .ct{flex:1;min-width:0}
+.creedhero .ct b{display:block;font-size:17px;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
+.creedhero .ct span{display:block;font-size:13px;color:var(--muted);margin-top:2px;line-height:1.35}
+.creedhero .go{flex:0 0 auto;display:inline-flex;align-items:center;color:var(--accent)}
+.creedhero .go svg{width:22px;height:22px}
+/* Pressed settles rather than bounces: the card drops to the neutral hover fill and the chip
+   deepens. :active covers the finger; :hover is the pointer equivalent on desktop. */
+.creedhero:hover{background:var(--hover-bg)}
+/* The AD's spec calls the resting elevation of the utility rows "e1"; in this codebase that
+   token is named --shadow. Using var(--e1) would have silently resolved to nothing. */
+.creedhero:active{background:var(--hover-bg);box-shadow:var(--shadow)}
+.creedhero:active .chip{filter:brightness(.85)}
+.creedhero:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){
+  /* Resting geometry is kept; only the movement goes. */
+  .creedhero, .creedhero .chip{transition:none}
+}
 footer{margin-top:22px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:.78rem;text-align:center}
 footer p{margin:0 0 8px}
 .linkbtn{
@@ -2103,6 +2137,25 @@ footer p{margin:0 0 8px}
     <button class="btn" type="button" id="startBtn" style="width:100%">Start Quiz</button>
   </div>
 
+  <!-- v62: the Recite the Creed flagship card, to the Art Director's spec
+       (02. Planning\2026-08-08 — Recite the Creed — home prominence (hero)).
+
+       Creed recitation is one of the most heavily weighted parts of a SOM or promotion board,
+       and until now it was the third plain button in the secondary utility list, under
+       Flashcards. It sits directly under the quiz card as its peer.
+
+       The pop comes from the filled-accent chip, the e2 elevation and the 17/700 title — NOT
+       from a coloured card fill, and deliberately not from --accent-soft, which is the
+       board-selection fill and would blur "what is selected" on this very screen.
+
+       One button, not a card wrapping a button: the whole surface is the tap target, and a
+       control inside a control is the nested-tap defect (v33/v45/v47). -->
+  <button class="creedhero" type="button" id="creedBtn">
+    <span class="chip" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z"/><path d="M6 11a6 6 0 0 0 12 0"/><path d="M12 17v4M9 21h6"/></svg></span>
+    <span class="ct"><b>Recite the Creed</b><span id="creedHeroSub">Recite a creed aloud and have it graded.</span></span>
+    <span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></span>
+  </button>
+
   <div class="card">
     <!-- v34: an eyebrow, not a title. As an <h2> it carried the same weight as the three
          button titles under it and competed with them; the same treatment as "Choose your
@@ -2112,12 +2165,11 @@ footer p{margin:0 0 8px}
     <div class="stack">
       <button class="btn sec" type="button" id="flashBtn">Flashcard Review</button>
       <button class="btn sec" type="button" id="missedBtn">Practice Missed Questions</button>
-      <!-- v57. Shown only where the browser can actually hear: on a browser without speech
-           recognition the button is removed and the note below takes its place, rather than
-           being left tappable and failing at the worst moment. -->
-      <button class="btn sec hidden" type="button" id="creedBtn">Recite the Creed</button>
-      <p class="hint hidden" id="creedNoSupport" style="margin:0">Recite the Creed needs speech recognition, which this browser doesn't have yet. Try Chrome, Edge, or Android.</p>
       <button class="btn sec" type="button" id="printBtn">Print a Study Sheet</button>
+      <!-- v62: Recite the Creed left this list for its own card above. The note stays in the
+           DOM but is never shown — v61 established that the creeds are readable everywhere,
+           so there is nothing left to apologise for on the home screen. -->
+      <p class="hint hidden" id="creedNoSupport" style="margin:0"></p>
     </div>
   </div>
 
@@ -3190,7 +3242,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v61";
+var APP_VERSION = "v62";
 /* The store-facing release number — what a tester sees on their Play or App Store listing.
    It has to be stated here because nothing in the web build can read the wrap's manifest,
    so this is a SECOND place the release number lives: it must be changed in lockstep with
@@ -6622,6 +6674,12 @@ function creedBack(){
 
      That also means the downloaded single-file copy can read them, which it could not before. */
   $("creedBtn").classList.remove("hidden");
+  /* v62: the flagship card promises what this device can actually deliver. The AD left the
+     sub line as the Dev's call if grading was not live on iOS at ship — it is not, so an
+     iPhone gets the honest version rather than an offer the screen cannot keep. The layout
+     takes either line without change, which is why it was safe to leave open. */
+  if(!creedSupported())
+    $("creedHeroSub").textContent = "Read the creeds and practise. Grading is coming to the app.";
 
   $("creedBtn").addEventListener("click", openCreed);
   $("crdBack").addEventListener("click", creedBack);
@@ -9983,6 +10041,41 @@ function selfTest(){
           + "without a microphone, so the button must never be gated on speech support");
       if(!$("creedNoSupport").classList.contains("hidden"))
         errs.push("creed: the home screen is showing an unsupported note in place of the feature");
+      /* v62: the flagship card holds its position and its colour law.
+
+         Two things regress quietly. A later home-layout edit can slide the card back inside
+         "Other ways to study" — which is the exact burial the AD's brief existed to undo, and
+         it would look fine. And --accent-soft is the BOARD-SELECTION fill: borrowing it here
+         would read as "this card is selected" on a screen where board selection is the thing
+         actually being selected. Both are asserted rather than trusted. */
+      (function(){
+        var hero = $("creedBtn"), other = $("flashBtn") && $("flashBtn").closest(".card");
+        if(!hero){ errs.push("creed: the flagship card is missing"); return; }
+        if(hero.tagName !== "BUTTON")
+          errs.push("creed: the flagship card is a " + hero.tagName + ", not a button — the whole card must be the tap target");
+        if(hero.querySelector("button, a, input, select, textarea"))
+          errs.push("creed: the flagship card nests a control inside a control, which iOS will not tap through");
+        if(other && other.contains(hero))
+          errs.push("creed: the flagship card is back inside 'Other ways to study' — the burial the "
+            + "prominence brief existed to undo");
+        var start = $("startBtn") && $("startBtn").closest(".card");
+        if(start && other && !(start.compareDocumentPosition(hero) & Node.DOCUMENT_POSITION_FOLLOWING
+                               && hero.compareDocumentPosition(other) & Node.DOCUMENT_POSITION_FOLLOWING))
+          errs.push("creed: the flagship card is no longer between the quiz card and the utility list");
+        /* Compare through the browser rather than by string: the token is a hex literal and
+           getComputedStyle hands back rgb(). Painting the hex onto a throwaway element and
+           reading it back makes both sides the same representation. */
+        var soft = getComputedStyle(document.documentElement).getPropertyValue("--accent-soft").trim();
+        var probe = document.createElement("span");
+        probe.style.cssText = "position:absolute;left:-9999px;background:" + soft;
+        document.body.appendChild(probe);
+        var softRGB = getComputedStyle(probe).backgroundColor;
+        probe.remove();
+        var chip = hero.querySelector(".chip");
+        if(chip && softRGB && getComputedStyle(chip).backgroundColor === softRGB)
+          errs.push("creed: the flagship chip is filled with --accent-soft, which is the board-selection "
+            + "fill — it would read as 'selected' on the screen where boards are selected");
+      })();
       if(typeof crdNoGradeReason !== "function")
         errs.push("creed: the read-only explanation is not reachable");
       else if(!supported && !/read and practise/i.test(crdNoGradeReason()))
