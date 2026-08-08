@@ -1878,6 +1878,16 @@ footer p{margin:0 0 8px}
       <span class="setval" id="setAudit"></span>
     </div>
 
+    <!-- v56: which build am I on. The value is deliberately left EMPTY here and written from
+         APP_RELEASE/APP_VERSION at startup — a version typed into markup is a version that
+         goes stale silently, and a stale one is worse than none because a bug report then
+         names the wrong build. The self-test asserts this element's authored markup carries
+         no version string, so nobody can quietly hardcode it back. -->
+    <div class="setrow">
+      <div><p class="setlab">Version</p></div>
+      <span class="setval" id="setVer"></span>
+    </div>
+
     <div class="setrow">
       <div><p class="setlab">Study data</p></div>
       <button class="btn sec sm" type="button" id="resetBtn">Reset study data</button>
@@ -3008,7 +3018,15 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v55";
+var APP_VERSION = "v56";
+/* The store-facing release number — what a tester sees on their Play or App Store listing.
+   It has to be stated here because nothing in the web build can read the wrap's manifest,
+   so this is a SECOND place the release number lives: it must be changed in lockstep with
+   android/app/build.gradle versionName and the iOS MARKETING_VERSION. It is deliberately
+   coarse — it moves on a store submission, not on a web build, which is exactly why the
+   build tag is shown beside it. "1.0" alone cannot tell you which of a dozen web builds a
+   Soldier is looking at; APP_VERSION can. */
+var APP_RELEASE = "1.0";
 /* Date the question bank was last checked against current doctrine. A single global
    date by design, not per-source. The army-study-guide-audit skill bumps this in the
    same change as any content it corrects, so the displayed date can never claim an
@@ -3638,9 +3656,14 @@ function setRefIntro(){
     "Every question is formulated based on current regulations and publications. "
     + "Content last audited for accuracy on " + auditDateLabel(AUDIT_DATE);
 }
+/* v56: the version line. One expression, used by both the renderer and the self-test, so a
+   test can never pass against a string the user is not actually shown. */
+function versionLabel(){ return APP_RELEASE + " (" + APP_VERSION + ")"; }
+function renderVersion(){ $("setVer").textContent = versionLabel(); }
 (function(){
   setRefIntro();
   $("setAudit").textContent=auditDateLabel(AUDIT_DATE);
+  renderVersion();
 })();
 /* Scope the sources panel to the quiz in play, or back to the whole bank. One function so a
    screen can never be left showing the wrong list — call it with the quiz on the way in and
@@ -8643,6 +8666,36 @@ function selfTest(){
         if(!document.getElementById(id))
           errs.push("android: back-button target #" + id + " is missing — that branch is a no-op");
       });
+    })();
+    /* v56: the Settings version line must say what this build actually is.
+
+       This reads the cell AS IT STANDS. The first version of this guard blanked the cell and
+       called renderVersion() itself — which repaired the exact defect it was checking for, so
+       a build with the version hardcoded in markup and the startup call deleted still passed.
+       A test that performs the fix cannot detect the fault. Same shape as the v55 guard that
+       matched its own search string; two in two builds, so it is worth stating plainly: a new
+       guard is not trustworthy until a deliberately broken build has made it fail.
+
+       This leg catches a missing element and a version that has drifted from the constants —
+       including the startup render never happening, which leaves the cell empty. The other
+       half, a version TYPED into the markup, cannot be seen from here at all (rendered DOM
+       looks identical either way); build6.js asserts that against the authored source. */
+    (function(){
+      var el = document.getElementById("setVer");
+      if(!el){ errs.push("version: the Settings version line is missing"); return; }
+      var shown = el.textContent;
+      if(!shown){
+        errs.push("version: the Settings version line is empty — nothing rendered it, so a "
+          + "tester has no way to tell you which build they are on");
+        return;
+      }
+      if(typeof versionLabel !== "function"){
+        errs.push("version: versionLabel is not reachable");
+        return;
+      }
+      if(shown !== versionLabel())
+        errs.push("version: Settings shows '" + shown + "' but this build is '" + versionLabel()
+          + "' — a bug report would name the wrong build");
     })();
     if(typeof quizIsLive !== "function") errs.push("nav: quizIsLive is not reachable");
     if(typeof goHomeNow !== "function") errs.push("nav: goHomeNow is not reachable");
