@@ -1831,6 +1831,12 @@ details.cats[open] summary::after{content:"\2212"}
 @keyframes crdPulse{50%{opacity:.25}}
 @media (prefers-reduced-motion: reduce){ #crdMic.live .dot{animation:none} }
 #crdStatus{text-align:center;font-size:.8rem;color:var(--muted);margin:10px 0 0;min-height:1.2em}
+/* v61: the read-only disclaimer. Bordered-top rather than tinted — it is a statement about
+   what this browser can do, not a warning about the creed above it. */
+#crdWhyNoGrade{
+  font-size:.83rem;line-height:1.5;color:var(--muted);
+  margin:14px 0 0;padding-top:12px;border-top:1px solid var(--line);
+}
 
 /* The score. The number carries the result, so it gets the size; everything else is caption. */
 #crdScore{text-align:center;padding:4px 0 2px}
@@ -2033,10 +2039,12 @@ footer p{margin:0 0 8px}
 
     <div class="setrow" style="display:block">
       <p class="setlab">Feedback</p>
-      <p class="sethelp" style="margin:2px 0 12px">Found a wrong answer or an outdated standard? Say so. Both open on your device; the app never sends anything itself.</p>
+      <!-- v61: email only. The GitHub issue link is gone — this app's users are Soldiers, not
+           contributors, and asking someone to open a repo issue to report a wrong answer is
+           asking them not to bother. "Both open" became "It opens" with the second route. -->
+      <p class="sethelp" style="margin:2px 0 12px">Found a wrong answer or an outdated standard? Say so. It opens on your device; the app never sends anything itself.</p>
       <div class="fbrow">
         <a id="mailFb" href="#">Email feedback</a>
-        <a id="ghFb" href="https://github.com/JordanBesse/army-board-study-guide/issues/new" target="_blank" rel="noopener noreferrer">Open a GitHub issue</a>
       </div>
     </div>
 
@@ -2310,6 +2318,9 @@ footer p{margin:0 0 8px}
       <span class="dot" aria-hidden="true"></span><span id="crdMicTxt">Start reciting</span>
     </button>
     <p id="crdStatus" role="status" aria-live="polite"></p>
+    <!-- v61: shown only where live grading cannot run. It sits under the creed, not in place
+         of it, because the creed is the thing the Soldier came for. -->
+    <p id="crdWhyNoGrade" class="hidden"></p>
     <button class="fghost" type="button" id="crdQuit">Back to the creeds</button>
   </div>
 
@@ -3227,7 +3238,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v60";
+var APP_VERSION = "v61";
 /* The store-facing release number — what a tester sees on their Play or App Store listing.
    It has to be stated here because nothing in the web build can read the wrap's manifest,
    so this is a SECOND place the release number lives: it must be changed in lockstep with
@@ -3925,10 +3936,12 @@ function scopeRefs(list){
 /* Plain anchors. The mail client or the browser handles them; the app never
    opens a connection of its own, so the offline promise is untouched. */
 (function(){
+  /* v61: the question count is gone. It told a support reader nothing about the report and
+     nothing they could act on. The version line stays and is driven by APP_VERSION, so it
+     names the exact build without anyone maintaining it. */
   var body = "Describe the problem or suggestion here.\n\n"
            + "-- please keep the lines below --\n"
-           + "App version: " + APP_VERSION + "\n"
-           + "Questions: " + QUESTIONS.length + "\n";
+           + "App version: " + APP_VERSION + "\n";
   /* The project address, not a personal one: in-app feedback, the privacy page's contact,
      and the App Store support URL all have to name the same mailbox. */
   $("mailFb").href = "mailto:jb.devteam@pm.me"
@@ -6258,6 +6271,21 @@ function crdSetMode(memory){
     : "Say it aloud. The app follows along and marks each word as you get it.";
 }
 
+/* v61: why grading is unavailable, in the words that fit the actual reason. One generic
+   "not supported" line would leave an iPhone user thinking the app is broken, when the honest
+   answer is that Apple gives web apps no speech recognition and the native app will. */
+function crdNoGradeReason(){
+  if(creedIOS())
+    return "Speech-to-text grading is coming to the iPhone and iPad app in a later update — "
+      + "no browser on iOS gives web apps access to speech recognition yet. You can read and "
+      + "practise the creeds here.";
+  if(creedFileCopy())
+    return "Speech-to-text grading needs the installed app or nco-prep.com — it can't run from "
+      + "a downloaded file. You can read and practise the creeds here.";
+  return "Speech-to-text grading isn't available in this browser yet — try Chrome, Edge, or "
+    + "Android. You can read and practise the creeds here.";
+}
+
 function crdPanel(name){
   [["crdPick","pick"],["crdConsentCard","consent"],["crdRun","run"],["crdDone","done"]]
     .forEach(function(p){ $(p[0]).classList[p[1] === name ? "remove" : "add"]("hidden"); });
@@ -6281,6 +6309,11 @@ function crdChoose(id){
   if(!c) return;
   crdPick = c;
   $("crdTitle").textContent = c.name;
+  /* v61: read-only practice needs no consent, because it does not touch the microphone, the
+     network, or a speech service. The notice exists to warn that audio leaves the device;
+     showing it to someone who is only going to READ the creed would be a lie about what is
+     about to happen, and a gate in front of nothing. */
+  if(!creedSupported()){ crdBegin(); return; }
   /* The gate runs before ANY speech object exists, and only once per device. */
   if(!DATA.creedOk){ crdPanel("consent"); $("crdAgree").focus(); return; }
   crdBegin();
@@ -6321,7 +6354,15 @@ function crdBegin(){
   $("crdTag").textContent = crdPick.cite;
   $("crdCount").textContent = crdRef.length + " words";
   $("crdCue").textContent = "";
-  box.classList[crdMemory ? "add" : "remove"]("memory");
+  /* v61: where grading cannot run, this screen becomes a reader. The creed is rendered from
+     the same single array the grader uses — no masking, no second copy — and the controls
+     that would promise a microphone are removed rather than left to fail. */
+  var readOnly = !creedSupported();
+  box.classList[(crdMemory && !readOnly) ? "add" : "remove"]("memory");
+  $("crdMic").classList[readOnly ? "add" : "remove"]("hidden");
+  $("crdStatus").classList[readOnly ? "add" : "remove"]("hidden");
+  $("crdWhyNoGrade").classList[readOnly ? "remove" : "add"]("hidden");
+  if(readOnly) $("crdWhyNoGrade").textContent = crdNoGradeReason();
   crdPaint(null);
   crdSetMic(false);
   $("crdStatus").textContent = "";
@@ -6567,10 +6608,24 @@ function crdFinish(){
 }
 
 function openCreed(){
-  if(!creedSupported()) return;
+  /* v61: no support check here. The screen opens everywhere — where grading cannot run it
+     becomes a reader. Guarding the opener on speech support was the v59 mistake in a second
+     place: the button was made unconditional but this still refused, so the entry led nowhere
+     at all. Caught by driving it with the iOS branch forced on. */
   crdPick = null;
-  $("crdTitle").textContent = "Recite the Creed";
-  $("crdCue").textContent = "Speech is the only part of this app that goes online.";
+  var canGrade = creedSupported();
+  $("crdTitle").textContent = canGrade ? "Recite the Creed" : "The Creeds";
+  $("crdCue").textContent = canGrade
+    ? "Speech is the only part of this app that goes online."
+    : "Read and practise. Nothing here goes online.";
+  /* v61: From Memory is a way of being GRADED, so it has no meaning without grading — and a
+     mode switch that changes nothing is worse than no switch. The pick hint says what this
+     screen actually does here. */
+  $("crdModeRow").classList[canGrade ? "remove" : "add"]("hidden");
+  if(!canGrade){
+    crdSetMode(false);
+    $("crdPickHint").textContent = "Pick a creed to read it through. Grading needs a microphone this browser can't offer yet.";
+  }
   crdRenderList();
   crdPanel("pick");
   $("home").classList.add("hidden");
@@ -6608,17 +6663,13 @@ function creedBack(){
 (function(){
   /* Feature detection decides what the home screen even offers. A control that cannot work
      must not be tappable — finding out at the moment you try to use it is the worst time. */
-  if(creedSupported()) $("creedBtn").classList.remove("hidden");
-  else {
-    if(creedFileCopy())
-      $("creedNoSupport").textContent = "Recite the Creed needs the installed app or nco-prep.com — "
-        + "speech recognition doesn't run from a downloaded file. Everything else here works as normal.";
-    else if(creedIOS())
-      $("creedNoSupport").textContent = "Recite the Creed can't run on iPhone or iPad yet — no browser "
-        + "there gives web apps access to speech recognition. It's coming to the iPhone app in a later "
-        + "update. Everything else works as normal.";
-    $("creedNoSupport").classList.remove("hidden");
-  }
+  /* v61: the entry is offered EVERYWHERE. v59 gated the whole feature on speech support and
+     that over-corrected badly — on an iPhone the creeds vanished behind a dead note, so a
+     Soldier could not even READ them. The creed text is bundled and needs no microphone, no
+     network and no permission; only the live grading does. Gate the grading, never the creeds.
+
+     That also means the downloaded single-file copy can read them, which it could not before. */
+  $("creedBtn").classList.remove("hidden");
 
   $("creedBtn").addEventListener("click", openCreed);
   $("crdBack").addEventListener("click", creedBack);
@@ -9960,7 +10011,8 @@ function selfTest(){
       /* 5. The gate and the wiring. Nothing may capture audio before the notice is accepted,
             and the entry point must match what the browser can actually do. */
       ["creed","crdPick","crdConsentCard","crdRun","crdDone","crdText","crdMic","crdBack",
-       "crdAgree","crdDecline","crdQuit","crdAgain","crdBackToList","creedBtn","creedNoSupport"
+       "crdAgree","crdDecline","crdQuit","crdAgain","crdBackToList","creedBtn","creedNoSupport",
+       "crdWhyNoGrade","crdModeRow"
       ].forEach(function(id){
         if(!document.getElementById(id)) errs.push("creed: #" + id + " is missing");
       });
@@ -9968,15 +10020,21 @@ function selfTest(){
         errs.push("creed: creedBack is not reachable — back would strand the screen with the mic open");
       if(typeof crdAbort !== "function")
         errs.push("creed: crdAbort is not reachable — leaving the screen could leave the microphone live");
+      /* v61: the entry is offered EVERYWHERE now, and that inverts the v59 assertion.
+         Gating the whole feature on speech support hid the creeds behind a dead note on
+         iPhone — a Soldier could not read the thing they came to memorise. The creed text is
+         bundled and needs no microphone, so the ONLY thing browser support may gate is the
+         grading. If this ever goes back to hiding the button, that regression returns. */
       var supported = creedSupported();
-      var btnShown = !$("creedBtn").classList.contains("hidden");
-      var noteShown = !$("creedNoSupport").classList.contains("hidden");
-      if(btnShown !== supported)
-        errs.push("creed: browser support is " + supported + " but the entry point is "
-          + (btnShown ? "offered" : "hidden") + " — a control that cannot work must not be tappable");
-      if(btnShown === noteShown)
-        errs.push("creed: the entry button and the unsupported note are both "
-          + (btnShown ? "showing" : "hidden"));
+      if($("creedBtn").classList.contains("hidden"))
+        errs.push("creed: the entry point is hidden — the creeds are bundled and readable "
+          + "without a microphone, so the button must never be gated on speech support");
+      if(!$("creedNoSupport").classList.contains("hidden"))
+        errs.push("creed: the home screen is showing an unsupported note in place of the feature");
+      if(typeof crdNoGradeReason !== "function")
+        errs.push("creed: the read-only explanation is not reachable");
+      else if(!supported && !/read and practise/i.test(crdNoGradeReason()))
+        errs.push("creed: the read-only explanation does not tell the Soldier they can still read the creeds");
       /* The consent flag must never reach validShape, exactly like qres/cb/tts before it. */
       var probe = {v:SCHEMA, theme:"light", stats:{}, scores:[]};
       if(!validShape(probe))
