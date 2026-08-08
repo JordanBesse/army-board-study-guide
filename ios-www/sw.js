@@ -1,5 +1,5 @@
 /* Army NCO Prep service worker. Cache-first app shell, no network use. */
-var CACHE = "absg-9f5bd39d174c-i8ab272";
+var CACHE = "absg-167caf9db910-i8ab272";
 var SHELL = ["./", "./index.html", "./manifest.webmanifest?v=3",
              "./icon-192.png?v=3", "./icon-512.png?v=3", "./apple-touch-icon.png?v=3"];
 
