@@ -477,6 +477,17 @@ header.compact #quizbar{display:block}
 /* A descriptive citation is not a document: no number, no controls, and a quoted-source
    glyph so it never reads as something a Soldier failed to download. */
 .librow.desc{cursor:default}
+/* v58: a cited source that now has text behind it. Readable rows take the same full-width
+   button treatment every other tappable row has, so "can I open this?" is answered by the
+   row looking like the ones you can already open — not by a new affordance to learn. */
+button.librow.desc.readable{cursor:pointer;width:100%;text-align:left;background:none;border:0;
+  border-bottom:1px solid var(--line);font:inherit;color:inherit}
+button.librow.desc.readable:hover{background:var(--surface2)}
+button.librow.desc.readable:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.libcited.open{color:var(--accent);background:var(--accent-soft)}
+.descbody{padding:4px 2px 14px;border-bottom:1px solid var(--line)}
+.descbody p{font-size:.9rem;line-height:1.55;color:var(--ink);margin:0 0 11px}
+.descbody p:last-child{margin-bottom:0}
 .libqt{flex:0 0 auto;width:20px;height:20px;color:var(--muted);margin-top:2px}
 .libqt svg{width:100%;height:100%}
 .libcited{flex:0 0 auto;font-size:.7rem;font-weight:700;letter-spacing:.05em;
@@ -3148,7 +3159,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v57";
+var APP_VERSION = "v58";
 /* The store-facing release number — what a tester sees on their Play or App Store listing.
    It has to be stated here because nothing in the web build can read the wrap's manifest,
    so this is a SECOND place the release number lives: it must be changed in lockstep with
@@ -5543,8 +5554,30 @@ function libEmpty(icon, head, body){
    rhythm and trailing geometry, and splitting them is how they drift apart. */
 function libBuildHubRow(r){
   if(r.kind === "desc"){
-    var d = document.createElement("div");
-    d.className = "librow desc";
+    /* v58: a cited source with no publication behind it used to be a dead row — and one of
+       them, "The Drill Sergeant Creed", carried the line "The creed, verbatim" while holding
+       no text at all. Where text now exists, the row becomes a button that opens it in place.
+
+       Expanded IN PLACE rather than on a screen of its own, and that is a deliberate trade:
+       a new screen would have to be taught to every exit route (toMenu, goHomeNow, popstate,
+       the Android back button) and would need its own quiz snapshot/restore, since the
+       library layers over a live quiz. An expanding row inherits all of that from the library
+       for free and cannot lose a quiz.
+
+       The text is a SIBLING of the button, never inside it. A control nested in another
+       control is invalid HTML and iOS will not deliver the tap to the inner one — the v33,
+       v45 and v47 defects. The self-test asserts it. */
+    /* Look up by the RAW citation the bank uses, never by r.name — r.name is the DISPLAY
+       label, which SOURCE_LABEL title-cases ("Audie Murphy biography" becomes "Audie Murphy
+       Biography"). Keying on the label silently lost the bio: the three creeds happened to
+       work only because they have no SOURCE_LABEL entry, so their label equals their raw
+       citation. Caught by the bio rendering as a dead "Cited" row next to three live ones. */
+    var text = null;
+    (r.srcs || []).forEach(function(s){ if(!text) text = sourceText(s); });
+    if(!text) text = sourceText(r.name);
+    var d = document.createElement(text ? "button" : "div");
+    d.className = "librow desc" + (text ? " readable" : "");
+    if(text) d.type = "button";
     var q = document.createElement("span"); q.className = "libqt";
     q.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">'
       + '<path d="M9.2 6.5c-2.6 1-4.2 3.2-4.2 5.9v5.1h5.4v-5.4H7.8c0-1.6.8-2.8 2.3-3.5zm8.6 0c-2.6 1-4.2 3.2-4.2 5.9v5.1H19v-5.4h-2.6c0-1.6.8-2.8 2.3-3.5z"/></svg>';
@@ -5556,9 +5589,26 @@ function libBuildHubRow(r){
       var dd = document.createElement("div"); dd.className = "rdesc"; dd.textContent = r.desc;
       dm.appendChild(dd);
     }
-    var ct = document.createElement("span"); ct.className = "libcited"; ct.textContent = "Cited";
+    var ct = document.createElement("span");
+    ct.className = "libcited" + (text ? " open" : "");
+    ct.textContent = text ? "Read" : "Cited";
     d.appendChild(q); d.appendChild(dm); d.appendChild(ct);
-    return d;
+    if(!text) return d;
+
+    var body = document.createElement("div");
+    body.className = "descbody hidden";
+    text.forEach(function(p){
+      var el = document.createElement("p"); el.textContent = p; body.appendChild(el);
+    });
+    d.setAttribute("aria-expanded", "false");
+    d.addEventListener("click", function(){
+      var open = body.classList.toggle("hidden") === false;
+      d.setAttribute("aria-expanded", open ? "true" : "false");
+      ct.textContent = open ? "Close" : "Read";
+    });
+    var frag = document.createDocumentFragment();
+    frag.appendChild(d); frag.appendChild(body);
+    return frag;
   }
   var st = r.st;
   var row = libBuildRow(st);
@@ -5923,21 +5973,82 @@ function goHomeNow(){
    give is an integrity check, stated in its own induction script: "Each major paragraph
    begins with three letters: N, C, O." The self-test asserts that acrostic still holds. */
 
+/* v58: each creed carries the bank citation string it corresponds to, so the References hub
+   can show the same text this mode grades against. ONE copy of each creed in the source —
+   a second copy for display would drift from the answer key, and a drifted answer key marks
+   correct recitations wrong. The self-test asserts every `src` here resolves to a real
+   citation the bank actually uses. */
 var CREEDS = [
-  { id:"nco", name:"The NCO Creed", cite:"Creed of the Noncommissioned Officer",
+  { id:"nco", name:"The NCO Creed", cite:"Creed of the Noncommissioned Officer", src:"NCO Creed",
     paras:[
       "No one is more professional than I. I am a Noncommissioned Officer, a leader of Soldiers. As a Noncommissioned Officer, I realize that I am a member of a time-honored corps, which is known as “The Backbone of the Army.” I am proud of the Corps of Noncommissioned Officers and will at all times conduct myself so as to bring credit upon the Corps, the military service, and my country regardless of the situation in which I find myself. I will not use my grade or position to attain pleasure, profit, or personal safety.",
       "Competence is my watchword. My two basic responsibilities will always be uppermost in my mind—accomplishment of my mission and the welfare of my Soldiers. I will strive to remain technically and tactically proficient. I am aware of my role as a Noncommissioned Officer. I will fulfill my responsibilities inherent in that role. All Soldiers are entitled to outstanding leadership; I will provide that leadership. I know my Soldiers and I will always place their needs above my own. I will communicate consistently with my Soldiers and never leave them uninformed. I will be fair and impartial when recommending both rewards and punishment.",
       "Officers of my unit will have maximum time to accomplish their duties; they will not have to accomplish mine. I will earn their respect and confidence as well as that of my Soldiers. I will be loyal to those with whom I serve; seniors, peers, and subordinates alike. I will exercise initiative by taking appropriate action in the absence of orders. I will not compromise my integrity, nor my moral courage. I will not forget, nor will I allow my comrades to forget that we are professionals, Noncommissioned Officers, leaders!"
     ] },
-  { id:"soldier", name:"The Soldier's Creed", cite:"The Soldier's Creed",
+  { id:"soldier", name:"The Soldier's Creed", cite:"The Soldier's Creed", src:"Soldier's Creed",
     paras:[
       "I am an American Soldier. I am a Warrior and a member of a team. I serve the people of the United States, and live the Army Values.",
       "I will always place the mission first. I will never accept defeat. I will never quit. I will never leave a fallen comrade.",
       "I am disciplined, physically and mentally tough, trained and proficient in my warrior tasks and drills. I always maintain my arms, my equipment and myself. I am an expert and I am a professional. I stand ready to deploy, engage, and destroy, the enemies of the United States of America in close combat. I am a guardian of freedom and the American way of life.",
       "I am an American Soldier."
+    ] },
+  /* v58: the Drill Sergeant Creed. Drill Sergeant is one of the six boards and the Creed is
+     its single largest lane (12 questions), so it belongs in the reciteable set.
+
+     Sourcing: no full text exists in the project's Drill Sergeant material — the Candidate
+     Blue Book only records that the Creed is RECITED at the start of every class, and
+     TR 350-16 does not print it. What does corroborate this text is the audited question
+     bank, which quotes it at six separate points: the opening/closing line, the "highly
+     motivated ... modern battlefield" clause, the "instill pride" sentence, the "military
+     bearing and courtesy ... highest traditions of the U.S. Army" clause, the "lead by
+     example" sentence, and "But first, last, and always, I am an American Soldier."
+
+     The ONE sentence with no in-app corroboration is the closing "Sworn to defend the
+     Constitution ..." — it rests on the AUSA text supplied in the handoff alone. Flagged
+     rather than quietly shipped as though it were equally attested.
+
+     "Soldier" is capitalised to the app's house style, as the handoff directed. Official
+     printings vary, and it changes nothing about grading — the normaliser folds case. */
+  { id:"ds", name:"The Drill Sergeant Creed", cite:"The Drill Sergeant Creed", src:"The Drill Sergeant Creed",
+    paras:[
+      "I am a Drill Sergeant. I will assist each individual in their efforts to become a highly motivated, well disciplined, physically and mentally fit Soldier, capable of defeating any enemy on today's modern battlefield.",
+      "I will instill pride in all I train. Pride in self, in the Army, and in country. I will insist that each Soldier meets and maintains the Army's standards of military bearing and courtesy, consistent with the highest traditions of the U.S. Army.",
+      "I will lead by example, never requiring a Soldier to attempt any task I would not do myself. But first, last, and always, I am an American Soldier. Sworn to defend the Constitution of the United States against all enemies, both foreign and domestic.",
+      "I am a Drill Sergeant."
     ] }
 ];
+
+/* v58: heritage text that is not a creed and not a document.
+
+   The References hub already lists these citations — "Audie Murphy Biography" has carried
+   the line "The life and service of Audie Murphy" since v29 — but tapping one did nothing,
+   because there is no publication behind it. Now the row opens the text itself.
+
+   The Audie Murphy bio is reconciled against the bank rather than dropped in beside it. The
+   drafted copy said the NAVY and Marine Corps turned him away; the bank's audited answer is
+   "The Marine Corps and the Army paratroopers", and "The Navy and the Coast Guard recruiting
+   offices" is a DISTRACTOR in that same question. Shipping the draft verbatim would have put
+   a study card in the app that coaches a Soldier straight into a wrong answer. The bank wins:
+   it is the audited artifact and it is the thing they are graded on. */
+var HERITAGE_TEXT = {
+  "Audie Murphy biography": [
+    "Audie Murphy (1925–1971) was the most decorated American combat Soldier of World War II and the namesake of the Sergeant Audie Murphy Board and Club, which recognises NCOs whose leadership and performance embody his example.",
+    "Born 20 June 1925 on a sharecropper's farm near Kingston, in Hunt County, Texas, Murphy enlisted in the Army in 1942 as a teenager after falsifying his age — the Marine Corps and the Army paratroopers had turned him away as underage and underweight. He served with Company B, 15th Infantry Regiment, 3rd Infantry Division, fought across Sicily, Italy, France and Germany, and rose from private to a battlefield-commissioned officer.",
+    "On 26 January 1945, near Holtzwihr, France, Murphy earned the Medal of Honor: with his company badly depleted, he climbed onto a burning M10 tank destroyer and used its .50-caliber machine gun to hold off attacking German infantry and tanks — alone and exposed — then led a counterattack that saved his unit. Across the war he received 33 U.S. decorations, including the Medal of Honor, the Distinguished Service Cross, two Silver Stars, the Legion of Merit, two Bronze Star Medals with “V”, and three Purple Hearts, plus French and Belgian honours — every U.S. Army combat valor award available at the time.",
+    "After the war he became a Hollywood actor, most famously playing himself in To Hell and Back (1955), based on his best-selling memoir. He died in a plane crash near Roanoke, Virginia, on 28 May 1971, and is buried at Arlington National Cemetery, where his grave is among the most visited."
+  ]
+};
+
+/* The text behind a cited source, or null. Creeds resolve to the SAME array the recitation
+   mode grades against — deliberately, so the two can never disagree. */
+function sourceText(src){
+  if(typeof CREEDS !== "undefined" && CREEDS){
+    for(var i = 0; i < CREEDS.length; i++){
+      if(CREEDS[i].src === src) return CREEDS[i].paras;
+    }
+  }
+  return HERITAGE_TEXT[src] || null;
+}
 
 /* Spoken forms a speech engine produces that the written creed does not. Expanded on BOTH
    sides, so it does not matter which form appears where — only that they agree. */
@@ -5957,6 +6068,13 @@ var CREED_NUM = {"0":"zero","1":"one","2":"two","3":"three","4":"four","5":"five
 function creedWords(s){
   var t = String(s == null ? "" : s).toLowerCase();
   t = t.replace(/[‘’]/g, "'");
+  /* v58: collapse dotted initialisms BEFORE the punctuation strip. "U.S." would otherwise
+     split into two tokens ("u", "s") while a speech engine's "US Army" gives one, so the
+     Drill Sergeant Creed's closing "highest traditions of the U.S. Army" scored 98% for a
+     word-perfect recitation. Found by grading a lowercased, unpunctuated transcript against
+     the written text and getting less than 100%. Anchored on the letter-plus-period pattern
+     repeating, so ordinary sentence ends ("...myself. I will...") are untouched. */
+  t = t.replace(/\b(?:[a-z]\.){2,}/g, function(m){ return m.replace(/\./g, ""); });
   CREED_CONTRACT.forEach(function(r){ t = t.replace(r[0], r[1]); });
   t = t.replace(/[^a-z0-9']+/g, " ");
   t = t.replace(/'/g, "");          /* what is left is possessive: soldier's -> soldiers */
@@ -9300,9 +9418,13 @@ function selfTest(){
         });
       });
 
-      var nco = null, sol = null;
-      CREEDS.forEach(function(c){ if(c.id === "nco") nco = c; if(c.id === "soldier") sol = c; });
-      if(!nco || !sol){ errs.push("creed: the NCO Creed and Soldier's Creed must both be present"); return; }
+      var nco = null, sol = null, ds = null;
+      CREEDS.forEach(function(c){
+        if(c.id === "nco") nco = c; if(c.id === "soldier") sol = c; if(c.id === "ds") ds = c;
+      });
+      if(!nco || !sol || !ds){
+        errs.push("creed: the NCO, Soldier's and Drill Sergeant Creeds must all be present"); return;
+      }
 
       /* 1. The acrostic. TC 7-22.7's own induction script states that each major paragraph of
             the NCO Creed begins with N, C, O in turn. A reordered or truncated creed fails
@@ -9343,6 +9465,129 @@ function selfTest(){
           errs.push("creed: the Soldier's Creed no longer contains " + pair[1]);
       });
 
+      /* 2b. v58 — the Drill Sergeant Creed.
+
+            Its structural property is a bookend, not an acrostic: the Creed opens and closes
+            with the same sentence, which the bank asserts in its own words ("The Drill
+            Sergeant Creed opens and closes with the same sentence"). If those two ever stop
+            matching, the text has been edited wrongly. */
+      if(ds.paras.length !== 4)
+        errs.push("creed: the Drill Sergeant Creed has " + ds.paras.length + " paragraphs, not 4");
+      else {
+        var dsFirst = creedWords(ds.paras[0]).slice(0, 5).join(" ");
+        var dsLast = creedWords(ds.paras[ds.paras.length - 1]).join(" ");
+        if(dsLast !== "i am a drill sergeant")
+          errs.push("creed: the Drill Sergeant Creed does not close on \"I am a Drill Sergeant\"");
+        if(dsFirst.indexOf("i am a drill sergeant") !== 0)
+          errs.push("creed: the Drill Sergeant Creed does not open on \"I am a Drill Sergeant\" — "
+            + "the bank teaches that it opens and closes with the same sentence");
+      }
+      /* The six points where the audited bank quotes this creed. These are the only external
+         corroboration the text has, so they are the ones worth pinning. */
+      var dsAll = creedWords(ds.paras.join(" ")).join(" ");
+      [["highly motivated well disciplined physically and mentally fit soldier capable of "
+        + "defeating any enemy on todays modern battlefield", "the 'highly motivated ... modern battlefield' clause"],
+       ["i will instill pride in all i train pride in self in the army and in country", "the 'instill pride' sentence"],
+       ["meets and maintains the armys standards of military bearing and courtesy consistent "
+        + "with the highest traditions of the us army", "the 'military bearing and courtesy' clause"],
+       ["i will lead by example never requiring a soldier to attempt any task i would not do myself",
+        "the 'lead by example' sentence"],
+       ["but first last and always i am an american soldier", "the 'first, last, and always' line"]
+      ].forEach(function(pair){
+        if(dsAll.indexOf(pair[0]) === -1)
+          errs.push("creed: the Drill Sergeant Creed no longer contains " + pair[1]
+            + " — it has drifted from the wording the question bank quotes");
+      });
+
+      /* 2c. v58 — every creed's citation must be one the bank actually uses, or the
+             References row it is meant to fill will never appear. */
+      var bankSources = {};
+      QUESTIONS.forEach(function(q){ if(q.s) bankSources[q.s] = 1; });
+      CREEDS.forEach(function(c){
+        if(!c.src){ errs.push("creed: " + c.id + " has no source citation"); return; }
+        if(!bankSources[c.src])
+          errs.push("creed: " + c.id + " cites '" + c.src + "', which no question uses — "
+            + "its References row would never be built");
+        if(sourceText(c.src) !== c.paras)
+          errs.push("creed: References would show a DIFFERENT copy of " + c.name
+            + " than the recitation grades against — the two can drift apart");
+      });
+
+      /* 2d. v58 — the Audie Murphy bio must not contradict the bank it sits beside.
+
+             The drafted copy said the Navy and Marine Corps turned him away. The bank's
+             audited answer is "The Marine Corps and the Army paratroopers", and "The Navy and
+             the Coast Guard recruiting offices" is a DISTRACTOR in that same question — so
+             the draft would have coached a Soldier into a wrong answer from a study card in
+             the same app. Pinned so it cannot come back. */
+      (function(){
+        var bio = HERITAGE_TEXT["Audie Murphy biography"];
+        if(!bio || !bio.length){ errs.push("heritage: the Audie Murphy bio is missing"); return; }
+        var all = bio.join(" ");
+        if(all.indexOf("Marine Corps and the Army paratroopers") === -1)
+          errs.push("heritage: the Audie Murphy bio no longer matches the bank's audited answer "
+            + "on which branches rejected him ('The Marine Corps and the Army paratroopers')");
+        if(all.indexOf("1925") === -1)
+          errs.push("heritage: the Audie Murphy bio does not give the birth year 1925");
+        var wrongYear = false;
+        QUESTIONS.forEach(function(q){
+          if(/1924/.test(JSON.stringify(q))) wrongYear = true;
+        });
+        if(wrongYear || all.indexOf("1924") !== -1)
+          errs.push("heritage: 1924 appears as Audie Murphy's birth year — the app standardises on 1925");
+      })();
+
+      /* 2e. v58 — a readable References row must be a BUTTON with its text as a SIBLING.
+             A control inside another control is invalid HTML and iOS will not deliver the tap
+             to the inner one — v33, v45 and v47 all came from that. */
+      (function(){
+        if(typeof libBuildHubRow !== "function"){ errs.push("heritage: libBuildHubRow is not reachable"); return; }
+        var frag = libBuildHubRow({ kind:"desc", name:"The Drill Sergeant Creed", desc:"The creed, verbatim." });
+        var host = document.createElement("div");
+        host.appendChild(frag);
+        var btn = host.querySelector("button.librow.desc");
+        var body = host.querySelector(".descbody");
+        if(!btn){ errs.push("heritage: a cited source with text does not render as a tappable row"); return; }
+        if(!body){ errs.push("heritage: the readable row has no text panel"); return; }
+        if(btn.contains(body))
+          errs.push("heritage: the text panel is INSIDE the row button — nested controls, which iOS will not tap through");
+        if(btn.querySelector("button, a, input, select, textarea"))
+          errs.push("heritage: the readable References row nests another control inside a button");
+        if(!body.classList.contains("hidden"))
+          errs.push("heritage: the readable row starts expanded — the list would be unscannable");
+        var plain = libBuildHubRow({ kind:"desc", name:"Army heritage", desc:"Army history, customs, and lineage." });
+        if(plain.nodeType === 11)
+          errs.push("heritage: a source with no text is being given a text panel");
+
+        /* The check that actually matters, and the one whose absence let a real defect ship
+           past the check above: run the REAL hub rows through the REAL builder. The row above
+           is hand-built, so it proved only that a row I constructed correctly works. The bio
+           was keyed on the raw citation while the builder looked up the DISPLAY label, and no
+           hand-built probe could ever have caught that. Everything with text must come out
+           readable, by the same path the Soldier's screen uses. */
+        if(typeof libHubRows === "function" && window.REGLIB){
+          var wantText = {}, k;
+          for(k in HERITAGE_TEXT) if(Object.prototype.hasOwnProperty.call(HERITAGE_TEXT, k)) wantText[k] = 1;
+          CREEDS.forEach(function(c){ if(c.src) wantText[c.src] = 1; });
+          var found = {};
+          libHubRows(null).forEach(function(row){
+            if(row.kind !== "desc") return;
+            var hit = null;
+            (row.srcs || []).forEach(function(s){ if(wantText[s]) hit = s; });
+            if(!hit) return;
+            found[hit] = 1;
+            var f = document.createElement("div");
+            f.appendChild(libBuildHubRow(row));
+            if(!f.querySelector("button.librow.desc.readable"))
+              errs.push("heritage: '" + hit + "' has text but its References row is not readable");
+          });
+          for(k in wantText){
+            if(Object.prototype.hasOwnProperty.call(wantText, k) && !found[k])
+              errs.push("heritage: '" + k + "' has text but no References row cites it");
+          }
+        }
+      })();
+
       /* 3. The normaliser must absorb what a speech engine actually does to text — case,
             punctuation, hyphens, contractions, digits. If it stops, grading turns into a
             formatting test and a perfect recitation scores badly. */
@@ -9352,7 +9597,11 @@ function selfTest(){
        ["mind—accomplishment", "mind accomplishment"],
        ["My 2 basic", "My two basic"],
        ["The Soldier's needs", "the soldiers needs"],
-       ["“The Backbone of the Army.”", "the backbone of the army"]
+       ["“The Backbone of the Army.”", "the backbone of the army"],
+       /* v58: a dotted initialism and the way a speech engine renders it must agree, or the
+          Drill Sergeant Creed's closing line costs a word-perfect recitation a mark. */
+       ["the highest traditions of the U.S. Army", "the highest traditions of the US Army"],
+       ["the U.S. Army", "the us army"]
       ].forEach(function(pair){
         if(!sameWords(pair[0], pair[1]))
           errs.push("creed: the normaliser treats \"" + pair[0] + "\" and \"" + pair[1]
