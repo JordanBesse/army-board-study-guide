@@ -3300,7 +3300,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v68";
+var APP_VERSION = "v69";
 /* The store-facing release number — what a tester sees on their Play or App Store listing.
    It has to be stated here because nothing in the web build can read the wrap's manifest,
    so this is a SECOND place the release number lives: it must be changed in lockstep with
@@ -3309,10 +3309,21 @@ var APP_VERSION = "v68";
    build tag is shown beside it. "1.0" alone cannot tell you which of a dozen web builds a
    Soldier is looking at; APP_VERSION can. */
 var APP_RELEASE = "1.0";
-/* Date the question bank was last checked against current doctrine. A single global
-   date by design, not per-source. The army-study-guide-audit skill bumps this in the
-   same change as any content it corrects, so the displayed date can never claim an
-   audit that did not touch the bank. Display only: no logic, no storage, no network. */
+/* Date the question bank was last checked against current doctrine. A single global date by
+   design, not per-source. Display only: no logic, no storage, no network.
+
+   v69 — THE RULE CHANGED, and the old one was quietly wrong. It used to read "bumps this in
+   the same change as any content it corrects", so any surgical fix to a single question moved
+   the date. That let one corrected answer advertise the WHOLE 608-question bank as freshly
+   audited — the opposite of what a Soldier reads this line to mean.
+
+   The rule now: AUDIT_DATE advances ONLY when a full audit completes — every cited source
+   swept, every question confirmed-current, corrected, or explicitly flagged. A partial pass,
+   however many corrections it ships, must NEVER move it. The ledger at
+   `02. Planning\Audit Ledger — Supersession Sweep.md` is what says whether that has happened.
+
+   The self-test asserts this wording is still here, because a rule that lives only in a
+   comment is a rule that gets edited away by the next person in a hurry. */
 var AUDIT_DATE = "2026-08-08";
 
 /* ---------------- helpers ---------------- */
@@ -10217,6 +10228,27 @@ function selfTest(){
       rawDel("absg_creedprobe");
       if(validShape(old) && old.creedOk === true)
         errs.push("creed: an older save is being read as having accepted the speech notice");
+    })();
+    /* v69: the AUDIT_DATE rule must stay written down where it is enforced.
+
+       The rule is that the date advances ONLY on a completed full audit — never on a surgical
+       pass. The app cannot detect whether a sweep was complete, so what is asserted here is
+       that the RULE ITSELF is still documented at the constant. That is not a formality: the
+       previous wording said the opposite ("bumps this in the same change as any content it
+       corrects"), and under it a single corrected answer advertised the whole bank as freshly
+       audited. A rule that lives only in a comment is one edit away from vanishing.
+
+       Needles are ASSEMBLED rather than written whole, for the v55 reason — a literal would
+       appear in this guard's own source and match itself, so the check could never fail. */
+    (function(){
+      var src = document.documentElement.innerHTML;
+      var must = "advances " + "ONLY when a full audit completes";
+      var never = "must " + "NEVER move it";
+      if(src.indexOf(must) === -1 || src.indexOf(never) === -1)
+        errs.push("audit: the AUDIT_DATE full-audit-only rule is no longer documented at the "
+          + "constant — a surgical fix could silently advertise the whole bank as re-audited");
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(AUDIT_DATE))
+        errs.push("audit: AUDIT_DATE is not an ISO date");
     })();
     if(typeof quizIsLive !== "function") errs.push("nav: quizIsLive is not reachable");
     if(typeof goHomeNow !== "function") errs.push("nav: goHomeNow is not reachable");
