@@ -1761,6 +1761,17 @@ details.cats[open] summary::after{content:"\2212"}
 .crdw{border-radius:4px;padding:0 1px;transition:background-color var(--m-state) linear, color var(--m-state) linear}
 .crdw.ok{background:var(--accent-soft);color:var(--accent)}
 .crdw.miss{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
+/* v59: From Memory. The mask is muted and monospaced so every slot is the same width and the
+   paragraph shape gives away nothing about the words underneath. A miss reads RED here rather
+   than struck-through-grey: in follow-along the word was on screen the whole time and a quiet
+   mark is enough, but here it is the first time the Soldier is seeing it, and the point is
+   that they did not have it. --no is the graded-wrong colour and carries the colour-blind
+   palette with it. */
+#crdText.memory .crdw{font-variant-ligatures:none}
+#crdText.memory .crdw.miss{
+  color:var(--no);background:var(--no-bg);text-decoration:none;
+}
+#crdText.memory .crdw.now{background:var(--surface2);box-shadow:inset 0 -2px 0 var(--accent)}
 .crdw.now{background:var(--surface2);box-shadow:inset 0 -2px 0 var(--accent)}
 @media (prefers-reduced-motion: reduce){ .crdw{transition:none} }
 
@@ -2216,7 +2227,16 @@ footer p{margin:0 0 8px}
   <!-- 1. Pick -->
   <div class="card" id="crdPick">
     <p class="hint" id="crdPickHint">Say it aloud. The app follows along and marks each word as you get it.</p>
-    <div class="stack" id="crdList"></div>
+    <!-- v59: how you want to be tested, chosen before the creed rather than after — it changes
+         what the next screen looks like, so asking afterwards would mean redrawing it. Reuses
+         the quiz-length pair's markup and styling so it reads as the same kind of choice. -->
+    <div class="qsec" id="crdModeRow">
+      <button class="qsm" type="button" data-crdmode="follow" aria-pressed="true">
+        <span class="t">Follow along</span><span class="s">The words stay on screen</span></button>
+      <button class="qsm" type="button" data-crdmode="memory" aria-pressed="false">
+        <span class="t">From memory</span><span class="s">Hidden until you say them</span></button>
+    </div>
+    <div class="stack" id="crdList" style="margin-top:12px"></div>
   </div>
 
   <!-- 2. The consent gate. Shown once, before the first recitation ever runs. Nothing about
@@ -3159,7 +3179,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v58";
+var APP_VERSION = "v59";
 /* The store-facing release number — what a tester sees on their Play or App Store listing.
    It has to be stated here because nothing in the web build can read the wrap's manifest,
    so this is a SECOND place the release number lives: it must be changed in lockstep with
@@ -6124,7 +6144,7 @@ function creedAlign(ref, said){
 
 /* ---- the mode ---- */
 var CREED_SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
-var crdPick = null, crdRef = [], crdSpans = [], crdRec = null, crdLive = false;
+var crdPick = null, crdRef = [], crdSpans = [], crdRec = null, crdLive = false, crdMemory = false;
 var crdFinal = "", crdInterim = "", crdRestarts = 0, crdLast = null;
 
 /* Two ways this mode cannot work, and both have to be settled BEFORE the button is offered.
@@ -6135,7 +6155,40 @@ var crdFinal = "", crdInterim = "", crdRestarts = 0, crdLast = null;
    starts reciting. That is the worst possible time to find out. The app already knows about
    this case elsewhere ("opened as a file, not installed"); this is the same fact. */
 function creedFileCopy(){ return location.protocol === "file:"; }
-function creedSupported(){ return !!CREED_SR && !creedFileCopy(); }
+/* v59: iOS is the third way this cannot work, and the most misleading.
+
+   Every browser on iOS renders through WKWebView, so this is not a Safari quirk — Chrome and
+   Firefox on an iPhone hit it too. `webkitSpeechRecognition` EXISTS there, so a plain feature
+   test says yes; it then never prompts and never delivers a result. Jordan hit exactly that on
+   his iPhone: tapping a creed said it needed the microphone, and no permission dialog ever
+   appeared. A dead screen that claims to be waiting for you is worse than an honest refusal.
+
+   iPadOS 13+ reports itself as "Macintosh", so the user-agent alone would let an iPad through.
+   Touch points separate a real Mac (0) from an iPad (5).
+
+   This is a browser-capability gate, not a platform judgement: iOS gets this mode through the
+   native Capacitor speech plugin in the planned Phase 3, which can also run on-device. */
+function creedIOS(){
+  var ua = navigator.userAgent || "";
+  if(/iPad|iPhone|iPod/.test(ua)) return true;
+  return /Macintosh/.test(ua) && navigator.maxTouchPoints > 1;
+}
+function creedSupported(){ return !!CREED_SR && !creedFileCopy() && !creedIOS(); }
+
+/* v59: which of the two ways to be tested. Deliberately NOT persisted to the save file —
+   follow-along is the honest default for someone opening the mode cold, and a Soldier who
+   drilled from memory last week should not be dropped into a wall of blocks with no idea why.
+   One tap to change it, on the screen where you pick the creed. */
+function crdSetMode(memory){
+  crdMemory = !!memory;
+  Array.prototype.forEach.call($("crdModeRow").querySelectorAll("button"), function(b){
+    var on = (b.getAttribute("data-crdmode") === "memory") === crdMemory;
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+  });
+  $("crdPickHint").textContent = crdMemory
+    ? "Board conditions. The creed stays hidden and fills in only as you say it."
+    : "Say it aloud. The app follows along and marks each word as you get it.";
+}
 
 function crdPanel(name){
   [["crdPick","pick"],["crdConsentCard","consent"],["crdRun","run"],["crdDone","done"]]
@@ -6187,8 +6240,12 @@ function crdBegin(){
       para.appendChild(sp);
       para.appendChild(document.createTextNode(" "));
       /* One span can cover more than one normalised word ("time-honored"). Record the span's
-         slice of the reference so painting stays aligned with scoring. */
-      crdSpans.push({ el:sp, from:crdRef.length, to:crdRef.length + norm.length });
+         slice of the reference so painting stays aligned with scoring.
+
+         v59: `raw` is kept on the span so From Memory can mask and then restore the word from
+         the SAME structure the follow-along mode paints. There is still exactly one copy of
+         each creed — masking is a render state, not a second text. */
+      crdSpans.push({ el:sp, raw:raw, from:crdRef.length, to:crdRef.length + norm.length });
       norm.forEach(function(w){ crdRef.push(w); });
     });
     box.appendChild(para);
@@ -6196,6 +6253,7 @@ function crdBegin(){
   $("crdTag").textContent = crdPick.cite;
   $("crdCount").textContent = crdRef.length + " words";
   $("crdCue").textContent = "";
+  box.classList[crdMemory ? "add" : "remove"]("memory");
   crdPaint(null);
   crdSetMic(false);
   $("crdStatus").textContent = "";
@@ -6203,30 +6261,54 @@ function crdBegin(){
   box.scrollTop = 0;
 }
 
-function crdSetMic(live){
+/* The label has to describe what a tap will DO. While the browser's permission dialog is up
+   the button is neither "Start" nor "Stop" — tapping it does nothing, so it must not claim
+   otherwise. Third state, honestly named. */
+function crdSetMic(live, label){
   $("crdMic").classList[live ? "add" : "remove"]("live");
   $("crdMic").classList[live ? "add" : "remove"]("sec");
-  $("crdMicTxt").textContent = live ? "Stop" : "Start reciting";
+  $("crdMicTxt").textContent = label || (live ? "Stop" : "Start reciting");
 }
 
+/* v59: the mask a word wears in From Memory until it has been earned.
+
+   Three blocks regardless of how long the word is. Length-hinted underscores were the other
+   option and they leak: "▢▢▢▢▢▢▢▢▢▢" against "▢▢▢" tells you the next word is "professional"
+   before you have said it, which is the one thing this mode exists to prevent. A board gives
+   you nothing, so neither does this. */
+var CRD_MASK = "▢▢▢";
+
 /* Paint from an alignment. Only classes change, and only where they differ — this runs on
-   every interim result, several times a second. */
-function crdPaint(al){
+   every interim result, several times a second.
+
+   In From Memory the same pass also controls the TEXT: a word is masked until the aligner has
+   reached it, then revealed in place. Both modes drive off one alignment and one set of spans,
+   so the two can never disagree about what was said. */
+function crdPaint(al, revealAll){
   var next = al ? al.reached : 0;
   crdSpans.forEach(function(s){
-    var cls = "crdw";
+    var cls = "crdw", earned = false;
     if(al){
       var ok = 0, miss = 0, k;
       for(k = s.from; k < s.to; k++){
         if(al.status[k] === "ok") ok++;
         else if(al.status[k] === "miss") miss++;
       }
-      if(ok && !miss) cls = "crdw ok";
-      else if(miss && !ok) cls = "crdw miss";
-      else if(ok && miss) cls = "crdw ok";
+      if(ok && !miss){ cls = "crdw ok"; earned = true; }
+      else if(miss && !ok){ cls = "crdw miss"; earned = true; }
+      else if(ok && miss){ cls = "crdw ok"; earned = true; }
       else if(s.from <= next && next < s.to) cls = "crdw now";
     } else if(s.from === 0) cls = "crdw now";
     if(s.el.className !== cls) s.el.className = cls;
+    if(crdMemory){
+      /* On finish everything is revealed, so the summary is read over the whole creed —
+         anything never reached was never said, which is a miss, not a secret. */
+      var want = (earned || revealAll) ? s.raw : CRD_MASK;
+      if(s.el.textContent !== want) s.el.textContent = want;
+      if(revealAll && !earned && s.el.className.indexOf("miss") === -1) s.el.className = "crdw miss";
+    } else if(s.el.textContent !== s.raw){
+      s.el.textContent = s.raw;
+    }
   });
   /* Keep the place they are on in view, without yanking the page around. */
   var cur = null;
@@ -6244,7 +6326,9 @@ function crdPaint(al){
 function crdPhrase(from, to){
   var parts = [];
   crdSpans.forEach(function(s){
-    if(s.to > from && s.from < to) parts.push(s.el.textContent);
+    /* s.raw, never s.el.textContent — in From Memory a word that is still masked would report
+       the summary as "▢▢▢ ▢▢▢ ▢▢▢", telling the Soldier nothing about what they left out. */
+    if(s.to > from && s.from < to) parts.push(s.raw);
   });
   return parts.join(" ").replace(/\s+/g, " ").trim();
 }
@@ -6255,7 +6339,43 @@ function crdHeard(){
   crdPaint(crdLast);
 }
 
+/* v59: ask for the microphone explicitly, on the tap, before recognition starts.
+
+   SpeechRecognition is supposed to raise the permission prompt itself. In practice it is
+   unreliable about it, and when it silently declines to ask there is nothing on screen to act
+   on — the Soldier is told the app needs the microphone and given no way to grant it.
+   getUserMedia has one job and does it predictably, so the prompt is forced here and
+   recognition only starts once permission actually exists.
+
+   The stream is released the moment the prompt resolves. We never wanted the audio — only the
+   permission — and recognition opens its own capture; leaving this one running would hold the
+   recording indicator on and, in some browsers, block that second capture from opening. */
+var crdArming = false;
 function crdStart(){
+  if(!CREED_SR || crdLive || crdArming) return;
+  var md = navigator.mediaDevices;
+  if(!md || !md.getUserMedia){ crdBeginListening(); return; }   /* older browser: let recognition ask */
+  crdArming = true;
+  crdSetMic(true, "Waiting…");
+  $("crdStatus").textContent = "Waiting for microphone permission…";
+  md.getUserMedia({ audio: true }).then(function(stream){
+    try { stream.getTracks().forEach(function(t){ t.stop(); }); } catch(e){}
+    crdArming = false;
+    crdBeginListening();
+  }).catch(function(err){
+    crdArming = false;
+    crdSetMic(false);
+    var n = err && err.name;
+    $("crdStatus").textContent =
+      (n === "NotAllowedError" || n === "SecurityError")
+        ? "The microphone is blocked. Allow microphone access for this site, then try again."
+      : (n === "NotFoundError" || n === "OverconstrainedError")
+        ? "No microphone found on this device."
+        : "The microphone could not be opened" + (n ? " (" + n + ")" : "") + ".";
+  });
+}
+
+function crdBeginListening(){
   if(!CREED_SR || crdLive) return;
   var rec;
   try { rec = new CREED_SR(); }
@@ -6316,6 +6436,7 @@ function crdStop(){
 /* Stop recognition without scoring — leaving the screen, not finishing a recitation. */
 function crdAbort(){
   crdLive = false;
+  crdArming = false;   /* leaving mid-prompt must not strand the button */
   if(crdRec){ try { crdRec.abort ? crdRec.abort() : crdRec.stop(); } catch(e){} }
   crdRec = null;
   crdSetMic(false);
@@ -6326,6 +6447,10 @@ function crdFinish(){
   var said = creedWords(crdFinal);
   var al = creedAlign(crdRef, said);
   crdLast = al;
+  /* Reveal the whole creed before scoring it. In From Memory the Soldier has been looking at
+     masks, and a score with nothing to read it against teaches nothing — the point of the
+     summary is seeing WHERE it went. Same call in follow-along, where it is a no-op. */
+  crdPaint(al, true);
   var pct = al.total ? Math.round(al.matched / al.total * 100) : 0;
   $("crdPct").textContent = pct + "%";
   $("crdCap").textContent = al.matched + " of " + al.total + " words, in order";
@@ -6384,6 +6509,15 @@ function openCreed(){
   $("quiz").classList.add("hidden"); $("results").classList.add("hidden");
   $("flash").classList.add("hidden");
   $("creed").classList.remove("hidden");
+  /* v59: the global footer carries the audit line, an inline References button and the
+     study-aid disclaimer. All three are quiz and reference chrome — under a screen where the
+     job is to speak, they are three blocks of trust text between the Soldier and the creed
+     they came to recite. Hidden here exactly as the library and Notes hubs already hide it;
+     toMenu puts it back on every exit route, so there is nothing new to unwind.
+
+     The References HUB is untouched and still one tap away on the floating book control —
+     this removes the redundant inline button, not the way in. */
+  document.querySelector("footer").style.display = "none";
   $("sub").textContent = "Recite a creed aloud and have it graded as you go.";
   mount($("creed"));
   window.scrollTo(0, 0);
@@ -6411,6 +6545,10 @@ function creedBack(){
     if(creedFileCopy())
       $("creedNoSupport").textContent = "Recite the Creed needs the installed app or nco-prep.com — "
         + "speech recognition doesn't run from a downloaded file. Everything else here works as normal.";
+    else if(creedIOS())
+      $("creedNoSupport").textContent = "Recite the Creed can't run on iPhone or iPad yet — no browser "
+        + "there gives web apps access to speech recognition. It's coming to the iPhone app in a later "
+        + "update. Everything else works as normal.";
     $("creedNoSupport").classList.remove("hidden");
   }
 
@@ -6423,7 +6561,13 @@ function creedBack(){
     DATA.creedOk = true; save();
     crdBegin();
   });
-  $("crdMic").addEventListener("click", function(){ crdLive ? crdStop() : crdStart(); });
+  $("crdMic").addEventListener("click", function(){
+    if(crdArming) return;                 /* the permission dialog owns the moment */
+    if(crdLive) crdStop(); else crdStart();
+  });
+  Array.prototype.forEach.call($("crdModeRow").querySelectorAll("button"), function(b){
+    b.addEventListener("click", function(){ crdSetMode(b.getAttribute("data-crdmode") === "memory"); });
+  });
   $("crdAgain").addEventListener("click", function(){ crdBegin(); });
 })();
 
@@ -9587,6 +9731,102 @@ function selfTest(){
           }
         }
       })();
+
+      /* 2f. v59 — From Memory must not leak the creed it is hiding.
+
+             This is the only failure in the mode that matters: if a word is on screen before
+             it has been said, the mode is pointless and the Soldier is reading, not reciting.
+             Asserted by building the real spans through the real render path and reading what
+             is actually in the DOM — not by trusting the mask constant.
+
+             The whole check snapshots and restores every piece of state it touches, the same
+             discipline the hubs use to survive being opened mid-quiz. */
+      (function(){
+        if(typeof crdBegin !== "function" || typeof crdSetMode !== "function"){
+          errs.push("memory: the From Memory mode is not reachable"); return;
+        }
+        var savedMode = crdMemory, savedPick = crdPick, savedRef = crdRef, savedSpans = crdSpans;
+        var panels = ["crdPick","crdConsentCard","crdRun","crdDone"];
+        var panelWas = panels.map(function(id){ return $(id).classList.contains("hidden"); });
+        var creedWasHidden = $("creed").classList.contains("hidden");
+        try {
+          crdSetMode(true);
+          crdPick = CREEDS[0];
+          crdBegin();
+          var shown = $("crdText").textContent;
+          var leaked = [], allMasked = true;
+          crdSpans.forEach(function(s){
+            if(s.el.textContent === s.raw && s.raw !== CRD_MASK) leaked.push(s.raw);
+            if(s.el.textContent !== CRD_MASK) allMasked = false;
+          });
+          if(!crdSpans.length) errs.push("memory: no words were rendered to mask");
+          if(leaked.length)
+            errs.push("memory: " + leaked.length + " word(s) are visible before being said, "
+              + "starting with \"" + leaked[0] + "\" — the creed is readable in From Memory");
+          if(!allMasked) errs.push("memory: some words render as neither the word nor the mask");
+          /* The strongest form of the same question, asked of the DOM rather than the spans. */
+          if(shown.indexOf("professional") !== -1 || shown.indexOf("Noncommissioned") !== -1)
+            errs.push("memory: the creed text is present in the rendered screen while masked");
+
+          /* Revealing on finish must restore the real words, or the score is unreadable. */
+          crdPaint(creedAlign(crdRef, []), true);
+          var stillMasked = 0;
+          crdSpans.forEach(function(s){ if(s.el.textContent === CRD_MASK) stillMasked++; });
+          if(stillMasked)
+            errs.push("memory: " + stillMasked + " word(s) stay masked after the recitation ends, "
+              + "so the summary cannot be read against the creed");
+
+          /* And the missed-phrase summary must report words, never masks. */
+          var phrase = crdPhrase(0, Math.min(4, crdRef.length));
+          if(!phrase || phrase.indexOf(CRD_MASK) !== -1)
+            errs.push("memory: the missed-phrase summary reports masks instead of the creed's words");
+
+          /* Follow-along must be unaffected: the words are there from the start. */
+          crdSetMode(false);
+          crdBegin();
+          var plainLeak = false;
+          crdSpans.forEach(function(s){ if(s.el.textContent !== s.raw) plainLeak = true; });
+          if(plainLeak) errs.push("memory: follow-along mode is masking words it should show");
+        } catch(e){
+          errs.push("memory: the From Memory check threw (" + (e && e.message) + ")");
+        }
+        crdMemory = savedMode; crdPick = savedPick; crdRef = savedRef; crdSpans = savedSpans;
+        crdSetMode(savedMode);
+        $("crdText").textContent = "";
+        $("crdText").classList.remove("memory");
+        panels.forEach(function(id, i){ $(id).classList[panelWas[i] ? "add" : "remove"]("hidden"); });
+        if(creedWasHidden) $("creed").classList.add("hidden");
+      })();
+
+      /* 2g. v59 — the Recite screen carries none of the reference chrome, and putting it away
+             does not strip it from everywhere else. Driven through the real open/exit routes
+             rather than asserted against the source, because what matters is the end state. */
+      (function(){
+        if(!creedSupported()) return;      /* the screen cannot be opened here */
+        var footer = document.querySelector("footer");
+        if(!footer){ errs.push("declutter: the footer is missing entirely"); return; }
+        var wasHidden = $("creed").classList.contains("hidden");
+        openCreed();
+        if(getComputedStyle(footer).display !== "none")
+          errs.push("declutter: the audit line, References button and study-aid disclaimer are "
+            + "still under the Recite screen");
+        if($("crdPick").classList.contains("hidden"))
+          errs.push("declutter: opening Recite does not land on the creed list");
+        toMenu();
+        if(getComputedStyle(footer).display === "none")
+          errs.push("declutter: leaving Recite left the footer hidden on the main menu");
+        if(wasHidden && !$("creed").classList.contains("hidden"))
+          errs.push("declutter: the Recite screen stayed open after toMenu");
+      })();
+
+      /* 2h. v59 — the microphone is requested explicitly, and iOS is gated before the tap. */
+      if(typeof crdBeginListening !== "function")
+        errs.push("mic: recognition start is not separated from the permission request, so the "
+          + "browser may never raise the prompt");
+      if(typeof creedIOS !== "function")
+        errs.push("mic: the iOS gate is not reachable — iPhone would reach a dead 'needs microphone' state");
+      else if(creedIOS() && creedSupported())
+        errs.push("mic: this is an iOS browser but the mode is still being offered");
 
       /* 3. The normaliser must absorb what a speech engine actually does to text — case,
             punctuation, hyphens, contractions, digits. If it stops, grading turns into a
