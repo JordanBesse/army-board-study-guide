@@ -78,14 +78,14 @@
   /* The "Getting There" band. Measured on this app's own surfaces, not taken from a
      palette: #8a6100 is 5.54:1 on the card and 4.87:1 on --surface2. */
   --amber:#8a6100;
-  /* The band WORD is a separate token from the bar, because colour-blind mode shifts the
+  /* The band WORD is a separate token from the bar, because color-blind mode shifts the
      word yellower without moving the bar. Same value outside that mode. */
   --amber-word:#8a6100;
   /* Pointer hover — neutral, never the accent. Shipped as literals in v16; promoted to
      tokens here because the sub-rows and the picker now need the same pair. Values
      unchanged, so nothing rendered moves. */
   --hover-bg:#e8ece8; --hover-line:#c9d1c9;
-  /* Dimmed (un-picked) option on reveal. A colour, not an opacity — see the note on
+  /* Dimmed (un-picked) option on reveal. A color, not an opacity — see the note on
      .opt.dim for why element opacity cannot clear AA here. */
   --dim-ink:#6b736a; --dim-line:#ebeeeb;
   /* --page (v27): the regulation page card. Paper, not app surface — a PDF page is white,
@@ -93,12 +93,12 @@
      --mark (v28): the annotation lane, promoted into the system on the chunk-4 lock. A warm
      khaki deliberately OUTSIDE the accent / ok / no lanes, so a highlight can never be read
      as "selected" or "graded". --mark-edge is the under-edge that carries the mark when
-     colour alone cannot. */
+     color alone cannot. */
   --page:#ffffff;
   /* v64: the default wash is lightened from .34 to .26. It read as opaque over the page —
      the point of a highlighter is that the words underneath stay the thing you are reading. */
   --mark:rgba(201,167,58,.26); --mark-edge:rgba(150,120,20,.85);
-  /* v64: the highlighter palette. Four hues at one alpha so no colour shouts louder than
+  /* v64: the highlighter palette. Four hues at one alpha so no color shouts louder than
      another, all deliberately OUTSIDE the accent / ok / no lanes so a highlight can never be
      read as "selected" or "graded". The reg page is always white paper — --page is #ffffff in
      BOTH themes — so these are tuned against white once and hold in either theme. */
@@ -142,7 +142,7 @@
   --hover-bg:#242b21; --hover-line:#4a5545;
   --dim-ink:#8f9a8d; --dim-line:#333b2f;
   /* The page stays white in dark mode ON PURPOSE — see the reader note. Only the chrome
-     darkens; recolouring the document would change what a Soldier is reading and citing.
+     darkens; recoloring the document would change what a Soldier is reading and citing.
      "Night read" is the opt-in for low light. */
   --page:#ffffff;
   --mark:rgba(214,180,80,.26); --mark-edge:rgba(214,180,80,.9);
@@ -153,7 +153,7 @@
   --sel-wash:rgba(136,171,139,.34);
   --scrim:rgba(0,0,0,.55);
   /* Measured on this band: --ink 13.2:1, --muted 6.3:1. Both clear AA. This is the
-     whole dark-identity change — no verdict colour and no accent moves. */
+     whole dark-identity change — no verdict color and no accent moves. */
   --barband:#1b2418;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -182,7 +182,7 @@ body{
    to rest underneath it. The safe-area term keeps that true on a notched iPhone. */
 .wrap{max-width:780px;margin:0 auto;padding:14px 14px calc(84px + env(safe-area-inset-bottom))}
 /* App bar. From v19 the gear is gone from here — it floats bottom-right instead — so the
-   title and subtitle no longer reserve a 52px inline slot for it and the header centres
+   title and subtitle no longer reserve a 52px inline slot for it and the header centers
    on the full column. That slot existed from v14 only because a control sat in the corner;
    with the control moved, keeping the padding would just be a permanent indent.
    The header still bleeds the band to the full viewport width on mobile via the negative
@@ -192,7 +192,7 @@ body{
    deliberately bleeds the band to the very top edge, which is right for a background but put
    the wordmark itself under the island on an iPhone 17 Pro. Padding the header pushes the TEXT
    clear while the band still reaches the edge. Padding .wrap instead would have left a strip of
-   page colour above the band. The reader's own .rdbar already did this correctly. */
+   page color above the band. The reader's own .rdbar already did this correctly. */
 header{
   position:relative;text-align:center;padding:24px 0 16px;
   background:var(--barband);border-bottom:1px solid var(--line);
@@ -219,12 +219,12 @@ h1{font-size:1.3rem;margin:0;letter-spacing:-.01em;font-weight:700;line-height:1
 /* The wordmark-as-home control. It has to look exactly like the heading it replaced — the
    affordance is the press state and the cursor, not a button box, because a permanently
    buttonish title would read as a second action competing with Start Quiz. 44px of height is
-   met by padding rather than a min-height, so the centred title does not shift. */
+   met by padding rather than a min-height, so the centered title does not shift. */
 #homeBtn{
   /* min-height, not padding alone: below 380px the title drops to 1.15rem on the narrow-screen
      type ramp, and 10px + 10px + that line box came to 43px — one pixel under the floor, which
      the self-test caught and a 390px measurement never would. inline-flex so the heading stays
-     centred in the app bar. */
+     centered in the app bar. */
   display:inline-flex;align-items:center;justify-content:center;min-height:44px;
   padding:10px 8px;margin:-10px -8px;
   background:none;border:0;color:inherit;font:inherit;letter-spacing:inherit;
@@ -267,7 +267,7 @@ header.compact #quizbar{display:block}
 }
 /* v21: 28px against the gear's widened 28-unit viewBox, so one user unit is one pixel and
    the mark renders at the size it was always meant to be (ink 25x24px) instead of being
-   scaled down to fit the extra margin. Centred by the flex rules above, ~13.5px clear on
+   scaled down to fit the extra margin. Centered by the flex rules above, ~13.5px clear on
    each side inside the 52px button. See the viewBox note on the button markup. */
 #settingsBtn svg{width:28px;height:28px;display:block;color:var(--ink)}
 #settingsBtn:hover{background:var(--surface2)}
@@ -277,16 +277,16 @@ header.compact #quizbar{display:block}
   #settingsBtn{transition:none}
   #settingsBtn:active{transform:none}
 }
-/* Regulations entry (v26, chunk 1 rev, option A). A labelled pill to the LEFT of the gear,
+/* Regulations entry (v26, chunk 1 rev, option A). A labeled pill to the LEFT of the gear,
    both floating bottom-right. The gear is untouched — the design note is explicit that the
    v19 floater stays exactly where it is.
    Wider than the gear and carrying a word, because a lone book glyph is ambiguous: a book of
    what? The accent sits on the GLYPH only, as brand, never on the fill — an accent-filled
    pill would put a second "primary action" on the home screen next to Start Quiz and would
-   also spend the accent's "selected" meaning on chrome, which the colour law forbids.
+   also spend the accent's "selected" meaning on chrome, which the color law forbids.
    Offset is the gear's own right inset plus its 52px width plus a 10px gap, so the pair
    stays glued together as the safe-area inset changes. */
-/* v29 reverts this to the LOCKED icon-only circle. v26 shipped the labelled pill (chunk-1
+/* v29 reverts this to the LOCKED icon-only circle. v26 shipped the labeled pill (chunk-1
    option A) by mistake; the locked pair is two matching 52px circles, and keeping them
    identical is what lets Notes join as a third without redrawing the set. */
 #regBtn{
@@ -367,7 +367,7 @@ header.compact #quizbar{display:block}
 #notesCue{text-align:center;font-size:.75rem;color:var(--muted);margin-top:3px}
 /* Filter chips, not a segmented control: three filters over ONE recency list, where the
    library's four views are genuinely different lists. The active chip is the only accent on
-   the row — the colour law's "accent = selected" — and it also carries a border and
+   the row — the color law's "accent = selected" — and it also carries a border and
    aria-pressed, so the state survives without hue. */
 #notesChips{display:flex;gap:8px;margin-top:12px;justify-content:center}
 /* 44px, not the 38px the in-quiz `.libchip` pair uses. The app's floor is 44 and these are a
@@ -409,7 +409,7 @@ header.compact #quizbar{display:block}
 #notesDel:disabled{color:var(--dim-ink);cursor:default;background:none}
 #notesAll:focus-visible,#notesCancel:focus-visible,#notesDel:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 /* One row shape for both kinds. What differs is the glyph, and whether the reg pill is
-   there at all — the pill's PRESENCE is the colour-independent tell that a note is linked. */
+   there at all — the pill's PRESENCE is the color-independent tell that a note is linked. */
 /* v47: the row is a container; .nopen inside it is the button. See the note on notesRow —
    a checkbox nested in a <button> is invalid and does not take on iOS. */
 .nrow{display:flex;align-items:flex-start;gap:0;width:100%;
@@ -513,8 +513,8 @@ header.compact #quizbar{display:block}
 #library .libtitle{text-align:center;font-size:1.06rem;font-weight:700;margin:8px 0 0}
 #libCue{text-align:center;font-size:.75rem;color:var(--muted);margin-top:3px}
 /* The four views. Equal columns, so no view reads as more important than another; the
-   selected one is the only accent on the row, which is the colour law's "accent = selected".
-   Icon plus word, so the state survives without colour. */
+   selected one is the only accent on the row, which is the color law's "accent = selected".
+   Icon plus word, so the state survives without color. */
 #libNav{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:12px;
   background:var(--surface2);border:1px solid var(--line);border-radius:11px;padding:3px}
 .libseg{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
@@ -634,9 +634,9 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .librow .rttl{font-size:.78rem;color:var(--muted);line-height:1.3;margin-top:2px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .librow .refline{font-size:.75rem;color:var(--muted);margin-top:4px;white-space:normal}
-/* State controls. ALL neutral by the colour law: download state is status, not selection and
+/* State controls. ALL neutral by the color law: download state is status, not selection and
    not grading, so nothing here may borrow --accent, --ok or --no. Every state carries a glyph
-   AND a word so it survives any colour vision. */
+   AND a word so it survives any color vision. */
 .libst{flex:0 0 auto;display:flex;align-items:center;justify-content:flex-end;min-width:104px}
 .dlbtn{display:inline-flex;align-items:center;gap:6px;background:var(--surface2);
   border:1px solid var(--line);border-radius:999px;padding:0 13px;min-height:44px;
@@ -724,7 +724,7 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .rdpage canvas{display:block;width:100%;height:auto}
 .rdph{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.75rem}
 /* Night read: a VIEW filter only. It never touches stored bytes, and the mark overlay is
-   outside .rdpage's filter so a highlight is not inverted into a strange colour. */
+   outside .rdpage's filter so a highlight is not inverted into a strange color. */
 #reader[data-night="1"] .rdpage canvas{filter:invert(1) hue-rotate(180deg) brightness(.86) contrast(1.06)}
 #reader[data-night="1"] .rdpage{background:#12140f}
 /* v30: the pill became a full bottom bar. It spans the width rather than floating, because
@@ -753,7 +753,7 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .rdbottom button:disabled{color:var(--dim-ink);cursor:default}
 .rdbottom button:not(:disabled):hover{background:var(--surface2)}
 .rdbottom button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
-/* Saved and bookmarked are STATES of this document, so accent is correct here by the colour
+/* Saved and bookmarked are STATES of this document, so accent is correct here by the color
    law — the control is showing you what is selected/on, not grading anything. */
 .rdbottom button[aria-pressed="true"]{color:var(--accent)}
 .rdbottom button[aria-pressed="true"] svg{fill:var(--accent-soft)}
@@ -837,7 +837,7 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .rdselband{position:absolute;background:var(--sel-wash);border-radius:1px}
 /* The AD's grips: a thin accent bar the height of the line, capped with a round knob. The
    START knob sits ABOVE the line and the END knob BELOW, so which end is which is carried by
-   shape and position rather than by hue — colour is never the only signal. The page is cream
+   shape and position rather than by hue — color is never the only signal. The page is cream
    in both themes, so these use the page-local accent either way. */
 .rdgrips{position:absolute;inset:0;pointer-events:none;z-index:4}
 .rdgrip{position:absolute;pointer-events:auto;touch-action:none;cursor:grab}
@@ -847,7 +847,7 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
   background:var(--accent);border-radius:50%}
 .rdgrip.start .knob{top:-9px}
 .rdgrip.end .knob{bottom:-9px}
-/* The invisible 44px target, centred on the knob and extending well past the visible grip. */
+/* The invisible 44px target, centered on the knob and extending well past the visible grip. */
 .rdgrip::after{content:"";position:absolute;left:50%;width:44px;height:44px;margin-left:-22px;border-radius:50%}
 .rdgrip.start::after{top:-31px}
 .rdgrip.end::after{bottom:-31px}
@@ -867,14 +867,14 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:var(--e2);pointer-events:none}
 #mkRead.hidden{display:none}
 /* color stays transparent under selection: without it the UA repaints the selected glyphs
-   in its own colour and they double over the rasterised page. */
+   in its own color and they double over the rasterised page. */
 .rdtext ::selection{background:var(--sel-wash);color:transparent}
 .rdtext ::-moz-selection{background:var(--sel-wash);color:transparent}
 .rdmarks{position:absolute;inset:0;pointer-events:none;z-index:1}
 /* The wash is --mark, deliberately outside the accent / ok / no lanes, so a highlight can
-   never read as "selected" or "graded". The under-edge is the second, non-colour signal. */
+   never read as "selected" or "graded". The under-edge is the second, non-color signal. */
 .rdmark{position:absolute;background:var(--mark);border-radius:1px}
-/* v64: per-highlight colour. A mark stored before this build carries color:"mark" and gets
+/* v64: per-highlight color. A mark stored before this build carries color:"mark" and gets
    no class, so it keeps painting from --mark — no migration, and nothing already on a page
    changes appearance. */
 .rdmark.c-y{background:var(--hl-y)}
@@ -882,7 +882,7 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .rdmark.c-b{background:var(--hl-b)}
 .rdmark.c-p{background:var(--hl-p)}
 .rdmark.note{box-shadow:inset 0 -2px 0 0 var(--mark-edge)}
-/* A noted passage also gets a margin tab, because colour is never the only signal. */
+/* A noted passage also gets a margin tab, because color is never the only signal. */
 .rdtab{position:absolute;left:-2px;width:4px;border-radius:2px;background:var(--mark-edge);z-index:3}
 /* Selection toolbar — a small dark popover, per the chunk. */
 /* Diagnostic only, never shown without the flag. pointer-events:none so it cannot eat the very
@@ -932,10 +932,10 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 /* v50: absolute within #reader, not fixed — see the note on .rdbottom. */
 #mkBar,#mkPop{position:absolute;z-index:90;display:flex;flex-wrap:wrap;gap:2px;padding:4px;
   background:#1d2a1f;border-radius:12px;box-shadow:var(--e2)}
-/* v64: the colour row. A full-width second line inside the same chip rather than a submenu —
-   a highlighter colour is a one-tap decision, and a menu to reach a menu is two taps to do
-   nothing. Tapping a swatch in the selection bar highlights in that colour directly; in the
-   mark popover it recolours the highlight already under the finger. */
+/* v64: the color row. A full-width second line inside the same chip rather than a submenu —
+   a highlighter color is a one-tap decision, and a menu to reach a menu is two taps to do
+   nothing. Tapping a swatch in the selection bar highlights in that color directly; in the
+   mark popover it recolors the highlight already under the finger. */
 .mkswatches{flex:1 0 100%;display:flex;gap:6px;justify-content:center;
   padding:6px 2px 2px;margin-top:2px;border-top:1px solid rgba(238,242,236,.18)}
 /* 44px, the project's tap-target standard — the same floor the marks checkbox is held to.
@@ -1057,7 +1057,7 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .mktool:hover{background:var(--hover-bg);color:var(--ink)}
 .mktool:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 /* Quiet by design: a save indicator that announced itself would be a second thing to read
-   every time a Soldier stops typing. Muted, no colour — "Saved" is not a verdict either. */
+   every time a Soldier stops typing. Muted, no color — "Saved" is not a verdict either. */
 #mkSaved{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:.72rem;
   font-weight:650;color:var(--muted);opacity:0;transition:opacity var(--m-state) ease-out}
 #mkSaved.on{opacity:1}
@@ -1098,7 +1098,7 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .mkgo:hover{background:var(--hover-bg)}
 .mkgo:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 /* Deleting is deliberately NOT painted in --no. That lane means "graded wrong" everywhere
-   else in the app, and a destructive control borrowing it would teach the colour a second
+   else in the app, and a destructive control borrowing it would teach the color a second
    meaning. Same reasoning as the note sheet's own Delete, which is muted ink. */
 .mkbulk{display:flex;justify-content:flex-end;padding:10px 0 2px}
 #mkBulkDel{display:inline-flex;align-items:center;gap:7px;
@@ -1160,14 +1160,14 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
   min-height:44px;min-width:44px;padding:0 13px;font:inherit;font-size:.8rem;cursor:pointer;
 }
 #themeBtn:hover{background:var(--surface2)}
-/* Colour-blind-safe accents (Okabe-Ito blue / vermillion). Applied by a root
+/* Color-blind-safe accents (Okabe-Ito blue / vermillion). Applied by a root
    attribute so it layers over whichever theme is active. The glyph and word cues
    on an answer are always on and do not depend on this. */
 /* Okabe-Ito blue and vermillion, DARKENED for text contrast. The published values
-   (#0072B2 / #D55E00) are chart-series colours: on this light surface the vermillion
+   (#0072B2 / #D55E00) are chart-series colors: on this light surface the vermillion
    measures 3.41:1, below the 4.5:1 AA floor, which would make the accessibility
    option worse than the default palette. These keep the blue-versus-orange axis that
-   does the colour-blind work and clear AA on both the tint and the card. Measured:
+   does the color-blind work and clear AA on both the tint and the card. Measured:
    blue 5.35 on tint / 6.17 on card, orange 4.59 / 5.20. Do not revert to the raw values. */
 :root[data-cb="1"]{
   --ok:#00669F; --ok-bg:#e7f0f7; --ok-line:#7fb0d4;
@@ -1179,13 +1179,13 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
      survives the hue collapse where a hue shift alone does not. */
   --amber-word:#6f6300;
 }
-/* v17 lifted the selected board's fill one step in colour-blind mode: the readiness band
+/* v17 lifted the selected board's fill one step in color-blind mode: the readiness band
    word sits directly on the row, a SELECTED row is --accent-soft, and the CB vermillion
    measured 4.490:1 on the light tint — a hair under the floor. The palette pair is locked
    and must not be re-darkened, so the surface moved instead (#ecf2ed, 4.58:1).
    v18 SCOPES IT TO THE LIGHT THEME, which is what v17 should have done. `:root[data-cb="1"]`
    is theme-agnostic and outranks `:root[data-theme="dark"]`, so the light tint was also
-   painting the selected row in DARK colour-blind mode — a near-white card on a dark page,
+   painting the selected row in DARK color-blind mode — a near-white card on a dark page,
    with the band word at 1.85:1. Dark needs no lift of its own: the CB vermillion already
    measures 6.11:1 on the dark --accent-soft. */
 :root[data-cb="1"][data-theme="light"]{
@@ -1205,7 +1205,7 @@ button.librow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
    A fixed overlay, not an inline card. The old panel was injected at the top of the
    document and shoved the whole page down when it opened; this one floats over the page
    and the page underneath never reflows. Mobile gets a bottom sheet, desktop the same
-   panel centred. */
+   panel centered. */
 /* The entrance is a one-shot @keyframes animation, not a transition away from a
    "from" class. That distinction is load-bearing: with a transition, the sheet's
    resting position is only reached BY the animation, so anywhere the animation does
@@ -1398,14 +1398,14 @@ h2{font-size:.98rem;margin:0 0 10px;font-weight:650;text-align:center}
 /* v29: the 3px left spine is gone. On device it read as a heavy bar against a 1px border
    on the other three edges — one edge shouting while the rest whispered. The selected
    treatment is now a UNIFORM accent border: the 1px inset ring plus the accent border
-   colour, same weight all the way round. Accent still means selected; only its weight
+   color, same weight all the way round. Accent still means selected; only its weight
    changed. */
 #boardPicks .pick[aria-pressed="true"]{box-shadow:inset 0 0 0 1px var(--accent),var(--e2)}
 @media (hover:hover) and (pointer:fine){
   /* Selection keeps its lift under the cursor too, or hovering a chosen board drops it. */
   #boardPicks .pick[aria-pressed="true"]:hover{box-shadow:inset 0 0 0 1px var(--accent),var(--e2)}
 }
-/* Readiness cluster. Replaces the grey pill, which said "Not Started" and nothing else:
+/* Readiness cluster. Replaces the gray pill, which said "Not Started" and nothing else:
    the word tells you the band, the bar shows you moving inside it. The percentage is
    carried in .sronly so a screen reader still gets the number the bar draws. */
 .rdy{width:96px;text-align:right}
@@ -1416,7 +1416,7 @@ h2{font-size:.98rem;margin:0 0 10px;font-weight:650;text-align:center}
 .band-nr{color:var(--no)}        .fill-nr{background-color:var(--no)}
 .band-gt{color:var(--amber-word)}.fill-gt{background-color:var(--amber)}
 .band-rd{color:var(--ok)}        .fill-rd{background-color:var(--ok)}
-/* The Getting-There hatch (v18), colour-blind mode only, every bar that carries the
+/* The Getting-There hatch (v18), color-blind mode only, every bar that carries the
    amber band: the picker cluster, the score report's readiness track, and the amber
    mastery segments. ~3px period at 45 degrees, static — no motion, nothing to reduce.
    The stripe runs light on the light theme (the amber is dark there) and dark on the
@@ -1450,7 +1450,7 @@ h2{font-size:.98rem;margin:0 0 10px;font-weight:650;text-align:center}
 #boardPicks .subpick .pick b{font-size:.9rem;font-weight:600}
 /* The sub-board cell is 26px rather than the main rows' 40px, but the MARK stays at the
    26px the set was drawn and legibility-checked at — it just sits flush in its cell
-   instead of centred in a gutter. The rank insignia are the detailed end of the set (three
+   instead of centered in a gutter. The rank insignia are the detailed end of the set (three
    chevrons, and a rocker under them for Staff Sergeant); shrinking them to 22px to buy
    padding cost detail the marks need and bought no title width, since the cell is the
    same size either way. */
@@ -1526,7 +1526,7 @@ h2.secttl{margin:0 0 10px}
    with an accent border; the project-manager resolution overrides that and it is the right
    call — an always-on accent pill on the quiz-length card would compete with accent-as-
    selection on the one screen where selection is the whole point. Muted ink on --surface2
-   says "our suggestion" without borrowing a state colour. */
+   says "our suggestion" without borrowing a state color. */
 .rec{
   flex:0 0 auto;font-size:.66rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
   color:var(--muted);background:var(--surface2);border:1px solid var(--line);
@@ -1565,7 +1565,7 @@ h2.secttl{margin:0 0 10px}
 .row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
 .btn:focus-visible,.pick:focus-visible,.opt:focus-visible,.qprimary:focus-visible,.qsm:focus-visible,#themeBtn:focus-visible,#settingsBtn:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 details.cats{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);margin-bottom:12px;box-shadow:var(--shadow)}
-/* Two stacked centred lines — the heading, then the count under it — with the +/-
+/* Two stacked centered lines — the heading, then the count under it — with the +/-
    disclosure marker still pinned to the right edge. */
 details.cats summary{
   position:relative;padding:12px 36px;cursor:pointer;font-weight:700;min-height:48px;
@@ -1613,15 +1613,15 @@ details.cats[open] summary::after{content:"\2212"}
 .tag{font-size:.76rem;font-weight:650;color:var(--accent);background:var(--accent-soft);border-radius:99px;padding:3px 9px}
 .counter{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
 .counter .clock{display:block;font-size:.74rem}
-/* Centred and up to 19px. Options stay left-aligned deliberately — left-aligned body
-   text is faster to read under stress, and a centred column of answers would cost more
-   than the formality is worth. `balance` keeps a centred multi-line stem from leaving a
+/* Centered and up to 19px. Options stay left-aligned deliberately — left-aligned body
+   text is faster to read under stress, and a centered column of answers would cost more
+   than the formality is worth. `balance` keeps a centered multi-line stem from leaving a
    single orphaned word on the last line. */
-/* Left-aligned by default; centred only when the stem fits on one line. Wave E centred
-   every stem, which reads well on one line and badly on two — a centred two-line question
+/* Left-aligned by default; centered only when the stem fits on one line. Wave E centered
+   every stem, which reads well on one line and badly on two — a centered two-line question
    breaks mid-phrase and a tired reader loses the thread. `.oneline` is applied by render()
    after measuring the laid-out line count. Left is the safe default: if the measurement
-   cannot run (element not laid out yet), the stem stays readable rather than mis-centred. */
+   cannot run (element not laid out yet), the stem stays readable rather than mis-centered. */
 .qtext{font-size:1.19rem;font-weight:650;margin:2px 0 16px;line-height:1.35;text-align:left;text-wrap:balance}
 .qtext.oneline{text-align:center}
 .opts{display:flex;flex-direction:column;gap:8px}
@@ -1673,7 +1673,7 @@ details.cats[open] summary::after{content:"\2212"}
 .opt.dim{color:var(--dim-ink);border-color:var(--dim-line)}
 .opt.dim .k{color:var(--dim-ink)}
 /* Interaction feedback. Kept subtle and short; every animation is disabled
-   under prefers-reduced-motion, leaving the colour states intact. */
+   under prefers-reduced-motion, leaving the color states intact. */
 .opt,.btn,.pick{
   transition:background-color var(--m-state) ease-out,border-color var(--m-state) ease-out,
              color var(--m-state) ease-out,transform var(--m-tap) ease-out;
@@ -1702,7 +1702,7 @@ details.cats[open] summary::after{content:"\2212"}
   .chev{transition:none}
 }
 /* ---------- Graded verdict block (v17) ----------
-   A block, not a grey box: the graded tint plus a 3px spine in the graded colour, so the
+   A block, not a gray box: the graded tint plus a 3px spine in the graded color, so the
    result reads as a considered verdict rather than an appended note. Only --ok / --no
    appear here; the selection accent is never borrowed. */
 .fb{
@@ -1741,7 +1741,7 @@ details.cats[open] summary::after{content:"\2212"}
 .rdpanel .rdlbl{font-size:.75rem;color:var(--muted);font-weight:600;margin:0 0 6px}
 .rdpanel .rdrow{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .rdpanel .rdband{font-size:1.06rem;font-weight:800;letter-spacing:.01em}
-/* The arrow is the colour-independent half of the delta: up and down read without
+/* The arrow is the color-independent half of the delta: up and down read without
    ever resolving green against red. */
 .rdpanel .rddelta{font-size:.78rem;font-weight:700;white-space:nowrap}
 .rdpanel .rddelta.up{color:var(--ok)} .rdpanel .rddelta.down{color:var(--no)}
@@ -1796,7 +1796,7 @@ details.cats[open] summary::after{content:"\2212"}
   font-size:.72rem;color:var(--muted);
 }
 /* Answer face: left-aligned and top-anchored, because it is now prose to read rather than a
-   single centred line. */
+   single centered line. */
 .flashcard.answer{justify-content:flex-start;text-align:left}
 .flashcard .alabel{
   font-size:.69rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
@@ -1828,7 +1828,7 @@ details.cats[open] summary::after{content:"\2212"}
   .flashcard.flip{animation:none}
 }
 /* ---- v57: Recite the Creed ----
-   The header copies #library's exactly — same absolute back button, same centred title,
+   The header copies #library's exactly — same absolute back button, same centered title,
    and deliberately NO safe-area inset: the app bar above already applies one, and adding a
    second drops the title by a full inset on a notched phone. The self-test asserts that. */
 #creed .crdhdr{position:relative;padding:2px 0 12px;border-bottom:1px solid var(--line)}
@@ -1843,7 +1843,7 @@ details.cats[open] summary::after{content:"\2212"}
 #creed .crdtitle{text-align:center;font-size:1.06rem;font-weight:700;margin:8px 0 0}
 #crdCue{text-align:center;font-size:.75rem;color:var(--muted);margin-top:3px}
 
-/* The reference text. Line height is generous because words change colour underneath a
+/* The reference text. Line height is generous because words change color underneath a
    moving finger-free gaze — a Soldier is reciting, not reading closely, and needs to find
    their place fast. */
 #crdText{
@@ -1853,17 +1853,17 @@ details.cats[open] summary::after{content:"\2212"}
 }
 #crdText p{margin:0 0 14px}
 #crdText p:last-child{margin-bottom:0}
-/* Four word states. Pending is the resting ink; the other three are the only colour in the
+/* Four word states. Pending is the resting ink; the other three are the only color in the
    view, so the eye lands on what changed. --accent-soft behind a matched word rather than
-   coloured glyphs, because coloured text at this size is harder to read, not easier. */
+   colored glyphs, because colored text at this size is harder to read, not easier. */
 .crdw{border-radius:4px;padding:0 1px;transition:background-color var(--m-state) linear, color var(--m-state) linear}
 .crdw.ok{background:var(--accent-soft);color:var(--accent)}
 .crdw.miss{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
 /* v59: From Memory. The mask is muted and monospaced so every slot is the same width and the
    paragraph shape gives away nothing about the words underneath. A miss reads RED here rather
-   than struck-through-grey: in follow-along the word was on screen the whole time and a quiet
+   than struck-through-gray: in follow-along the word was on screen the whole time and a quiet
    mark is enough, but here it is the first time the Soldier is seeing it, and the point is
-   that they did not have it. --no is the graded-wrong colour and carries the colour-blind
+   that they did not have it. --no is the graded-wrong color and carries the color-blind
    palette with it. */
 #crdText.memory .crdw{font-variant-ligatures:none}
 #crdText.memory .crdw.miss{
@@ -2002,7 +2002,7 @@ footer p{margin:0 0 8px}
 <button id="settingsBtn" type="button" aria-label="Settings" aria-expanded="false" aria-controls="settingsPanel">
   <!-- v32: the approved symmetric gear, same rounded style. It retires the v21 widened
        viewBox ("-2.5 -2 28 28") along with the old asymmetric Feather path — that box existed
-       only to stop the old path clipping and to re-centre its off-hub cog. This one is drawn
+       only to stop the old path clipping and to re-center its off-hub cog. This one is drawn
        symmetric about its hub inside a standard 0 0 24 24 box, so the box needs no
        compensation. Still rendered at 28px, and the self-test's clip sweep covers it. -->
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12.0 2.6L12.73 2.74L13.34 3.56L13.6 5.33L13.89 6.19L14.3 6.46L14.78 6.55L15.58 6.15L17.02 5.09L18.03 4.94L18.65 5.35L19.06 5.97L18.91 6.98L17.85 8.42L17.45 9.22L17.54 9.7L17.81 10.11L18.67 10.4L20.44 10.66L21.26 11.27L21.4 12.0L21.26 12.73L20.44 13.34L18.67 13.6L17.81 13.89L17.54 14.3L17.45 14.78L17.85 15.58L18.91 17.02L19.06 18.03L18.65 18.65L18.03 19.06L17.02 18.91L15.58 17.85L14.78 17.45L14.3 17.54L13.89 17.81L13.6 18.67L13.34 20.44L12.73 21.26L12.0 21.4L11.27 21.26L10.66 20.44L10.4 18.67L10.11 17.81L9.7 17.54L9.22 17.45L8.42 17.85L6.98 18.91L5.97 19.06L5.35 18.65L4.94 18.03L5.09 17.02L6.15 15.58L6.55 14.78L6.46 14.3L6.19 13.89L5.33 13.6L3.56 13.34L2.74 12.73L2.6 12.0L2.74 11.27L3.56 10.66L5.33 10.4L6.19 10.11L6.46 9.7L6.55 9.22L6.15 8.42L5.09 6.98L4.94 5.97L5.35 5.35L5.97 4.94L6.98 5.09L8.42 6.15L9.22 6.55L9.7 6.46L10.11 6.19L10.4 5.33L10.66 3.56L11.27 2.74Z"/><circle cx="12" cy="12" r="3.2"/></svg>
@@ -2016,7 +2016,7 @@ footer p{margin:0 0 8px}
 </button>
 <!-- Notes entry (v45). Third floater, leftmost of the trio: Notes · References · Settings, with
      References kept immediately left of the gear. The glyph is a symmetric lined page — drawn
-     about x=12 so it optically centres in the 52px button — and it is the same mark used for a
+     about x=12 so it optically centers in the 52px button — and it is the same mark used for a
      free-standing note everywhere else in the app, so the identity is one thing. -->
 <button id="notesBtn" type="button" aria-label="Notes">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="5" y="3" width="14" height="18" rx="2.5"></rect><path d="M8 8.5h8M8 12h8M9.5 15.5h5"></path></svg>
@@ -2044,7 +2044,7 @@ footer p{margin:0 0 8px}
          grip is display:none, which lifts everything 22px — enough for the X to land ON the
          Appearance switch (measured: a 40x3px overlap). It is a header slot now, so nothing
          it could collide with is laid out underneath it at any width. The empty leading slot
-         keeps the title optically centred. -->
+         keeps the title optically centered. -->
     <div id="setHead">
       <span class="setslot" aria-hidden="true"></span>
       <h2 id="setTitle">Settings</h2>
@@ -2066,7 +2066,7 @@ footer p{margin:0 0 8px}
         <p class="setlab">Colorblind-friendly colors</p>
         <p class="sethelp">Blue and orange instead of green and red. The check, cross, and wording never depend on color.</p>
         <!-- Live sample. The palette itself was correct before v13, but nothing on the
-             settings screen used the answer colours, so flipping the switch appeared to do
+             settings screen used the answer colors, so flipping the switch appeared to do
              nothing at all. These two chips are the only place the setting is visible at
              the moment you change it. Decorative: the switch states it for a reader. -->
         <span class="cbpreview" aria-hidden="true">
@@ -2243,7 +2243,7 @@ footer p{margin:0 0 8px}
        Flashcards. It sits directly under the quiz card as its peer.
 
        The pop comes from the filled-accent chip, the e2 elevation and the 17/700 title — NOT
-       from a coloured card fill, and deliberately not from --accent-soft, which is the
+       from a colored card fill, and deliberately not from --accent-soft, which is the
        board-selection fill and would blur "what is selected" on this very screen.
 
        One button, not a card wrapping a button: the whole surface is the tap target, and a
@@ -2450,7 +2450,7 @@ footer p{margin:0 0 8px}
     <h2 class="libtitle" id="libTitle">References</h2>
     <div id="libCue"></div>
     <!-- The four views. A segmented control rather than chips, so all four are equal weight
-         and one tap apart, and "All" is a labelled default instead of an implied one. -->
+         and one tap apart, and "All" is a labeled default instead of an implied one. -->
     <div id="libNav" role="tablist" aria-label="Reference views">
       <button type="button" class="libseg" role="tab" data-view="all" aria-selected="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 5h16M4 12h16M4 19h16"/></svg><span>All</span>
@@ -2594,7 +2594,7 @@ footer p{margin:0 0 8px}
   <button id="mkCopy" type="button">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 9h10v10H9z"></path><path d="M15 9V5H5v10h4"></path></svg>Copy
   </button>
-  <div class="mkswatches" role="group" aria-label="Highlight colour"><button type="button" class="sw sw-y" data-new-color="y" aria-label="Yellow"><span></span></button><button type="button" class="sw sw-g" data-new-color="g" aria-label="Green"><span></span></button><button type="button" class="sw sw-b" data-new-color="b" aria-label="Blue"><span></span></button><button type="button" class="sw sw-p" data-new-color="p" aria-label="Pink"><span></span></button></div>
+  <div class="mkswatches" role="group" aria-label="Highlight color"><button type="button" class="sw sw-y" data-new-color="y" aria-label="Yellow"><span></span></button><button type="button" class="sw sw-g" data-new-color="g" aria-label="Green"><span></span></button><button type="button" class="sw sw-b" data-new-color="b" aria-label="Blue"><span></span></button><button type="button" class="sw sw-p" data-new-color="p" aria-label="Pink"><span></span></button></div>
 </div>
 <div id="mkPop" class="hidden" role="toolbar" aria-label="Selected mark">
   <button id="mkPopNote" type="button">
@@ -2606,7 +2606,7 @@ footer p{margin:0 0 8px}
   <button id="mkPopDel" type="button">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"></path></svg>Remove
   </button>
-  <div class="mkswatches" role="group" aria-label="Highlight colour"><button type="button" class="sw sw-y" data-set-color="y" aria-label="Yellow"><span></span></button><button type="button" class="sw sw-g" data-set-color="g" aria-label="Green"><span></span></button><button type="button" class="sw sw-b" data-set-color="b" aria-label="Blue"><span></span></button><button type="button" class="sw sw-p" data-set-color="p" aria-label="Pink"><span></span></button></div>
+  <div class="mkswatches" role="group" aria-label="Highlight color"><button type="button" class="sw sw-y" data-set-color="y" aria-label="Yellow"><span></span></button><button type="button" class="sw sw-g" data-set-color="g" aria-label="Green"><span></span></button><button type="button" class="sw sw-b" data-set-color="b" aria-label="Blue"><span></span></button><button type="button" class="sw sw-p" data-set-color="p" aria-label="Pink"><span></span></button></div>
   </div>
   <!-- v50: the outline / marks sheet lives inside #reader too. It is opened only from the
        reader, and its rows are the Bookmarks jump list — controls a Soldier taps. Same
@@ -3157,8 +3157,8 @@ var QUESTIONS = [
 {c:"Audie Murphy — Awards and Decorations",q:"Which decoration second only to the Medal of Honor did Audie Murphy also receive?",o:["The Distinguished Service Cross","The Silver Star for valor","The Legion of Merit for exceptional service","The Soldier's Medal for heroism"],a:"The Distinguished Service Cross",s:"Army heritage",e:"The Distinguished Service Cross is the Army's second-highest award for valor.",t:"knowledge",tr:"advanced",b:["p2","amc"]},
 {c:"Audie Murphy — Awards and Decorations",q:"How many Silver Stars did Audie Murphy receive?",o:["Two","One","Three","Five"],a:"Two",s:"Army heritage",e:"He earned both Silver Stars within a three-day period in 1944.",t:"knowledge",tr:"advanced",b:["amc"]},
 {c:"Audie Murphy — Awards and Decorations",q:"How many Purple Hearts did Audie Murphy receive?",o:["Three","One","Two","Five"],a:"Three",s:"Army heritage",e:"He was wounded three times during his combat service in Europe.",t:"knowledge",tr:"advanced",b:["amc"]},
-{c:"Audie Murphy — Awards and Decorations",q:"Which two nations, besides the United States, decorated Audie Murphy for his service?",o:["France and Belgium","Britain and Canada","Italy and Greece","The Netherlands and Luxembourg"],a:"France and Belgium",s:"Army heritage",e:"He received the French Legion of Honour and Croix de Guerre, and the Belgian Croix de Guerre.",t:"knowledge",tr:"advanced",b:["amc"]},
-{c:"Audie Murphy — Awards and Decorations",q:"Which French decoration was Audie Murphy awarded in the grade of Chevalier?",o:["The Legion of Honour","The Medaille Militaire","The Order of Liberation","The Croix de la Valeur"],a:"The Legion of Honour",s:"Army heritage",e:"He also received the French Croix de Guerre with silver star and with palm.",t:"knowledge",tr:"advanced",b:["amc"]},
+{c:"Audie Murphy — Awards and Decorations",q:"Which two nations, besides the United States, decorated Audie Murphy for his service?",o:["France and Belgium","Britain and Canada","Italy and Greece","The Netherlands and Luxembourg"],a:"France and Belgium",s:"Army heritage",e:"He received the French Legion of Honor and Croix de Guerre, and the Belgian Croix de Guerre.",t:"knowledge",tr:"advanced",b:["amc"]},
+{c:"Audie Murphy — Awards and Decorations",q:"Which French decoration was Audie Murphy awarded in the grade of Chevalier?",o:["The Legion of Honor","The Medaille Militaire","The Order of Liberation","The Croix de la Valeur"],a:"The Legion of Honor",s:"Army heritage",e:"He also received the French Croix de Guerre with silver star and with palm.",t:"knowledge",tr:"advanced",b:["amc"]},
 {c:"Audie Murphy — Awards and Decorations",q:"What rank did Audie Murphy hold at the end of World War II?",o:["First Lieutenant","Staff Sergeant","Captain","Second Lieutenant"],a:"First Lieutenant",s:"Audie Murphy biography",e:"He entered the Army as a private and left active service as a first lieutenant.",t:"knowledge",tr:"advanced",b:["amc"]},
 {c:"Audie Murphy — Film and Music",q:"What career did Audie Murphy pursue after World War II?",o:["Acting in Hollywood films","Professional boxing career","State politics in Texas","Commercial aviation piloting"],a:"Acting in Hollywood films",s:"Audie Murphy biography",e:"Actor James Cagney invited him to Hollywood after seeing his photograph on the cover of Life magazine.",t:"knowledge",tr:"core"},
 {c:"Audie Murphy — Film and Music",q:"Roughly how many feature films did Audie Murphy make?",o:["About 44","About 10","About 100","About 25"],a:"About 44",s:"Audie Murphy biography",e:"Most were westerns, made across roughly two decades in Hollywood.",t:"knowledge",tr:"advanced",b:["amc"]},
@@ -3174,7 +3174,7 @@ var QUESTIONS = [
 {c:"Audie Murphy — Personal Life and Legacy",q:"To which actress was Audie Murphy first married?",o:["Wanda Hendrix","Ingrid Bergman","Donna Reed","Maureen O'Hara"],a:"Wanda Hendrix",s:"Audie Murphy biography",e:"They married in 1949 and divorced in 1951; he later married Pamela Archer.",t:"knowledge",tr:"advanced",b:["amc"]},
 {c:"Audie Murphy — Personal Life and Legacy",q:"What financial difficulty did Audie Murphy face late in life?",o:["He filed for bankruptcy after business losses and gambling debts","He lost his family home and his land to a natural disaster in Texas","He was defrauded by an error in the Army pay system","He never experienced any financial trouble at all"],a:"He filed for bankruptcy after business losses and gambling debts",s:"Audie Murphy biography",e:"He declared bankruptcy in 1968 despite his fame.",t:"knowledge",tr:"advanced",b:["amc"]},
 {c:"Audie Murphy — Personal Life and Legacy",q:"Besides acting and songwriting, what business interest did Audie Murphy pursue?",o:["Breeding and racing quarter horses","Running a chain of restaurants","Publishing a newspaper","Manufacturing firearms"],a:"Breeding and racing quarter horses",s:"Audie Murphy biography",e:"Horse breeding was among the ventures that contributed to his financial losses.",t:"knowledge",tr:"advanced",b:["amc"]},
-{c:"Audie Murphy — Personal Life and Legacy",q:"How did Audie Murphy die?",o:["In a private plane crash","In an automobile accident","Of wounds received in combat","Of a sudden illness"],a:"In a private plane crash",s:"Audie Murphy biography",e:"He died on 28 May 1971 when the aircraft he was travelling in struck a mountain in Virginia.",t:"knowledge",tr:"core"},
+{c:"Audie Murphy — Personal Life and Legacy",q:"How did Audie Murphy die?",o:["In a private plane crash","In an automobile accident","Of wounds received in combat","Of a sudden illness"],a:"In a private plane crash",s:"Audie Murphy biography",e:"He died on 28 May 1971 when the aircraft he was traveling in struck a mountain in Virginia.",t:"knowledge",tr:"core"},
 {c:"Audie Murphy — Personal Life and Legacy",q:"In what year did Audie Murphy die?",o:["1971","1965","1980","1955"],a:"1971",s:"Audie Murphy biography",e:"He was 45 years old at the time of the crash.",t:"knowledge",tr:"advanced",b:["amc"]},
 {c:"Audie Murphy — Personal Life and Legacy",q:"Where is Audie Murphy buried?",o:["Arlington National Cemetery","The Texas State Cemetery","West Point Cemetery","Normandy American Cemetery"],a:"Arlington National Cemetery",s:"Army heritage",e:"His grave near the Memorial Amphitheater is among the most visited at Arlington.",t:"knowledge",tr:"core"},
 {c:"Audie Murphy — Personal Life and Legacy",q:"What is unusual about Audie Murphy's headstone at Arlington National Cemetery?",o:["It is plain, without the gold leaf normally used for Medal of Honor recipients","It deliberately faces away from the Memorial Amphitheater on the hillside above it","It bears no name at all, only a list of his decorations","It is made of Texas granite instead of the standard government-issue marble stone"],a:"It is plain, without the gold leaf normally used for Medal of Honor recipients",s:"Army heritage",e:"He asked that his headstone remain plain, in keeping with his own modesty about his service.",t:"knowledge",tr:"advanced",b:["amc"]},
@@ -3300,7 +3300,7 @@ var QUESTIONS = [
 {c:"Drill Sergeant Competition",q:"A Center of Excellence DSOY who is not selected as the TRADOC DSOY performs special assignments for the CoE Commander and CSM. Which duties may they not perform?",o:["Driver or enlisted aide","Recruiting or staff assistance visits","Quality assurance of CoE training","Advising the command team on Drill Sergeant issues"],a:"Driver or enlisted aide",s:"TR 350-16 (27 March 2023)",e:"TR 350-16 names those two duties as explicitly excluded from the CoE DSOY's role.",t:"situational",tr:"advanced",b:["ds"]},
 {c:"Drill Sergeant Competition",q:"Where does the TRADOC Active Army Drill Sergeant of the Year relocate, and for how long?",o:["To Fort Eustis, VA, for a minimum of one year","To Fort Jackson, SC, for a minimum of one year","To Fort Knox, KY, for the award year","They remain at their home installation"],a:"To Fort Eustis, VA, for a minimum of one year",s:"TR 350-16 (27 March 2023)",e:"Total time in a Drill Sergeant status may not exceed 42 months, and the DSOY draws SDAP for the duration of the assignment.",t:"knowledge",tr:"advanced",b:["ds"]},
 {c:"Expert Soldier Badge — Program and Eligibility",q:"What does the Expert Soldier Badge recognize?",o:["Mastery of the common warrior tasks and battle drills every Soldier must perform","Completion of an advanced individual training course of instruction at the proponent school","Superior marksmanship with a Soldier's assigned individual weapon","Sustained excellence in a Soldier's primary military occupational specialty over a full rating period"],a:"Mastery of the common warrior tasks and battle drills every Soldier must perform",s:"TR 672-9 (24 July 2020)",e:"The ESB is an expert-qualification badge for demonstrated mastery of the common Soldier tasks, tested under a standardized program.",t:"knowledge",tr:"core",b:["esb"]},
-{c:"Expert Soldier Badge — Program and Eligibility",q:"Which Soldiers earn the Expert Soldier Badge rather than the Expert Infantryman Badge or the Expert Field Medical Badge?",o:["Soldiers in career fields other than Infantry, Special Forces, and the medical fields","Only Soldiers assigned to a training, cadre, or instructor position at an Army school or training centre","Only Soldiers in the rank of Sergeant or above, in any branch","Soldiers in any career field at all, including Infantry, Special Forces, and the medical fields"],a:"Soldiers in career fields other than Infantry, Special Forces, and the medical fields",s:"TR 672-9 (24 July 2020)",e:"Infantry and Special Forces Soldiers test for the EIB and medical-field Soldiers for the EFMB; the ESB is the expert badge for everyone else.",t:"knowledge",tr:"core",b:["esb"]},
+{c:"Expert Soldier Badge — Program and Eligibility",q:"Which Soldiers earn the Expert Soldier Badge rather than the Expert Infantryman Badge or the Expert Field Medical Badge?",o:["Soldiers in career fields other than Infantry, Special Forces, and the medical fields","Only Soldiers assigned to a training, cadre, or instructor position at an Army school or training center","Only Soldiers in the rank of Sergeant or above, in any branch","Soldiers in any career field at all, including Infantry, Special Forces, and the medical fields"],a:"Soldiers in career fields other than Infantry, Special Forces, and the medical fields",s:"TR 672-9 (24 July 2020)",e:"Infantry and Special Forces Soldiers test for the EIB and medical-field Soldiers for the EFMB; the ESB is the expert badge for everyone else.",t:"knowledge",tr:"core",b:["esb"]},
 {c:"Expert Soldier Badge — Program and Eligibility",q:"In what year was the Expert Soldier Badge first awarded?",o:["2015","2020","2010","2008"],a:"2020",s:"army.mil (ESB announcement)",e:"The Army announced the ESB in 2019 and the first badges were awarded in 2020; it was the first new Soldier badge of its kind in decades.",t:"knowledge",tr:"core",b:["esb"]},
 {c:"Expert Soldier Badge — Program and Eligibility",q:"What publication governs Expert Soldier Badge testing?",o:["Army Regulation 350-1","TRADOC Regulation 672-9","Training Circular 3-21.5","Field Manual 7-22"],a:"TRADOC Regulation 672-9",s:"TR 672-9 (24 July 2020)",e:"TRADOC Regulation 672-9 governs testing for the EIB, ESB, and EFMB together (the E3B program).",t:"knowledge",tr:"advanced",b:["esb"]},
 {c:"Expert Soldier Badge — Program and Eligibility",q:"Who is the sole authority to authorize ESB testing and award the badge?",o:["The candidate's brigade commander, on the command sergeant major's recommendation","USACIMT (U.S. Army Center for Initial Military Training)","The installation commanding general, through the awards branch","Human Resources Command, Enlisted Personnel Directorate"],a:"USACIMT (U.S. Army Center for Initial Military Training)",s:"TR 672-9 (24 July 2020)",e:"USACIMT is the sole authority to authorize ESB testing and award the ESB.",t:"knowledge",tr:"advanced",b:["esb"]},
@@ -3342,7 +3342,7 @@ var QUESTIONS = [
 ];
 
 var SCHEMA = 3, KEY = "absg_v3", GRADUATE = 2, HIST_MAX = 10;
-var APP_VERSION = "v65";
+var APP_VERSION = "v66";
 /* The store-facing release number — what a tester sees on their Play or App Store listing.
    It has to be stated here because nothing in the web build can read the wrap's manifest,
    so this is a SECOND place the release number lives: it must be changed in lockstep with
@@ -3654,9 +3654,9 @@ function readinessFrom(boardId, runs){
   return Math.max(0, Math.min(100, Math.round(0.60*acc + 0.25*coverage + 0.15*backlog)));
 }
 function readiness(boardId){ return readinessFrom(boardId, boardRuns(boardId)); }
-/* The band word alone, with a key for its colour. The percentage used to be baked into
+/* The band word alone, with a key for its color. The percentage used to be baked into
    this string; from v17 the word and the number are drawn separately — the word in the
-   band colour, the number as the width of a bar — so callers compose them. */
+   band color, the number as the width of a bar — so callers compose them. */
 function band(v){
   if(v===null) return {t:"Not Started", k:"ns"};
   if(v<50)     return {t:"Not Ready",   k:"nr"};
@@ -3723,7 +3723,7 @@ $("themeBtn").addEventListener("click", function(){
   applyTheme(document.documentElement.getAttribute("data-theme")==="dark" ? "light" : "dark");
 });
 
-/* ---------------- colourblind palette ---------------- */
+/* ---------------- colorblind palette ---------------- */
 function applyCb(on){
   if(on) document.documentElement.setAttribute("data-cb","1");
   else document.documentElement.removeAttribute("data-cb");
@@ -4306,7 +4306,7 @@ function startQuiz(cats){
     beginQuiz(list,"quiz");
   });
 }
-/* Centre a stem only while it occupies a single line. Measured off the laid-out text
+/* Center a stem only while it occupies a single line. Measured off the laid-out text
    rather than guessed from character count, because the threshold moves with the
    viewport, the font, and the reader's own text-size setting. Left-aligned is the
    fallback: if the element is not laid out (0 rects) we leave it alone. */
@@ -4362,7 +4362,7 @@ function answer(chosen, btn){
     b.disabled=true;
     var label=b.querySelector(".otext").textContent, m, graded=false;
     /* The glyph and the word carry the result on their own, so the meaning survives
-       any colour vision. These are always on and ignore the colourblind toggle. */
+       any color vision. These are always on and ignore the colorblind toggle. */
     if(label===q.a){ b.classList.add("correct"); graded=true; m=document.createElement("span"); m.className="mark"; m.textContent="✓ CORRECT"; b.appendChild(m); }
     if(b===btn && !right){ b.classList.add("wrong"); graded=true; m=document.createElement("span"); m.className="mark"; m.textContent="✗ YOUR ANSWER"; b.appendChild(m); }
     /* Everything the Soldier did not pick recedes, so the eye lands on the verdict and
@@ -4384,7 +4384,7 @@ function answer(chosen, btn){
   var num=document.createElement("b"); num.textContent=labelFor(q.s); st.appendChild(num);
   var ttl=titleFor(q.s);
   if(ttl) st.appendChild(document.createTextNode(" · "+ttl));
-  /* The state class drives the tint, the spine, the word colour and which of the two
+  /* The state class drives the tint, the spine, the word color and which of the two
      drawn marks is shown, so there is exactly one place the verdict can be set. */
   $("fb").className="fb "+(right?"ok":"no");
   $("nextBtn").classList.remove("hidden");
@@ -4805,7 +4805,7 @@ var REGLIB = (function(){
      cites TC 4-02.1 on 19 questions — reconciling those citations belongs to the
      content audit, not to a manifest build, because the answers were written against
      the 2016 text and whether each still holds under the 2026 pub is a content
-     question. Flagged in the changelog rather than silently relabelled. */
+     question. Flagged in the changelog rather than silently relabeled. */
   var BY_ID = {}; MANIFEST.forEach(function(r){ BY_ID[r.id]=r; });
 
   /* ---- Capability gate. The library needs real persistent storage and fetch. ---- */
@@ -5600,9 +5600,31 @@ function libRenderAll(list){
         .forEach(function(r){ list.appendChild(libBuildHubRow(r)); });
   }
   if(desc.length){
-    list.appendChild(libSec("Other cited sources", false));
-    desc.sort(function(a,b){ return a.sortKey.localeCompare(b.sortKey); })
-        .forEach(function(r){ list.appendChild(libBuildHubRow(r)); });
+    /* v66: the ones you can actually READ come first, under their own heading.
+
+       v58 made cited sources with text expandable, and they worked — but they sat in
+       alphabetical order among twenty-odd rows you cannot open, under a heading ("Other cited
+       sources") that promises nothing readable. Jordan could not find the Audie Murphy bio at
+       all, and he knew it existed. A feature nobody can find is not shipped.
+
+       Splitting them is the whole fix: four readable rows at the top of the section, named as
+       readable, ahead of the citations that are only citations. */
+    var readable = desc.filter(function(r){
+      var t = null;
+      (r.srcs || []).forEach(function(x){ if(!t) t = sourceText(x); });
+      return !!(t || sourceText(r.name));
+    });
+    var plain = desc.filter(function(r){ return readable.indexOf(r) === -1; });
+    if(readable.length){
+      list.appendChild(libSec("Creeds and heritage · read here", false));
+      readable.sort(function(a,b){ return a.sortKey.localeCompare(b.sortKey); })
+              .forEach(function(r){ list.appendChild(libBuildHubRow(r)); });
+    }
+    if(plain.length){
+      list.appendChild(libSec("Other cited sources", false));
+      plain.sort(function(a,b){ return a.sortKey.localeCompare(b.sortKey); })
+           .forEach(function(r){ list.appendChild(libBuildHubRow(r)); });
+    }
   }
   if(libScope){
     var out = document.createElement("button");
@@ -6110,7 +6132,7 @@ function openNotes(){
    The one thing it will NOT do is silently bin a quiz in progress. The wordmark is hidden by
    the compact bar mid-quiz, so the only way to be here with unanswered work is the References
    hub opened FROM a quiz — and there, scoring the quiz (what End Quiz already does) is the
-   behaviour that cannot lose a Soldier's work to a mis-tap on the title. */
+   behavior that cannot lose a Soldier's work to a mis-tap on the title. */
 /* Is there a quiz that going home would throw away? True while the quiz screen is up, and
    also while a hub is layered over it — that layer is the case v46 got wrong. */
 function quizIsLive(){
@@ -6125,7 +6147,7 @@ function quizIsLive(){
    The wording is deliberately LEAVE, not END. The End Quiz button is the scored finish and
    lands on the results screen; this is the abandon and lands on the main menu. Two controls,
    two outcomes — so they must not use the same verb, or a Soldier reasonably expects the
-   button's behaviour from this one and loses a run finding out otherwise. */
+   button's behavior from this one and loses a run finding out otherwise. */
 function goHome(){
   if(quizIsLive()){
     libAsk("Leave quiz?",
@@ -6193,12 +6215,6 @@ function goHomeNow(){
    correct recitations wrong. The self-test asserts every `src` here resolves to a real
    citation the bank actually uses. */
 var CREEDS = [
-  { id:"nco", name:"The NCO Creed", cite:"Creed of the Noncommissioned Officer", src:"NCO Creed",
-    paras:[
-      "No one is more professional than I. I am a Noncommissioned Officer, a leader of Soldiers. As a Noncommissioned Officer, I realize that I am a member of a time-honored corps, which is known as “The Backbone of the Army.” I am proud of the Corps of Noncommissioned Officers and will at all times conduct myself so as to bring credit upon the Corps, the military service, and my country regardless of the situation in which I find myself. I will not use my grade or position to attain pleasure, profit, or personal safety.",
-      "Competence is my watchword. My two basic responsibilities will always be uppermost in my mind—accomplishment of my mission and the welfare of my Soldiers. I will strive to remain technically and tactically proficient. I am aware of my role as a Noncommissioned Officer. I will fulfill my responsibilities inherent in that role. All Soldiers are entitled to outstanding leadership; I will provide that leadership. I know my Soldiers and I will always place their needs above my own. I will communicate consistently with my Soldiers and never leave them uninformed. I will be fair and impartial when recommending both rewards and punishment.",
-      "Officers of my unit will have maximum time to accomplish their duties; they will not have to accomplish mine. I will earn their respect and confidence as well as that of my Soldiers. I will be loyal to those with whom I serve; seniors, peers, and subordinates alike. I will exercise initiative by taking appropriate action in the absence of orders. I will not compromise my integrity, nor my moral courage. I will not forget, nor will I allow my comrades to forget that we are professionals, Noncommissioned Officers, leaders!"
-    ] },
   { id:"soldier", name:"The Soldier's Creed", cite:"The Soldier's Creed", src:"Soldier's Creed",
     paras:[
       "I am an American Soldier. I am a Warrior and a member of a team. I serve the people of the United States, and live the Army Values.",
@@ -6223,6 +6239,12 @@ var CREEDS = [
 
      "Soldier" is capitalised to the app's house style, as the handoff directed. Official
      printings vary, and it changes nothing about grading — the normaliser folds case. */
+  { id:"nco", name:"The NCO Creed", cite:"Creed of the Noncommissioned Officer", src:"NCO Creed",
+    paras:[
+      "No one is more professional than I. I am a Noncommissioned Officer, a leader of Soldiers. As a Noncommissioned Officer, I realize that I am a member of a time-honored corps, which is known as “The Backbone of the Army.” I am proud of the Corps of Noncommissioned Officers and will at all times conduct myself so as to bring credit upon the Corps, the military service, and my country regardless of the situation in which I find myself. I will not use my grade or position to attain pleasure, profit, or personal safety.",
+      "Competence is my watchword. My two basic responsibilities will always be uppermost in my mind—accomplishment of my mission and the welfare of my Soldiers. I will strive to remain technically and tactically proficient. I am aware of my role as a Noncommissioned Officer. I will fulfill my responsibilities inherent in that role. All Soldiers are entitled to outstanding leadership; I will provide that leadership. I know my Soldiers and I will always place their needs above my own. I will communicate consistently with my Soldiers and never leave them uninformed. I will be fair and impartial when recommending both rewards and punishment.",
+      "Officers of my unit will have maximum time to accomplish their duties; they will not have to accomplish mine. I will earn their respect and confidence as well as that of my Soldiers. I will be loyal to those with whom I serve; seniors, peers, and subordinates alike. I will exercise initiative by taking appropriate action in the absence of orders. I will not compromise my integrity, nor my moral courage. I will not forget, nor will I allow my comrades to forget that we are professionals, Noncommissioned Officers, leaders!"
+    ] },
   { id:"ds", name:"The Drill Sergeant Creed", cite:"The Drill Sergeant Creed", src:"The Drill Sergeant Creed",
     paras:[
       "I am a Drill Sergeant. I will assist each individual in their efforts to become a highly motivated, well disciplined, physically and mentally fit Soldier, capable of defeating any enemy on today's modern battlefield.",
@@ -6246,9 +6268,9 @@ var CREEDS = [
    it is the audited artifact and it is the thing they are graded on. */
 var HERITAGE_TEXT = {
   "Audie Murphy biography": [
-    "Audie Murphy (1925–1971) was the most decorated American combat Soldier of World War II and the namesake of the Sergeant Audie Murphy Board and Club, which recognises NCOs whose leadership and performance embody his example.",
+    "Audie Murphy (1925–1971) was the most decorated American combat Soldier of World War II and the namesake of the Sergeant Audie Murphy Board and Club, which recognizes NCOs whose leadership and performance embody his example.",
     "Born 20 June 1925 on a sharecropper's farm near Kingston, in Hunt County, Texas, Murphy enlisted in the Army in 1942 as a teenager after falsifying his age — the Marine Corps and the Army paratroopers had turned him away as underage and underweight. He served with Company B, 15th Infantry Regiment, 3rd Infantry Division, fought across Sicily, Italy, France and Germany, and rose from private to a battlefield-commissioned officer.",
-    "On 26 January 1945, near Holtzwihr, France, Murphy earned the Medal of Honor: with his company badly depleted, he climbed onto a burning M10 tank destroyer and used its .50-caliber machine gun to hold off attacking German infantry and tanks — alone and exposed — then led a counterattack that saved his unit. Across the war he received 33 U.S. decorations, including the Medal of Honor, the Distinguished Service Cross, two Silver Stars, the Legion of Merit, two Bronze Star Medals with “V”, and three Purple Hearts, plus French and Belgian honours — every U.S. Army combat valor award available at the time.",
+    "On 26 January 1945, near Holtzwihr, France, Murphy earned the Medal of Honor: with his company badly depleted, he climbed onto a burning M10 tank destroyer and used its .50-caliber machine gun to hold off attacking German infantry and tanks — alone and exposed — then led a counterattack that saved his unit. Across the war he received 33 U.S. decorations, including the Medal of Honor, the Distinguished Service Cross, two Silver Stars, the Legion of Merit, two Bronze Star Medals with “V”, and three Purple Hearts, plus French and Belgian honors — every U.S. Army combat valor award available at the time.",
     "After the war he became a Hollywood actor, most famously playing himself in To Hell and Back (1955), based on his best-selling memoir. He died in a plane crash near Roanoke, Virginia, on 28 May 1971, and is buried at Arlington National Cemetery, where his grave is among the most visited."
   ]
 };
@@ -6345,7 +6367,7 @@ var crdFinal = "", crdInterim = "", crdRestarts = 0, crdLast = null;
 
    The second one is the download. The self-contained copy is opened straight off the disk at
    `file:`, and Chrome will not run speech recognition from a bare file — the API is present,
-   so a plain feature test says yes and then the recogniser fails at the moment a Soldier
+   so a plain feature test says yes and then the recognizer fails at the moment a Soldier
    starts reciting. That is the worst possible time to find out. The app already knows about
    this case elsewhere ("opened as a file, not installed"); this is the same fact. */
 function creedFileCopy(){ return location.protocol === "file:"; }
@@ -6360,7 +6382,7 @@ function creedFileCopy(){ return location.protocol === "file:"; }
    iPadOS 13+ reports itself as "Macintosh", so the user-agent alone would let an iPad through.
    Touch points separate a real Mac (0) from an iPad (5).
 
-   This is a browser-capability gate, not a platform judgement: iOS gets this mode through the
+   This is a browser-capability gate, not a platform judgment: iOS gets this mode through the
    native Capacitor speech plugin in the planned Phase 3, which can also run on-device. */
 function creedIOS(){
   var ua = navigator.userAgent || "";
@@ -6391,12 +6413,12 @@ function crdNoGradeReason(){
   if(creedIOS())
     return "Speech-to-text grading is coming to the iPhone and iPad app in a later update — "
       + "no browser on iOS gives web apps access to speech recognition yet. You can read and "
-      + "practise the creeds here.";
+      + "practice the creeds here.";
   if(creedFileCopy())
     return "Speech-to-text grading needs the installed app or nco-prep.com — it can't run from "
-      + "a downloaded file. You can read and practise the creeds here.";
+      + "a downloaded file. You can read and practice the creeds here.";
   return "Speech-to-text grading isn't available in this browser yet — try Chrome, Edge, or "
-    + "Android. You can read and practise the creeds here.";
+    + "Android. You can read and practice the creeds here.";
 }
 
 function crdPanel(name){
@@ -6730,7 +6752,7 @@ function openCreed(){
   $("crdTitle").textContent = canGrade ? "Recite the Creed" : "The Creeds";
   $("crdCue").textContent = canGrade
     ? "Speech is the only part of this app that goes online."
-    : "Read and practise. Nothing here goes online.";
+    : "Read and practice. Nothing here goes online.";
   /* v61: From Memory is a way of being GRADED, so it has no meaning without grading — and a
      mode switch that changes nothing is worse than no switch. The pick hint says what this
      screen actually does here. */
@@ -6788,7 +6810,7 @@ function creedBack(){
      iPhone gets the honest version rather than an offer the screen cannot keep. The layout
      takes either line without change, which is why it was safe to leave open. */
   if(!creedSupported())
-    $("creedHeroSub").textContent = "Read the creeds and practise. Grading is coming to the app.";
+    $("creedHeroSub").textContent = "Read the creeds and practice. Grading is coming to the app.";
 
   $("creedBtn").addEventListener("click", openCreed);
   $("crdBack").addEventListener("click", creedBack);
@@ -6813,11 +6835,11 @@ function creedBack(){
 
    Grading cannot be proven without speaking into a microphone, and a microphone is exactly
    what a build machine does not have. `say` pushes a transcript through the SAME code the
-   recogniser's onresult handler feeds — normalise, align, paint — so the live highlighting
+   recognizer's onresult handler feeds — normalise, align, paint — so the live highlighting
    and the score can be exercised end to end with no audio and no permission prompt.
 
    It reads and writes the real state rather than a copy: a seam that tests a parallel
-   implementation proves nothing about what ships. Nothing here can START the recogniser. */
+   implementation proves nothing about what ships. Nothing here can START the recognizer. */
 window.__CREED__ = {
   words: creedWords, align: creedAlign, texts: CREEDS,
   choose: function(id){ DATA.creedOk = true; crdChoose(id); },
@@ -6835,7 +6857,7 @@ window.__CREED__ = {
 
 /* ---- v55: the Android hardware back button.
 
-   On Android, Capacitor's default back behaviour pops WebView history and, when there is none,
+   On Android, Capacitor's default back behavior pops WebView history and, when there is none,
    FINISHES THE ACTIVITY. This app is a single page, so there is no history to pop — which means
    the default is "back closes the app," from any screen, including mid-quiz. That is the v47
    defect wearing a different hat: a Soldier twenty questions in, reaching for back to close the
@@ -7193,7 +7215,7 @@ function notesRow(r){
     main.appendChild(p);
     /* A question-linked note carries a "Question" tag and the stem it came from, in the same
        slot the reg pill uses on a linked row — same shape, different lane, and the tag's
-       presence is again what tells them apart without colour. */
+       presence is again what tells them apart without color. */
     if(r.qid){
       var qtag = document.createElement("div"); qtag.className = "ntag";
       var qp = document.createElement("span"); qp.className = "npill qpill";
@@ -7562,7 +7584,7 @@ function rdGoto(n){
    The fallback is not defensive padding — it is required. Measured against the live host
    from a browser: a Range request for a LARGE publication returns 206 with Content-Range,
    but the same request for a SMALL one returns 200 with no Content-Range and the whole body.
-   Cloudflare honours ranges on big objects and ignores them on small cached ones. In
+   Cloudflare honors ranges on big objects and ignores them on small cached ones. In
    range-only mode pdf.js takes that full body as if it were the chunk it asked for, so its
    offsets run past the end and it throws "Bad end offset" — which is exactly the
    "could not be opened" a Soldier saw. 26 of 36 publications failed this way.
@@ -8349,7 +8371,7 @@ function markHideBar(){ $("mkBar").classList.add("hidden"); }
 /* Do two normalized rect sets cover substantially the same passage? This is what makes the
    highlight a toggle. Overlap is measured against the SMALLER of the two areas, so selecting
    one word inside an already-highlighted sentence still counts as hitting it — which is the
-   behaviour of every office highlighter and the thing a Soldier will actually do. */
+   behavior of every office highlighter and the thing a Soldier will actually do. */
 function markRectsOverlap(a, b){
   a = a || []; b = b || [];
   var inter = 0, areaA = 0, areaB = 0, i, j;
@@ -8370,8 +8392,8 @@ var MK_OVERLAP = 0.5;
 /* v33: highlighting the same passage twice used to add a SECOND mark over the first, so the
    wash deepened with every pass and there was no way back short of the note sheet. It is a
    toggle now: a highlight that lands on an existing highlight removes it. */
-/* v64: the highlighter colour. Session state, not a saved preference — a Soldier picking
-   blue for one passage has not chosen blue forever, and a colour that silently persisted
+/* v64: the highlighter color. Session state, not a saved preference — a Soldier picking
+   blue for one passage has not chosen blue forever, and a color that silently persisted
    across sessions would surprise them the next time they highlighted. */
 var MK_COLORS = ["y","g","b","p"];
 var mkColor = "y";
@@ -8386,12 +8408,12 @@ function markSetColor(k){
     b.setAttribute("aria-pressed", b.getAttribute("data-new-color") === k ? "true" : "false");
   });
 }
-/* Recolour the highlight under the finger. Repaint from the store rather than restyling the
+/* Recolor the highlight under the finger. Repaint from the store rather than restyling the
    band in place, so what is on the page is always what was saved. */
 function markRecolor(k){
   if(!mkPicked || MK_COLORS.indexOf(k) === -1) return;
   var m = mkPicked;
-  if(m.type === "bookmark") return;            /* nothing painted to recolour */
+  if(m.type === "bookmark") return;            /* nothing painted to recolor */
   markSetColor(k);
   /* put() rebuilds the record but preserves the id, so this updates rather than duplicates —
      and color was already part of the locked shape, so nothing about that shape changes. */
@@ -8480,7 +8502,7 @@ function markRepaint(holder, n){
         layer.appendChild(d);
       });
       if(m.type === "note" && m.anchor.rects && m.anchor.rects[0]){
-        /* The margin tab: a note must be findable without relying on the wash's colour. */
+        /* The margin tab: a note must be findable without relying on the wash's color. */
         var t = document.createElement("button");
         t.type = "button"; t.className = "rdtab";
         t.setAttribute("aria-label", "Open note");
@@ -8498,7 +8520,7 @@ function markRepaint(holder, n){
 /* ---- Arriving from the Notes hub (v45) ----
    The reader already puts a Soldier on the right PAGE — that is the Bookmarks path, reused
    unchanged. A note needs one thing more: a page can hold several marks, so the one the note
-   is about is pulsed and scrolled to. Colour does not carry it (the pulse is the --mark lane
+   is about is pulsed and scrolled to. Color does not carry it (the pulse is the --mark lane
    widening), and under reduced motion nothing animates: being scrolled to the passage is then
    the whole affordance, which is enough. */
 function markFlashNow(){
@@ -8812,7 +8834,7 @@ function markInsertLine(marker){
 }
 /* Delete. Neutral chrome, and it NAMES the consequence: deleting a linked note from anywhere
    removes the whole mark — the note and the highlight it carries — which is what the reader's
-   own Marks delete has always done. One delete behaviour, not two. */
+   own Marks delete has always done. One delete behavior, not two. */
 function markEditorDelete(){
   if(mkEditing){
     var m = mkEditing;
@@ -9227,7 +9249,7 @@ function selfTest(){
         if(!hasDl) errs.push(tag+": downloadable publication has no Download control");
         if(!/\bMB\b/.test(row.textContent)) errs.push(tag+": Download control shows no size");
       }
-      /* Colour law: a status control must never borrow the selection or grading lanes. */
+      /* Color law: a status control must never borrow the selection or grading lanes. */
       if(row.querySelector(".ok,.no,.correct,.wrong"))
         errs.push(tag+": row uses a graded/selected class");
       if(!row.querySelector(".tag")) errs.push(tag+": row has no category tag");
@@ -9298,7 +9320,7 @@ function selfTest(){
     });
     probe.remove();
 
-    /* 2. The highlight toggle's maths. A re-highlight has to RECOGNISE the existing mark or
+    /* 2. The highlight toggle's maths. A re-highlight has to RECOGNIZE the existing mark or
        it will stack a second wash on it, which is the bug being fixed. */
     if(typeof markRectsOverlap !== "function"){
       errs.push("markup: markRectsOverlap is not reachable, so highlighting cannot toggle");
@@ -9455,7 +9477,7 @@ function selfTest(){
     })();
 
     /* 4. One highlight, one wash. The merge is what stops a multi-word selection painting as
-       a striped, double-painted band, so its behaviour is asserted rather than assumed. */
+       a striped, double-painted band, so its behavior is asserted rather than assumed. */
     if(typeof markMergeRects !== "function"){
       errs.push("markup: markMergeRects is not reachable, so a highlight would paint per word");
     } else {
@@ -9622,7 +9644,7 @@ function selfTest(){
     if(typeof markEditorFlush !== "function") errs.push("notes: the editor has no save path");
     if(typeof markEditorDelete !== "function") errs.push("notes: the editor has no delete path");
     /* 4. The row builder, rendered rather than reasoned about — the reg pill's PRESENCE is
-       the colour-independent tell, so a linked row without one is a real defect. */
+       the color-independent tell, so a linked row without one is a real defect. */
     (function(){
       if(typeof notesRow !== "function"){ errs.push("notes: notesRow is not reachable"); return; }
       var box = document.createElement("div");
@@ -10185,7 +10207,7 @@ function selfTest(){
           + "without a microphone, so the button must never be gated on speech support");
       if(!$("creedNoSupport").classList.contains("hidden"))
         errs.push("creed: the home screen is showing an unsupported note in place of the feature");
-      /* v62: the flagship card holds its position and its colour law.
+      /* v62: the flagship card holds its position and its color law.
 
          Two things regress quietly. A later home-layout edit can slide the card back inside
          "Other ways to study" — which is the exact burial the AD's brief existed to undo, and
@@ -10222,7 +10244,7 @@ function selfTest(){
       })();
       if(typeof crdNoGradeReason !== "function")
         errs.push("creed: the read-only explanation is not reachable");
-      else if(!supported && !/read and practise/i.test(crdNoGradeReason()))
+      else if(!supported && !/read and practice/i.test(crdNoGradeReason()))
         errs.push("creed: the read-only explanation does not tell the Soldier they can still read the creeds");
       /* The consent flag must never reach validShape, exactly like qres/cb/tts before it. */
       var probe = {v:SCHEMA, theme:"light", stats:{}, scores:[]};
@@ -10328,7 +10350,7 @@ function selfTest(){
       /* v50: nothing inside the reader may be position:fixed. On iOS with viewport-fit=cover a
          fixed element hit-tests offset from its paint once the insets are non-zero, which put
          every reader control about an inch above itself — the bug that read as a freeze. This
-         is the structural guard; the loop below is the behavioural one. */
+         is the structural guard; the loop below is the behavioral one. */
       Array.prototype.forEach.call(rd.querySelectorAll("*"), function(el){
         if(getComputedStyle(el).position === "fixed")
           errs.push("reader: " + (el.id ? "#" + el.id : el.className || el.tagName)
@@ -11365,8 +11387,8 @@ document.addEventListener("selectionchange", function(){
   markShowBar();
 });
 $("mkHi").addEventListener("click", function(){ markSave("highlight", null); });
-/* v64: the colour swatches. In the selection bar a swatch IS the highlight action — pick the
-   colour and it is placed, one tap, no mode to remember. In the mark popover it recolours the
+/* v64: the color swatches. In the selection bar a swatch IS the highlight action — pick the
+   color and it is placed, one tap, no mode to remember. In the mark popover it recolors the
    highlight already under the finger. */
 Array.prototype.forEach.call(document.querySelectorAll("[data-new-color]"), function(b){
   b.addEventListener("click", function(){
